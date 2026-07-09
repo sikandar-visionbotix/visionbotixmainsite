@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url>
+    <loc>https://visionbotix.com/</loc>
+    <lastmod>2026-07-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://visionbotix.com/assets/img/og-home.jpg</image:loc>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://visionbotix.com/ip-encryptor.html</loc>
+    <lastmod>2026-07-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://visionbotix.com/assets/img/vx1-front.jpg</image:loc>
+      <image:title>VX-1 IP Encryptor by Visionbotix</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://visionbotix.com/assets/img/vx1-angle.jpg</image:loc>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://visionbotix.com/threatiq.html</loc>
+    <lastmod>2026-07-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://visionbotix.com/cyber-range.html</loc>
+    <lastmod>2026-07-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+</urlset>

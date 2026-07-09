@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VX-1 IP Encryptor — Hardware AES-256 Network Encryption | Visionbotix</title>
+  <meta name="description" content="The VX-1 is an FPGA-based, plug-and-play IP encryptor delivering AES-256 encryption at line rate — no operating system, minimal attack surface, quantum-resistant by design.">
+  <link rel="canonical" href="https://visionbotix.com/ip-encryptor.html">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+  <meta name="theme-color" content="#060a14">
+  <meta property="og:site_name" content="Visionbotix">
+  <meta property="og:title" content="VX-1 IP Encryptor — Hardware AES-256 Network Encryption">
+  <meta property="og:description" content="FPGA-based plug-and-play encryption for critical networks. AES-256 CTR at line rate, validated against NIST FIPS 197.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://visionbotix.com/ip-encryptor.html">
+  <meta property="og:image" content="https://visionbotix.com/assets/img/og-vx1.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="VX-1 IP Encryptor — Hardware AES-256 Network Encryption">
+  <meta name="twitter:description" content="FPGA-based plug-and-play encryption for critical networks. AES-256 CTR at line rate.">
+  <meta name="twitter:image" content="https://visionbotix.com/assets/img/og-vx1.jpg">
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Product",
+        "name": "VX-1 IP Encryptor",
+        "url": "https://visionbotix.com/ip-encryptor.html",
+        "image": [
+          "https://visionbotix.com/assets/img/vx1-front.jpg",
+          "https://visionbotix.com/assets/img/vx1-angle.jpg"
+        ],
+        "description": "The VX-1 is an FPGA-based, plug-and-play hardware IP encryptor delivering AES-256 (CTR mode) encryption at line rate over Layer 2 and Layer 3 WAN networks — with no operating system, a minimal attack surface, quantum-resistant symmetric architecture, and validation against NIST FIPS 197 reference vectors.",
+        "category": "Network Encryption Hardware",
+        "brand": { "@type": "Brand", "name": "Visionbotix" },
+        "manufacturer": { "@id": "https://visionbotix.com/#organization" }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://visionbotix.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Products", "item": "https://visionbotix.com/#products" },
+          { "@type": "ListItem", "position": 3, "name": "VX-1 IP Encryptor", "item": "https://visionbotix.com/ip-encryptor.html" }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is the VX-1 IP Encryptor?",
+            "acceptedAnswer": { "@type": "Answer", "text": "The VX-1 is a hardware network encryptor built by Visionbotix on dedicated FPGA silicon. It encrypts all IP traffic crossing a WAN with AES-256 in Counter Mode at near line-rate speed, deploys plug-and-play with zero configuration, and has no operating system — giving it a minimal attack surface." }
+          },
+          {
+            "@type": "Question",
+            "name": "Is the VX-1 quantum-resistant?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. The VX-1 avoids traditional public-key cryptography entirely, so there is no key exchange for quantum computers to break. Its symmetric AES-256 architecture provides inherent resistance to future quantum-based attacks and long-term confidentiality." }
+          },
+          {
+            "@type": "Question",
+            "name": "What networks does the VX-1 work on?",
+            "acceptedAnswer": { "@type": "Answer", "text": "The VX-1 operates transparently on Layer 2 and Layer 3 networks, including ISP links, private WANs and satellite connections such as Starlink. It has been validated with multi-vendor equipment from Cisco, Huawei, TP-Link and Netgear, and benchmarked with Spirent TestCenter (RFC 2544, ITU-T Y.1564)." }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+  <header class="nav">
+    <div class="container nav-inner">
+      <a class="logo" href="index.html" aria-label="Visionbotix home">
+        <img src="assets/img/visionbotix-logo.png" alt="Visionbotix" width="150" height="40">
+      </a>
+      <button class="nav-toggle" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+      <nav class="nav-links">
+        <a href="index.html#services">Services</a>
+        <a href="index.html#cybersecurity">Cybersecurity</a>
+        <a href="index.html#products" class="active">Products</a>
+        <a href="index.html#about">About</a>
+        <a href="index.html#contact" class="btn btn-primary btn-sm">Talk to Us</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ===== Page hero ===== -->
+  <section class="page-hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+    <div class="container page-hero-inner">
+      <div>
+        <div class="crumb"><a href="index.html">Home</a> / <a href="index.html#products">Products</a> / <span>VX-1 IP Encryptor</span></div>
+        <h1>VX-1 <span class="grad-text">IP Encryptor</span></h1>
+        <p class="lead">Hardware-level encryption for sensitive IP communications. The VX-1 encrypts everything crossing your WAN with AES-256 at line rate — from dedicated FPGA silicon, with no operating system to attack.</p>
+        <div class="hero-cta">
+          <a href="index.html#contact" class="btn btn-primary">Request a Briefing
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+          <a href="#specs" class="btn btn-ghost">Technical Specs</a>
+        </div>
+        <div class="chips">
+          <span class="chip gold">AES-256 · CTR</span>
+          <span class="chip gold">FPGA Hardware</span>
+          <span class="chip">Plug & Play</span>
+          <span class="chip">Quantum-Resistant</span>
+          <span class="chip">Line-Rate Throughput</span>
+        </div>
+      </div>
+      <div class="page-hero-visual reveal">
+        <img src="assets/img/vx1-angle.jpg" alt="VX-1 IP Encryptor hardware unit" fetchpriority="high">
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== End-to-end security ===== -->
+  <section class="section">
+    <div class="container split">
+      <div class="reveal">
+        <div class="eyebrow">Secure End-to-End Communication</div>
+        <h2>Drop it in. Everything is encrypted.</h2>
+        <p>The VX-1 operates transparently at the IP layer. Place one unit at each end of the link, connect, and power on — all user data crossing the WAN is encrypted with AES-256 in Counter Mode. No reconfiguration of your routers, switches or endpoints.</p>
+        <ul class="checklist">
+          <li><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            <span><b>End-to-end security</b> — every packet across the WAN encrypted in hardware.</span></li>
+          <li><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            <span><b>Zero configuration</b> — true plug-and-play deployment with no setup procedures.</span></li>
+          <li><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            <span><b>Transparent operation</b> — works with existing routers, switches and devices, including satellite links such as Starlink.</span></li>
+          <li><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            <span><b>Wide compatibility</b> — runs over ISP and private WAN networks on Layer 2 and Layer 3.</span></li>
+        </ul>
+      </div>
+      <img class="reveal" data-delay="1" src="assets/img/vx1-front.jpg" alt="VX-1 IP Encryptor front panel" loading="lazy">
+    </div>
+  </section>
+
+  <!-- ===== Differentiators ===== -->
+  <section class="section cyber">
+    <div class="container">
+      <div class="section-head center reveal">
+        <div class="eyebrow">Why Hardware</div>
+        <h2>Security that starts in <span class="grad-text">silicon</span></h2>
+        <p>Software encryptors inherit every weakness of the operating system beneath them. The VX-1 doesn't have one.</p>
+      </div>
+      <div class="grid grid-3">
+        <div class="card reveal">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3.5v5.5c0 4.5-3.2 7.6-8 9-4.8-1.4-8-4.5-8-9V6.5z"/></svg></div>
+          <h3>Minimal Attack Surface</h3>
+          <p>Dedicated FPGA hardware eliminates OS layers, background services and software dependencies — drastically reducing vulnerability exposure and malware risk.</p>
+        </div>
+        <div class="card reveal" data-delay="1">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
+          <h3>Quantum-Resistant Design</h3>
+          <p>No traditional public-key exchange to break. The VX-1's symmetric architecture provides inherent resistance to future quantum attacks and long-term confidentiality.</p>
+        </div>
+        <div class="card reveal" data-delay="2">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13.5H11l-1 8.5L18.5 10H12z"/></svg></div>
+          <h3>Line-Rate Performance</h3>
+          <p>Hardware-speed encryption delivers ultra-high throughput with near line-rate performance, low latency and real-time packet processing.</p>
+        </div>
+        <div class="card reveal">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <h3>Tamper & Side-Channel Hardened</h3>
+          <p>Built-in protections against side-channel attacks and hardware exploitation, with enhanced tamper resistance for mission-critical environments.</p>
+        </div>
+        <div class="card reveal" data-delay="1">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M8 21H3v-5M21 3l-7 7M3 21l7-7"/></svg></div>
+          <h3>Rapid Deployment</h3>
+          <p>Operates at the IP layer with zero complex setup — rapid rollout, seamless network integration and simplified lifetime maintenance.</p>
+        </div>
+        <div class="card reveal" data-delay="2">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></div>
+          <h3>Standards-Validated</h3>
+          <p>AES-256 implementation verified byte-for-byte against NIST FIPS 197 reference vectors; production units follow FIPS 140-2/140-3 key management.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Comparison ===== -->
+  <section class="section">
+    <div class="container">
+      <div class="section-head center reveal">
+        <div class="eyebrow">Head to Head</div>
+        <h2>VX-1 vs. traditional encryptors</h2>
+      </div>
+      <div class="compare-wrap reveal">
+        <table class="compare">
+          <thead>
+            <tr><th></th><th>Traditional Encryptors</th><th>VX-1 FPGA Encryptor</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Attack surface</td><td>Large — full OS, services, software stack</td><td>Hardware-hardened, minimal</td></tr>
+            <tr><td>Deployment</td><td>Complex procedures and reconfiguration</td><td>Zero-configuration plug-and-play</td></tr>
+            <tr><td>Quantum exposure</td><td>Public-key exchange at risk</td><td>Quantum-resistant symmetric architecture</td></tr>
+            <tr><td>Performance</td><td>Software bottlenecks under load</td><td>Ultra-high throughput, low latency</td></tr>
+            <tr><td>Maintenance</td><td>Patching, updates, config drift</td><td>Streamlined operational simplicity</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Validation ===== -->
+  <section class="section cyber">
+    <div class="container split">
+      <img class="reveal" src="assets/img/circuit-neon.jpg" alt="Encrypted hardware circuitry" loading="lazy" style="aspect-ratio:4/4.2;">
+      <div class="reveal" data-delay="1">
+        <div class="eyebrow">Proven, Not Promised</div>
+        <h2>Tested like it will be deployed</h2>
+        <p>The VX-1 has been validated in staged, increasingly realistic environments using professional test equipment and multi-vendor infrastructure.</p>
+        <ul class="checklist">
+          <li><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            <span><b>Multi-vendor interoperability</b> — validated with Cisco, Huawei, TP-Link and Netgear routing and switching in the path.</span></li>
+          <li><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            <span><b>Real application traffic</b> — web, DNS, FTP, SMTP, VoIP and video streaming verified uninterrupted across VLAN, hybrid and enterprise topologies.</span></li>
+          <li><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            <span><b>Spirent TestCenter benchmarks</b> — RFC 2544 and ITU-T Y.1564 performance suites with full analytics, plus replayed real-world PCAP streams.</span></li>
+          <li><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            <span><b>Cryptographic validation</b> — ciphertext matched NIST FIPS 197 reference vectors exactly, confirming a correct AES-256 implementation.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Applications ===== -->
+  <section class="section">
+    <div class="container">
+      <div class="section-head center reveal">
+        <div class="eyebrow">Ideal Applications</div>
+        <h2>Where the VX-1 belongs</h2>
+      </div>
+      <div class="cyber-grid">
+        <div class="cyber-item reveal"><span class="num">/01</span><h3>Defense & Military</h3><p>Secure communications for defense operations over any transport.</p></div>
+        <div class="cyber-item reveal" data-delay="1"><span class="num">/02</span><h3>Government Networks</h3><p>Protected data transmission between agencies and field offices.</p></div>
+        <div class="cyber-item reveal" data-delay="2"><span class="num">/03</span><h3>Financial Institutions</h3><p>Encrypted transactions and inter-branch data flows.</p></div>
+        <div class="cyber-item reveal"><span class="num">/04</span><h3>Critical Infrastructure</h3><p>Industrial control systems, utilities and SCADA links.</p></div>
+        <div class="cyber-item reveal" data-delay="1"><span class="num">/05</span><h3>Telecom & ISP</h3><p>Secure backbone communications at carrier scale.</p></div>
+        <div class="cyber-item reveal" data-delay="2"><span class="num">/06</span><h3>Data Centers</h3><p>Enterprise-grade secure interconnects between sites.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Specs ===== -->
+  <section class="section cyber" id="specs">
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="eyebrow">Technical Overview</div>
+        <h2>VX-1 at a glance</h2>
+      </div>
+      <dl class="spec reveal">
+        <div class="spec-row"><dt>Encryption</dt><dd>AES-256 in Counter (CTR) mode, implemented fully in FPGA hardware</dd></div>
+        <div class="spec-row"><dt>Platform</dt><dd>Dedicated FPGA — no operating system, no background services, no software stack</dd></div>
+        <div class="spec-row"><dt>Deployment</dt><dd>Transparent, zero-configuration operation on Layer 2 and Layer 3 networks, including satellite links (e.g. Starlink)</dd></div>
+        <div class="spec-row"><dt>Performance</dt><dd>Near line-rate throughput with low latency and real-time packet processing</dd></div>
+        <div class="spec-row"><dt>Key Management</dt><dd>Dynamic IV generation with key management per FIPS 140-2 / 140-3 (production units)</dd></div>
+        <div class="spec-row"><dt>Validation</dt><dd>NIST FIPS 197 reference vectors; RFC 2544 and ITU-T Y.1564 performance testing on Spirent TestCenter</dd></div>
+        <div class="spec-row"><dt>Interoperability</dt><dd>Verified with Cisco, Huawei, TP-Link and Netgear equipment across VLAN, hybrid and enterprise topologies</dd></div>
+        <div class="spec-row"><dt>Roadmap</dt><dd>Wi-Fi connectivity, ASIC/SoC production hardware, rechargeable battery, automatic speed negotiation from 10 Mbps to 1 Gbps</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ===== FAQ ===== -->
+  <section class="section tight">
+    <div class="container">
+      <div class="section-head center reveal">
+        <div class="eyebrow">FAQ</div>
+        <h2>VX-1 questions, answered</h2>
+      </div>
+      <div class="faq-list reveal">
+        <details class="faq-item">
+          <summary>What is the VX-1 IP Encryptor?</summary>
+          <p>The VX-1 is a hardware network encryptor built by Visionbotix on dedicated FPGA silicon. It encrypts all IP traffic crossing a WAN with AES-256 in Counter Mode at near line-rate speed, deploys plug-and-play with zero configuration, and has no operating system — giving it a minimal attack surface.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Is the VX-1 quantum-resistant?</summary>
+          <p>Yes. The VX-1 avoids traditional public-key cryptography entirely, so there is no key exchange for quantum computers to break. Its symmetric AES-256 architecture provides inherent resistance to future quantum-based attacks and long-term confidentiality.</p>
+        </details>
+        <details class="faq-item">
+          <summary>What networks does the VX-1 work on?</summary>
+          <p>The VX-1 operates transparently on Layer 2 and Layer 3 networks, including ISP links, private WANs and satellite connections such as Starlink. It has been validated with multi-vendor equipment from Cisco, Huawei, TP-Link and Netgear, and benchmarked with Spirent TestCenter (RFC 2544, ITU-T Y.1564).</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CTA ===== -->
+  <section class="section">
+    <div class="container">
+      <div class="cta-band reveal">
+        <h2>Secure your links at the <span class="grad-text">hardware level</span></h2>
+        <p>Request a technical briefing or evaluation deployment of the VX-1 IP Encryptor for your organization.</p>
+        <a href="index.html#contact" class="btn btn-primary">Get in Touch
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div class="footer-bottom" style="border-top:none;padding-top:0;">
+        <span>© <span data-year>2026</span> Visionbotix. All rights reserved.</span>
+        <nav style="display:flex;gap:22px;">
+          <a href="ip-encryptor.html" style="color:var(--cyan);">VX-1</a>
+          <a href="threatiq.html" style="color:var(--text-dim);">ThreatIQ</a>
+          <a href="cyber-range.html" style="color:var(--text-dim);">Cyber Range</a>
+          <a href="index.html#contact" style="color:var(--text-dim);">Contact</a>
+        </nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js" defer></script>
+</body>
+</html>

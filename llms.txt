@@ -1,0 +1,36 @@
+# Visionbotix
+
+> Visionbotix is a software development and cybersecurity company headquartered in Islamabad, Pakistan, serving clients worldwide. It builds custom software, web and mobile applications, AI and machine learning systems, AI agents, computer vision solutions, IoT, robotics and embedded/FPGA products — and develops its own cybersecurity products for defense, government, financial and enterprise networks.
+
+Contact: info@visionbotix.com · (+92) 51 8896050 · 1st Floor, The Box Software Technology Park, F-11 Markaz, Islamabad, Pakistan
+LinkedIn: https://linkedin.com/company/visionbotix
+
+## Services
+
+- Custom software development — web platforms, cloud backends, enterprise systems
+- Mobile app development — native and cross-platform Android and iOS
+- AI development & machine learning — model research, training and deployment (cloud and edge)
+- AI agents & LLM solutions — autonomous agents, LLM-powered assistants, chatbots, workflow automation
+- Computer vision — AI-trained cameras for surveillance, inspection, counting and monitoring
+- Cybersecurity — hardware encryption, vulnerability assessment, insider-threat analytics, compliance benchmarking (CIS, DISA STIG, OWASP, NIST SP 800-115), network security testing, red/blue team exercises
+- Embedded systems & FPGA design, PCB engineering
+- IoT solutions — sensors, gateways, dashboards
+- Robotics & industrial automation, smart farming
+
+## Cybersecurity Products
+
+- [VX-1 IP Encryptor](https://visionbotix.com/ip-encryptor.html): FPGA-based, plug-and-play hardware network encryptor. AES-256 (CTR mode) at near line rate on Layer 2/3 WANs including satellite links (Starlink). No operating system — minimal attack surface, quantum-resistant symmetric architecture, side-channel and tamper hardened. Validated against NIST FIPS 197 vectors; benchmarked with Spirent TestCenter (RFC 2544, ITU-T Y.1564); interoperable with Cisco, Huawei, TP-Link, Netgear equipment. Production units follow FIPS 140-2/140-3 key management.
+- [ThreatIQ](https://visionbotix.com/threatiq.html): Internal defense layer for air-gapped and classified networks. Dedicated appliance + lightweight endpoint clients. Three capabilities: vulnerability assessment across six technology layers (malware, software, OS, web apps per OWASP Top Ten, malicious traffic, services/network per NIST SP 800-115); user behavior analytics (8 behavioral criteria, 1,000+ event patterns) for insider threat detection; compliance benchmarking against CIS benchmarks and DISA STIG. One-click consolidated reports. Operates fully offline.
+- [Cyber Range](https://visionbotix.com/cyber-range.html): Spirent-based training, testing and benchmarking platform. Red/blue team cyber exercises (red tooling: CyberFlood, Nessus Pro, Metasploit Pro, Nmap, Burp Suite, Kali Linux; blue: firewalls, IDS/IPS, SIEM). Device benchmarking per RFC 2544/2889/3511 and BMWG; NetSecOpen realistic traffic models; attack simulation (DDoS, XSS, SQL injection, backdoors, fuzzing); DLP and antimalware validation; PDF/Word/HTML reporting and REST API; operator training and support included.
+
+## Other Platforms
+
+- [Smart Livestock Platform](https://livestock.visionbotix.com): automated, sensor-driven livestock management for modern farms.
+- [Vision AI Products](https://cv.visionbotix.com): AI-trained camera systems for custom surveillance and monitoring.
+
+## Pages
+
+- [Home](https://visionbotix.com/): services, cybersecurity competencies, products, about, contact
+- [VX-1 IP Encryptor](https://visionbotix.com/ip-encryptor.html)
+- [ThreatIQ](https://visionbotix.com/threatiq.html)
+- [Cyber Range](https://visionbotix.com/cyber-range.html)
