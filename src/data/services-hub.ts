@@ -77,7 +77,7 @@ export const hubFaqs: FaqItem[] = [
   },
   {
     q: 'How do you work with clients in other time zones?',
-    a: `Our ${site.facts.teamSize}-person team is based in Rawalpindi, Pakistan, and has delivered ${site.facts.projectsDelivered}+ projects for clients in ${site.facts.countriesServed} countries. We keep working hours that overlap the US, UK, Europe, the Gulf and Australia, give you one named lead and a shared channel, and show you working software at a demo every week.`,
+    a: `Our ${site.facts.teamSize}-person team is based in Rawalpindi, Pakistan, and has delivered ${site.facts.projectsDelivered}+ projects for clients in ${site.facts.countriesServed} countries. We keep working hours that overlap the US, UK, Europe, the Gulf and Australia, give you one named lead and a shared channel, and show you working software at a demo every week. Each <a href="/locations/">country page</a> shows the exact overlap hours for your city.`,
   },
   {
     q: 'Can you take over or extend an existing codebase?',

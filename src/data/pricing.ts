@@ -181,3 +181,34 @@ export const estimatorRates = {
   agentSpread: 1.3,
   teamSpread: 1.25,
 } as const;
+
+/**
+ * Local-currency figures for the country pages (S9, D66). Prices are SET in USD (above); these are approximate
+ * conversions for orientation only, rounded, and labelled "≈" with the rate and month wherever they appear. The
+ * signed quote states the binding amount and currency. Update the rates (and `fxAsOf`) every few months.
+ * Sources, November 2026: HMRC monthly rate for GBP; market mid-rates (rounded) for EUR, AUD, CAD and PKR;
+ * AED and SAR are pegged to the US dollar.
+ */
+export const localCurrencies = ['USD', 'GBP', 'EUR', 'AUD', 'CAD', 'AED', 'SAR', 'PKR'] as const;
+export type LocalCurrency = (typeof localCurrencies)[number];
+export const fxAsOf = 'November 2026';
+/** Plural names for headings: "What it costs, in pounds." */
+export const currencyNames: Record<LocalCurrency, string> = { USD: 'US dollars', GBP: 'pounds sterling', EUR: 'euros', AUD: 'Australian dollars', CAD: 'Canadian dollars', AED: 'UAE dirhams', SAR: 'Saudi riyals', PKR: 'Pakistani rupees' };
+/** Units of the currency per US$1. */
+export const fx: Record<LocalCurrency, number> = { USD: 1, GBP: 0.75, EUR: 0.91, AUD: 1.5, CAD: 1.4, AED: 3.6725, SAR: 3.75, PKR: 280 };
+
+/** Round to a "nice" figure: 2 significant digits, then halves (1,125 → 1,150; 262 → 260; 55,720 → 55,500). */
+export function niceRound(n: number): number {
+  if (n < 20) return Math.round(n);
+  const step = 10 ** (Math.floor(Math.log10(n)) - 1) / 2;
+  return Math.round(n / step) * step;
+}
+const fmt = Object.fromEntries(
+  localCurrencies.map((c) => [c, new Intl.NumberFormat('en-US', { style: 'currency', currency: c, currencyDisplay: 'symbol', maximumFractionDigits: 0 })]),
+) as Record<LocalCurrency, Intl.NumberFormat>;
+/** A USD amount in a local currency, rounded: "£1,150", "€1,350", "A$2,250", "CA$2,100", "AED 5,500", "PKR 420,000". */
+export function localMoney(usdAmount: number, c: LocalCurrency): string {
+  return fmt[c].format(c === 'USD' ? usdAmount : niceRound(usdAmount * fx[c])).replace(/^([A-Z]{3})\s?/, '$1 ');
+}
+/** "US$1,500" (unambiguous next to A$, CA$ …). */
+export const usMoney = (n: number) => `US${money(n)}`;

@@ -110,10 +110,26 @@ export const industries = [
   { slug: 'government-defense', name: 'Government and defense', icon: 'building-2' as IconName },
 ];
 
+/**
+ * Country pages (S9): /locations/ and one page per entry (content in src/content/locations/, read through
+ * getLocations(), which fails the build if this list and the content drift). Order = hub and menu order.
+ */
+export const locations = [
+  { slug: 'usa', name: 'USA', code: 'US', currency: 'USD' as const },
+  { slug: 'uk', name: 'UK', code: 'GB', currency: 'GBP' as const },
+  { slug: 'canada', name: 'Canada', code: 'CA', currency: 'CAD' as const },
+  { slug: 'australia', name: 'Australia', code: 'AU', currency: 'AUD' as const },
+  { slug: 'germany', name: 'Germany', code: 'DE', currency: 'EUR' as const },
+  { slug: 'uae', name: 'UAE', code: 'AE', currency: 'AED' as const },
+  { slug: 'saudi-arabia', name: 'Saudi Arabia', code: 'SA', currency: 'SAR' as const },
+  { slug: 'pakistan', name: 'Pakistan', code: 'PK', currency: 'PKR' as const },
+];
+
 export const company = [
   { href: '/about/', name: 'About' },
   { href: '/process/', name: 'How we work' },
   { href: '/work/', name: 'Our work' },
+  { href: '/locations/', name: 'Where we work' },
   { href: '/careers/', name: 'Careers' },
   { href: '/contact/', name: 'Contact' },
 ];

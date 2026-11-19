@@ -30,13 +30,15 @@ interface Props {
   exitOffer?: boolean;
   /** Site concierge, "Ask our AI" (S7). Off where it would get in the way (thanks page). */
   concierge?: boolean;
+  /** Page language (S9): country pages written in UK spelling declare en-GB / en-AU. */
+  lang?: string;
 }
-const { seo, schema = [], backdrop = 'orbs', chrome = true, pageType, exitOffer = true, concierge = true } = Astro.props;
+const { seo, schema = [], backdrop = 'orbs', chrome = true, pageType, exitOffer = true, concierge = true, lang = 'en' } = Astro.props;
 const url = abs(Astro.url.pathname);
 ---
 
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang={lang} data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />

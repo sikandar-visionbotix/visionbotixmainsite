@@ -12,8 +12,8 @@ import Icon from '@/components/Icon.astro';
 import Accordion from '@/components/Accordion.astro';
 import CtaBand from '@/components/CtaBand.astro';
 import { site } from '@/data/site';
-import { agentsByGroup, servicesByPillar, agents } from '@/data/catalogue';
-import { agentPrices, bundles, audit, servicePrices, teamRates, hourlyFrom, money, serviceLabel } from '@/data/pricing';
+import { agentsByGroup, servicesByPillar, agents, locations } from '@/data/catalogue';
+import { agentPrices, bundles, audit, servicePrices, teamRates, hourlyFrom, money, serviceLabel, currencyNames } from '@/data/pricing';
 import { bundleCopy } from '@/data/agents-hub';
 import { getIndustries } from '@/lib/industries';
 const sectorEntries = await getIndustries();
@@ -79,7 +79,7 @@ const faqs: FaqItem[] = [
   },
   {
     q: 'Which currency do you bill in?',
-    a: 'Prices are in US dollars and exclude taxes. If you need to be invoiced in another currency, mention it when you ask for your quote.',
+    a: `Prices are in US dollars and exclude taxes. Our country pages also show them, approximately, in ${locations.filter((l) => l.currency !== 'USD').map((l) => `<a href="/locations/${l.slug}/#prices">${currencyNames[l.currency]}</a>`).join(', ').replace(/, ([^,]*)$/, ' and $1')}. If you need to be invoiced in another currency, mention it when you ask for your quote.`,
   },
   {
     q: 'Do you offer a cheaper way to start?',
@@ -132,6 +132,18 @@ const catalog: Thing = {
           }
         </ul>
       </nav>
+      <p class="pp-local small muted">
+        <span>Prices in your currency:</span>
+        {
+          locations
+            .filter((l) => l.currency !== 'USD')
+            .map((l) => (
+              <a href={`/locations/${l.slug}/#prices`}>
+                {l.name} <span class="mono">{l.currency}</span>
+              </a>
+            ))
+        }
+      </p>
     </div>
   </section>
 
@@ -388,6 +400,27 @@ const catalog: Thing = {
   }
   .pp-typical-title {
     margin-block: var(--space-6) var(--space-3);
+  }
+  .pp-local {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.9rem;
+  }
+  .pp-local a {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.3rem;
+    min-height: 1.75rem;
+    color: var(--fg);
+    text-decoration: none;
+  }
+  .pp-local a:hover {
+    text-decoration: underline;
+  }
+  .pp-local .mono {
+    font-size: 0.6875rem;
+    color: var(--accent);
   }
   .pp-jump {
     display: flex;

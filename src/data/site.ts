@@ -74,6 +74,15 @@ export const site = {
   },
   /** Countries we have delivered to, as named by the owner (a selection of the 20). */
   deliveredIn: ['the USA', 'the UK', 'Germany', 'Switzerland', 'Austria', 'Australia', 'New Zealand', 'the UAE'],
+  /** The same countries as ISO codes: a country page says "we have delivered for clients in X" only when listed here. */
+  deliveredInCodes: ['US', 'GB', 'DE', 'CH', 'AT', 'AU', 'NZ', 'AE'] as readonly string[],
+
+  /**
+   * Team hours (S9). Pakistan Standard Time has no daylight saving. Each country page staffs its projects on a shift
+   * (`shift` in src/content/locations/*.md, PKT hours) chosen for at least 4 hours of live overlap with the client's
+   * working day. TODO(owner): confirm the shifts (TRACKER "Needs from owner", S9).
+   */
+  hours: { tz: 'PKT', utcOffset: 5, days: 'Monday to Friday' },
 
   /** Founder (schema `founder` + About page). The owner prefers not to list the team. */
   founder: { name: 'Sikandar Farooq', jobTitle: 'Founder', url: 'https://www.linkedin.com/in/sikandar-farooq/' },

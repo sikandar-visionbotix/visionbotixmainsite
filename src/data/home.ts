@@ -134,7 +134,7 @@ export const faqs: FaqItem[] = [
   },
   {
     q: 'You are an offshore team. How does that work day to day?',
-    a: `Since ${site.facts.foundingYear} our team has delivered ${site.facts.projectsDelivered}+ projects for clients in ${site.facts.countriesServed} countries, including the USA, the UK, Germany, Switzerland, Australia and the UAE. Our ${site.facts.teamSize}-person team is based in Rawalpindi, Pakistan, with working hours that overlap the US, UK, Europe, the Gulf and Australia. You get one named project lead, a shared channel, weekly demos and milestone payments, so you see progress before you pay for it.`,
+    a: `Since ${site.facts.foundingYear} our team has delivered ${site.facts.projectsDelivered}+ projects for clients in ${site.facts.countriesServed} countries, including the USA, the UK, Germany, Switzerland, Australia and the UAE. Our ${site.facts.teamSize}-person team is based in Rawalpindi, Pakistan, with working hours that overlap the US, UK, Europe, the Gulf and Australia. You get one named project lead, a shared channel, weekly demos and milestone payments, so you see progress before you pay for it. Hours, prices and local rules for your country: <a href="/locations/">where we work</a>.`,
   },
   {
     q: 'Will it work with the tools we already use?',

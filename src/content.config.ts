@@ -14,7 +14,7 @@ import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 import { iconNames } from '@/lib/icons';
 import { services as serviceList, industries as industryList, products as productList, engagements } from '@/data/catalogue';
-import { bundles as bundleList } from '@/data/pricing';
+import { bundles as bundleList, localCurrencies } from '@/data/pricing';
 
 const md = (base: string) => glob({ base: `./src/content/${base}`, pattern: '**/[^_]*.md' });
 
@@ -240,22 +240,64 @@ const industries = defineCollection({
     }),
 });
 
-/* ---------- locations (S9) ---------- */
+/* ---------- locations (S9) ----------
+ * Country pages, read through `getLocations()` (src/lib/locations.ts), which keeps the collection and the catalogue in
+ * step. Genuinely local substance only (PLAN §6.2, no doorway pages): time-zone overlap computed from `zones` + `shift`,
+ * prices converted from pricing.ts into the local currency (never typed here), the country's own rules, contracts and
+ * data-transfer route, and local angles on agents and industries. "Delivered for clients in X" is shown only when the
+ * country is in `site.deliveredInCodes` (owner-confirmed). No offices abroad are implied: we work from Rawalpindi. */
 const locations = defineCollection({
   loader: md('locations'),
-  schema: base.extend({
-    country: z.string(),
-    /** ISO 3166-1 alpha-2 */
-    code: z.string().length(2),
-    region: z.enum(['north-america', 'europe', 'gcc', 'apac', 'south-asia']),
-    currency: z.string().length(3),
-    spelling: z.enum(['us', 'uk']).default('us'),
-    overlap: z.string(),
-    compliance: z.array(z.string()).default([]),
-    localTerms: z.array(z.string()).default([]),
-    industries: z.array(reference('industries')).default([]),
-    services: z.array(reference('services')).default([]),
-  }),
+  schema: base
+    .extend({
+      seo: seo.extend({
+        /** ≤ 46 chars: " | Visionbotix" is appended (total ≤ 60). Must contain the primary keyword. */
+        title: z.string().max(46),
+      }),
+      /** Short name, must equal the catalogue name ("UK", "Saudi Arabia"). */
+      name: z.string(),
+      /** Full country name ("United Kingdom"). */
+      country: z.string(),
+      /** The country in a sentence: "the UK", "Australia". */
+      inName: z.string().min(2).max(24),
+      /** Plural noun phrase for generated copy, e.g. "UK businesses", "Saudi companies". */
+      who: z.string().min(6).max(32),
+      /** ISO 3166-1 alpha-2, must equal the catalogue code. */
+      code: z.string().length(2),
+      currency: z.enum(localCurrencies),
+      /** UK, AU and PK pages use UK spelling (D65); the checker enforces it. */
+      spelling: z.enum(['us', 'uk']).default('us'),
+      /** <html lang> for the page, e.g. en-GB. */
+      lang: z.string().regex(/^en(-[A-Z]{2})?$/).default('en'),
+      /** Card line on the hub. */
+      tagline: z.string().min(30).max(90),
+      h1: z.string().min(20).max(80),
+      /** Main business cities and their UTC offset in the season with the LEAST overlap (the honest worst case). */
+      zones: z.array(z.object({ city: z.string().max(20), abbr: z.string().max(6), offset: z.number().min(-12).max(14) })).min(1).max(3),
+      /** Our project shift in PKT hours [start, end]; end < start means past midnight. */
+      shift: z.tuple([z.number().int().min(0).max(23), z.number().int().min(0).max(23)]),
+      /** The client's working day, local hours. */
+      workday: z.tuple([z.number().int(), z.number().int()]).default([9, 17]),
+      /** Daylight saving and working-week notes (e.g. Sunday to Thursday). */
+      overlapNote: z.string().min(30).max(240),
+      /** Why companies in this country work with us: local reasons, 3–4. */
+      why: z.array(z.object({ title: z.string().max(60), body: z.string().min(60).max(260) })).min(3).max(4),
+      /** Agents with the most local demand, lead first, each with its local angle. */
+      popular: z.array(z.object({ agent: reference('agents'), body: z.string().min(60).max(240) })).min(3).max(4),
+      /** Local rules and what we put in place. No certification or "compliant" claims. */
+      compliance: z.array(z.object({ name: z.string().max(40), scope: z.string().max(24), body: z.string().min(40).max(280) })).min(3).max(5),
+      /** Contracts, data transfers, hosting region and invoices for this country. */
+      contracts: z.array(z.object({ title: z.string().max(48), body: z.string().min(40).max(280) })).min(3).max(5),
+      /** Sectors with local demand and the local angle. */
+      industries: z.array(z.object({ industry: reference('industries'), body: z.string().min(60).max(240) })).min(3).max(4),
+      /** Custom builds most asked for here. */
+      services: z.array(reference('services')).min(2).max(4),
+      faq: z.array(z.object({ q: z.string().min(8), a: z.string().min(20) })).min(5).max(8),
+    })
+    .refine((d) => d.seo.title.toLowerCase().includes(d.keywords.primary.toLowerCase()), {
+      message: 'seo.title must contain keywords.primary (the title is the strongest on-page signal).',
+      path: ['seo', 'title'],
+    }),
 });
 
 /* ---------- work / case studies ----------

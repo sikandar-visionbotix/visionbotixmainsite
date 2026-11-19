@@ -9,6 +9,7 @@ import { getServices } from '@/lib/services';
 import { getProducts } from '@/lib/products';
 import { getWork } from '@/lib/work';
 import { getIndustries, teamPricing } from '@/lib/industries';
+import { getLocations, overlap, overlapLabel, locationFaq } from '@/lib/locations';
 import { typicalProjects, estimate, rangeLabel } from '@/data/estimator';
 import { liveDemos } from '@/data/demos';
 
@@ -16,7 +17,7 @@ const u = (p: string) => new URL(p, site.url).href;
 const f = site.facts;
 
 export async function llmsTxt(full: boolean): Promise<string> {
-  const [agents, services, products, work, industries] = await Promise.all([getAgents(), getServices(), getProducts(), getWork(), getIndustries()]);
+  const [agents, services, products, work, industries, locations] = await Promise.all([getAgents(), getServices(), getProducts(), getWork(), getIndustries(), getLocations()]);
   const minSetup = Math.min(...Object.values(agentPrices).filter((p) => p.monthly).map((p) => p.setup));
   const minMonthly = Math.min(...Object.values(agentPrices).filter((p) => p.monthly).map((p) => p.monthly!));
   const L: string[] = [];
@@ -60,6 +61,15 @@ export async function llmsTxt(full: boolean): Promise<string> {
     );
     if (full && i.data.faq.length) L.push(faq(i.data.faq));
   }
+  L.push('', '## Where we work (country pages)', '');
+  for (const l of locations) {
+    const z = overlap(l.data);
+    const price = locationFaq(l.data);
+    L.push(
+      `- [AI agents and software for ${l.data.who}](${u(`/locations/${l.id}/`)}): ${l.data.summary.replace(/\s+/g, ' ')} Live overlap: ${z.map((x) => `${x.city} ${x.hours} h (${overlapLabel(x)})`).join(', ')}. Rules we design around: ${l.data.compliance.map((c) => c.name).join(', ')}.`,
+    );
+    if (full) L.push(faq([price, ...l.data.faq]));
+  }
   L.push('', '## Our own products', '');
   for (const p of products) {
     L.push(`- [${p.data.name}](${u(`/products/${p.id}/`)}): ${p.data.summary.replace(/\s+/g, ' ')}${p.data.externalUrl ? ` Live at ${p.data.externalUrl}` : ''}`);
@@ -73,6 +83,7 @@ export async function llmsTxt(full: boolean): Promise<string> {
     `- [About](${u('/about/')})`,
     `- [How we work](${u('/process/')})`,
     `- [Industries](${u('/industries/')})`,
+    `- [Where we work](${u('/locations/')})`,
     `- [Pricing](${u('/pricing/')})`,
     `- [Project cost estimator](${u('/estimate/')})`,
     `- [Contact](${u('/contact/')})`,

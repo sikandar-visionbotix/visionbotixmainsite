@@ -1,0 +1,442 @@
+---
+/**
+ * /locations/ hub (S9): the countries we work with, each with its live overlap (computed), local currency and the rules
+ * we design around; a visible fact table for AI search; how a project starts across time zones; FAQ. Copy in
+ * `src/data/locations-hub.ts`; countries from getLocations(); numbers from src/lib/locations.ts.
+ */
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Button from '@/components/Button.astro';
+import Icon from '@/components/Icon.astro';
+import TextReveal from '@/components/TextReveal.astro';
+import Steps from '@/components/Steps.astro';
+import Accordion from '@/components/Accordion.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import { site } from '@/data/site';
+import { agentPrices, localMoney } from '@/data/pricing';
+import { locationsHero, locationSteps, locationFaqs } from '@/data/locations-hub';
+import { getLocations, overlap, overlapLabel, delivered } from '@/lib/locations';
+import { itemList } from '@/lib/schema';
+
+const all = await getLocations();
+const path = '/locations/';
+const cheapest = Object.values(agentPrices).filter((p) => p.monthly).reduce((a, b) => (b.setup < a.setup ? b : a));
+const cards = all.map((e) => {
+  const z = overlap(e.data);
+  return {
+    entry: e,
+    main: z[0]!,
+    zones: z,
+    delivered: delivered(e.data),
+    from: `${localMoney(cheapest.setup, e.data.currency)} + ${localMoney(cheapest.monthly!, e.data.currency)}/mo`,
+  };
+});
+const elsewhere = site.deliveredIn.filter((n) => !all.some((e) => e.data.inName === n || e.data.country === n || e.data.name === n.replace(/^the /, '')));
+---
+
+<BaseLayout
+  seo={{
+    title: 'Where We Work: AI and Software by Country',
+    description: 'AI agents and software for the USA, UK, Canada, Australia, Germany, the UAE, Saudi Arabia and Pakistan: overlap hours, local prices and local rules.',
+  }}
+  pageType="CollectionPage"
+  schema={[itemList({ path, name: 'Countries Visionbotix works with', items: all.map((e) => ({ name: `AI agents and software for ${e.data.who}`, path: `/locations/${e.id}/` })) })]}
+>
+  <!-- ============ Hero ============ -->
+  <section class="container hub-hero" aria-labelledby="hub-title">
+    <div class="hub-copy">
+      <Breadcrumbs items={[{ name: 'Where we work', href: path }]} />
+      <p class="eyebrow">Where we work · {site.facts.countriesServed} countries</p>
+      <TextReveal id="hub-title" text={locationsHero.title} accent={locationsHero.accent} class="display hub-title" />
+      <p class="lead hub-lead">{locationsHero.lead}</p>
+      <div class="cluster">
+        <Button href={site.contact.bookingUrl} size="lg" icon="arrow-right" data-event="book_call" data-event-location="locations-hub-hero">Book a free strategy call</Button>
+        <Button href="#countries" size="lg" variant="glass">Find your country</Button>
+      </div>
+      <ul role="list" class="hub-points">
+        {
+          locationsHero.points.map((p) => (
+            <li>
+              <Icon name="check" size={16} />
+              {p}
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+
+    <aside class="roster glass-strong" aria-labelledby="roster-title">
+      <p class="roster-head">
+        <span id="roster-title" class="roster-title">Pick your country</span>
+        <span class="mono subtle">live overlap</span>
+      </p>
+      <ul role="list" class="roster-list">
+        {
+          cards.map(({ entry: e, main }) => (
+            <li>
+              <a class="roster-item" href={`/locations/${e.id}/`}>
+                <span class="code mono" aria-hidden="true">{e.data.code}</span>
+                <span class="roster-name">{e.data.name}</span>
+                <span class="roster-h mono">{main.hours} h</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="roster-foot small muted"><span class="live-dot" aria-hidden="true"></span> Team in {site.address.locality}, Pakistan · {site.hours.tz}, UTC+{site.hours.utcOffset}</p>
+    </aside>
+  </section>
+
+  <!-- ============ Countries ============ -->
+  <Section id="countries" eyebrow="Countries" title="Choose your country." lead="Each page shows the hours our team overlaps with yours, our prices in your currency, the rules we design around and the questions buyers there ask us.">
+    <ul role="list" class="countries" data-stagger>
+      {
+        cards.map(({ entry: e, main, delivered: dl, from }) => (
+          <li class="country glass-subtle spotlight lift">
+            <a class="card-cover" href={`/locations/${e.id}/`} aria-hidden="true" tabindex="-1" />
+            <div class="country-top">
+              <span class="code code-lg mono" aria-hidden="true">{e.data.code}</span>
+              {dl && <span class="country-badge mono">Delivered here</span>}
+            </div>
+            <h3 class="h4">
+              <a href={`/locations/${e.id}/`}>{e.data.name}</a>
+            </h3>
+            <p class="muted small">{e.data.tagline}</p>
+            <dl class="country-facts small">
+              <div>
+                <dt class="subtle">Overlap</dt>
+                <dd>{main.hours} h · {overlapLabel(main)}</dd>
+              </div>
+              <div>
+                <dt class="subtle">Agents from</dt>
+                <dd class="mono">{e.data.currency !== 'USD' && '≈ '}{from}</dd>
+              </div>
+            </dl>
+          </li>
+        ))
+      }
+    </ul>
+    {
+      elsewhere.length > 0 && (
+        <p class="elsewhere small muted">
+          <Icon name="globe" size={15} /> We have also delivered for clients in {elsewhere.join(', ').replace(/, ([^,]*)$/, ' and $1')}. Those projects run the same way: a shift that overlaps your day and prices in US dollars.
+        </p>
+      )
+    }
+  </Section>
+
+  <!-- ============ At a glance ============ -->
+  <Section id="glance" band eyebrow="At a glance" title="Hours, currency and rules, country by country." lead="Overlap is our project shift against a 09:00–17:00 working day in the season with the least overlap. Compliance stays your responsibility; we build the setup so your compliance lead can sign it off.">
+    <div class="rules glass-subtle" data-reveal>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Country</th>
+            <th scope="col">Live overlap, main cities</th>
+            <th scope="col">Currency</th>
+            <th scope="col">Rules we design around</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            cards.map(({ entry: e, zones }) => (
+              <tr>
+                <th scope="row">
+                  <a href={`/locations/${e.id}/`}>{e.data.name}</a>
+                </th>
+                <td>{zones.map((z) => `${z.city} ${z.hours} h`).join(' · ')}</td>
+                <td class="mono">{e.data.currency}</td>
+                <td>
+                  <a class="rule-link" href={`/locations/${e.id}/#compliance`}>{e.data.compliance.map((c) => c.name).join(' · ')}</a>
+                </td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </Section>
+
+  <!-- ============ How it works ============ -->
+  <Section id="how" eyebrow="How it works" title="From first call to live work, in your hours." align="center">
+    <Steps steps={locationSteps} note="Your AI agents run around the clock in your time zone; the overlap is for the people." />
+  </Section>
+
+  <!-- ============ FAQ ============ -->
+  <Section id="faq" eyebrow="FAQ" title="Working with us from abroad, plainly explained." width="narrow" align="center">
+    <Accordion items={locationFaqs} schema name="locations-faq" />
+  </Section>
+
+  <CtaBand title="Wherever you are, get a fixed quote within 24 hours." text="Tell us how your team works. In a free 30-minute call, in your working hours, we point you to the agent or build that pays off first." location="locations-hub-final" />
+</BaseLayout>
+
+<style>
+  /* ---------- hero ---------- */
+  .hub-hero {
+    display: grid;
+    align-items: center;
+    gap: clamp(2rem, 1.5rem + 3vw, 4rem);
+    padding-block: calc(var(--header-h) + clamp(1.25rem, 0.5rem + 3vw, 3rem)) clamp(2rem, 1rem + 3vw, 4rem);
+  }
+  @media (min-width: 64rem) {
+    .hub-hero {
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+      min-height: min(100svh, 50rem);
+    }
+  }
+  .hub-copy {
+    display: grid;
+    gap: var(--space-5);
+    justify-items: start;
+  }
+  .hub-lead {
+    max-width: 58ch;
+  }
+  @media (max-width: 40rem) {
+    .hub-lead {
+      font-size: var(--step-0);
+    }
+  }
+  .hub-points {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    font-size: var(--step--1);
+    color: var(--fg-muted);
+  }
+  .hub-points li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .hub-points :global(.icon) {
+    color: var(--accent);
+  }
+  .roster {
+    --glass-radius: var(--radius-xl);
+    display: grid;
+    gap: var(--space-4);
+    padding: clamp(1.25rem, 1rem + 1vw, 1.75rem);
+    inline-size: 100%;
+    max-inline-size: 30rem;
+    justify-self: center;
+  }
+  @media (min-width: 64rem) {
+    .roster {
+      justify-self: end;
+    }
+  }
+  .roster > * {
+    position: relative;
+    z-index: 2;
+  }
+  .roster-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-2);
+    padding-block-end: var(--space-3);
+    border-block-end: 1px solid var(--border);
+  }
+  .roster-title {
+    font-weight: 640;
+  }
+  .roster-head .mono {
+    font-size: 0.6875rem;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+  }
+  .roster-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+  .roster-item {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-block-size: 2.75rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: var(--radius-md);
+    font-size: var(--step--1);
+    font-weight: 540;
+    text-decoration: none;
+    background: color-mix(in srgb, var(--fg) 5%, transparent);
+  }
+  .roster-item:hover {
+    background: color-mix(in srgb, var(--fg) 10%, transparent);
+  }
+  .roster-name {
+    flex: 1;
+    min-inline-size: 0;
+  }
+  .roster-h {
+    font-size: 0.6875rem;
+    color: var(--fg-muted);
+  }
+  .code {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    min-inline-size: 1.75rem;
+    block-size: 1.4rem;
+    padding-inline: 0.3rem;
+    border-radius: 0.4rem;
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+  .code-lg {
+    min-inline-size: 2.5rem;
+    block-size: 2.5rem;
+    border-radius: 0.9rem;
+    font-size: 0.8125rem;
+  }
+  .roster-foot {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--border);
+  }
+  .live-dot {
+    flex: none;
+    inline-size: 0.45rem;
+    block-size: 0.45rem;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 0 3px rgb(34 197 94 / 0.22);
+  }
+
+  /* ---------- countries ---------- */
+  #countries {
+    scroll-margin-top: var(--header-h);
+  }
+  .countries {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  }
+  @media (min-width: 64rem) {
+    .countries {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  .country {
+    --glass-radius: var(--radius-lg);
+    position: relative;
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    gap: var(--space-2);
+    padding: var(--space-5);
+    cursor: pointer;
+  }
+  .country > :not(.card-cover) {
+    position: relative;
+    z-index: 2;
+  }
+  .country .card-cover {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    border-radius: inherit;
+  }
+  .country h3 a {
+    text-decoration: none;
+  }
+  .country:has(h3 a:focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+  }
+  .country-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-2);
+    margin-block-end: var(--space-1);
+  }
+  .country-badge {
+    padding: 0.15rem 0.55rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.6875rem;
+    color: var(--fg-muted);
+    background: color-mix(in srgb, var(--fg) 8%, transparent);
+  }
+  .country-facts {
+    display: grid;
+    gap: 0.35rem;
+    margin-block-start: var(--space-2);
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--border);
+  }
+  .country-facts div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+  .country-facts dd {
+    text-align: end;
+  }
+  .elsewhere {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-block-start: var(--space-5);
+  }
+  .elsewhere :global(.icon) {
+    flex: none;
+    color: var(--accent);
+    transform: translateY(0.15rem);
+  }
+
+  /* ---------- table ---------- */
+  .rules {
+    --glass-radius: var(--radius-lg);
+    padding: clamp(0.75rem, 0.5rem + 1vw, 1.5rem);
+    overflow-x: auto;
+  }
+  .rules table {
+    position: relative;
+    z-index: 2;
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--step--1);
+  }
+  .rules th,
+  .rules td {
+    padding: 0.65rem 0.75rem;
+    text-align: start;
+    vertical-align: top;
+    border-block-end: 1px solid var(--border);
+  }
+  .rules thead th {
+    font-weight: 620;
+  }
+  .rules tbody th {
+    font-weight: 560;
+    white-space: nowrap;
+  }
+  .rules tbody th a,
+  .rule-link {
+    text-decoration: none;
+  }
+  .rules tbody th a:hover,
+  .rule-link:hover {
+    text-decoration: underline;
+  }
+  .rules td {
+    color: var(--fg-muted);
+  }
+  .rule-link {
+    color: inherit;
+  }
+  @media (max-width: 40rem) {
+    .rules table {
+      min-inline-size: 38rem;
+    }
+  }
+</style>

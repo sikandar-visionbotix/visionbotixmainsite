@@ -3,7 +3,7 @@
 import Logo from './Logo.astro';
 import Icon from './Icon.astro';
 import { site } from '@/data/site';
-import { agents, services, products, company, industriesLive } from '@/data/catalogue';
+import { agents, services, products, company, industriesLive, locations } from '@/data/catalogue';
 import type { IconName } from '@/lib/icons';
 
 const year = new Date().getFullYear();
@@ -78,6 +78,13 @@ const topServices = services.filter((s) => ['ai-agent-development', 'generative-
         </ul>
       </nav>
     </div>
+
+    <nav class="footer-places small" aria-labelledby="f-places">
+      <h2 id="f-places" class="footer-title"><a href="/locations/">Where we work</a></h2>
+      <ul role="list">
+        {locations.map((l) => <li><a href={`/locations/${l.slug}/`}>{l.name}</a></li>)}
+      </ul>
+    </nav>
 
     <div class="footer-bottom">
       <p class="small subtle">© {year} {site.legalName}. All rights reserved.</p>
@@ -196,6 +203,38 @@ const topServices = services.filter((s) => ['ai-agent-development', 'generative-
   }
   .footer-col .more {
     color: var(--accent);
+  }
+  .footer-places {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2) var(--space-5);
+    margin-block-start: var(--space-7);
+  }
+  .footer-places .footer-title {
+    margin: 0;
+  }
+  .footer-places .footer-title a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .footer-places ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+  }
+  .footer-places ul a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2rem;
+    color: var(--fg-muted);
+    text-decoration: none;
+  }
+  .footer-places a:hover {
+    color: var(--fg);
+  }
+  .footer-places + .footer-bottom {
+    margin-block-start: var(--space-5);
   }
   .footer-bottom {
     display: flex;
