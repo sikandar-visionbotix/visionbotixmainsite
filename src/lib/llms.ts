@@ -12,12 +12,14 @@ import { getIndustries, teamPricing } from '@/lib/industries';
 import { getLocations, overlap, overlapLabel, locationFaq } from '@/lib/locations';
 import { typicalProjects, estimate, rangeLabel } from '@/data/estimator';
 import { liveDemos } from '@/data/demos';
+import { getPosts, filled } from '@/lib/posts';
+import { authorBySlug } from '@/data/resources';
 
 const u = (p: string) => new URL(p, site.url).href;
 const f = site.facts;
 
 export async function llmsTxt(full: boolean): Promise<string> {
-  const [agents, services, products, work, industries, locations] = await Promise.all([getAgents(), getServices(), getProducts(), getWork(), getIndustries(), getLocations()]);
+  const [agents, services, products, work, industries, locations, posts] = await Promise.all([getAgents(), getServices(), getProducts(), getWork(), getIndustries(), getLocations(), getPosts()]);
   const minSetup = Math.min(...Object.values(agentPrices).filter((p) => p.monthly).map((p) => p.setup));
   const minMonthly = Math.min(...Object.values(agentPrices).filter((p) => p.monthly).map((p) => p.monthly!));
   const L: string[] = [];
@@ -78,12 +80,18 @@ export async function llmsTxt(full: boolean): Promise<string> {
   for (const s of site.properties) L.push(`- [${s.name}](${s.href})`);
   L.push('', '## Case studies (anonymous by policy: client names are never published)', '');
   for (const w of work) L.push(`- [${w.data.title}](${u(`/work/${w.id}/`)}): ${w.data.clientType}. ${full ? w.data.summary.replace(/\s+/g, ' ') : ''}`.trim());
+  L.push('', '## Resources (guides, cost guides and comparisons)', '');
+  for (const p of posts) {
+    L.push(`- [${p.data.title}](${u(`/resources/${p.id}/`)}): ${filled(p.data.summary).replace(/\s+/g, ' ')} By ${authorBySlug(p.data.author).name}, updated ${p.data.updated.toISOString().slice(0, 10)}.`);
+    if (full) L.push(faq(p.data.faq.map((x) => ({ q: x.q, a: filled(x.a) }))));
+  }
   L.push('', '## Company', '');
   L.push(
     `- [About](${u('/about/')})`,
     `- [How we work](${u('/process/')})`,
     `- [Industries](${u('/industries/')})`,
     `- [Where we work](${u('/locations/')})`,
+    `- [Resources](${u('/resources/')})`,
     `- [Pricing](${u('/pricing/')})`,
     `- [Project cost estimator](${u('/estimate/')})`,
     `- [Contact](${u('/contact/')})`,

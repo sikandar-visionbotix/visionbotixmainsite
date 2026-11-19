@@ -11,6 +11,7 @@ import Button from '@/components/Button.astro';
 import Icon from '@/components/Icon.astro';
 import Accordion from '@/components/Accordion.astro';
 import CtaBand from '@/components/CtaBand.astro';
+import RelatedReading from '@/components/RelatedReading.astro';
 import { site } from '@/data/site';
 import { agentsByGroup, servicesByPillar, agents, locations } from '@/data/catalogue';
 import { agentPrices, bundles, audit, servicePrices, teamRates, hourlyFrom, money, serviceLabel, currencyNames } from '@/data/pricing';
@@ -373,6 +374,9 @@ const catalog: Thing = {
       Prices in US dollars, excluding taxes. "From" prices are starting points, not offers; your signed quote is binding. See our <a class="link" href="/terms/">terms</a>.
     </p>
   </Section>
+
+  <!-- ============ Guides (S10): posts that link to this page ============ -->
+  <RelatedReading />
 
   <CtaBand title="Get your fixed quote within 24 hours." location="pricing-final" />
 </BaseLayout>

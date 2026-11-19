@@ -214,3 +214,83 @@ export function breadcrumbList(trail: Crumb[]): Thing {
 export function graph(...nodes: Thing[]): Thing {
   return { '@context': 'https://schema.org', '@graph': nodes };
 }
+
+/* ---------- posts (S10) ---------- */
+
+/** A real author (src/data/resources.ts). `path` = their author page on this site. */
+export function person(a: { name: string; jobTitle: string; url: string; path: string; bio?: string; knowsAbout?: readonly string[] }): Thing {
+  return {
+    '@type': 'Person',
+    '@id': `${abs(a.path)}#person`,
+    name: a.name,
+    jobTitle: a.jobTitle,
+    url: abs(a.path),
+    sameAs: [a.url],
+    worksFor: { '@id': ORG_ID },
+    ...(a.bio ? { description: a.bio } : {}),
+    ...(a.knowsAbout ? { knowsAbout: a.knowsAbout } : {}),
+  };
+}
+
+export function blogPosting(p: {
+  path: string;
+  headline: string;
+  description: string;
+  published: Date;
+  modified: Date;
+  authorPath: string;
+  image: string;
+  keywords: string[];
+  section: string;
+  wordCount: number;
+  citations: { title: string; publisher: string; url: string }[];
+  about?: string[];
+}): Thing {
+  const url = abs(p.path);
+  return {
+    '@type': 'BlogPosting',
+    '@id': `${url}#article`,
+    headline: p.headline,
+    description: p.description,
+    url,
+    mainEntityOfPage: { '@id': `${url}#webpage` },
+    datePublished: p.published.toISOString(),
+    dateModified: p.modified.toISOString(),
+    author: { '@id': `${abs(p.authorPath)}#person` },
+    publisher: { '@id': ORG_ID },
+    image: abs(p.image),
+    keywords: p.keywords.join(', '),
+    articleSection: p.section,
+    wordCount: p.wordCount,
+    inLanguage: 'en',
+    isPartOf: { '@id': `${abs('/resources/')}#blog` },
+    ...(p.about?.length ? { about: p.about.map((u) => ({ '@id': `${abs(u)}#service` })) } : {}),
+    ...(p.citations.length
+      ? { citation: p.citations.map((c) => ({ '@type': 'CreativeWork', name: c.title, url: c.url, publisher: { '@type': 'Organization', name: c.publisher } })) }
+      : {}),
+  };
+}
+
+/** The /resources/ blog node; posts point at it with isPartOf. */
+export function blog(posts: { path: string; headline: string }[]): Thing {
+  return {
+    '@type': 'Blog',
+    '@id': `${abs('/resources/')}#blog`,
+    name: 'Visionbotix Resources',
+    url: abs('/resources/'),
+    publisher: { '@id': ORG_ID },
+    inLanguage: 'en',
+    blogPost: posts.map((p) => ({ '@type': 'BlogPosting', '@id': `${abs(p.path)}#article`, headline: p.headline, url: abs(p.path) })),
+  };
+}
+
+export function definedTermSet(path: string, name: string, terms: { term: string; definition: string; id: string }[]): Thing {
+  const url = abs(path);
+  return {
+    '@type': 'DefinedTermSet',
+    '@id': `${url}#terms`,
+    name,
+    url,
+    hasDefinedTerm: terms.map((t) => ({ '@type': 'DefinedTerm', '@id': `${url}#${t.id}`, name: t.term, description: t.definition, url: `${url}#${t.id}`, inDefinedTermSet: { '@id': `${url}#terms` } })),
+  };
+}

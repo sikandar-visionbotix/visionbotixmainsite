@@ -15,6 +15,7 @@ import Button from '@/components/Button.astro';
 import Icon from '@/components/Icon.astro';
 import Accordion from '@/components/Accordion.astro';
 import CtaBand from '@/components/CtaBand.astro';
+import RelatedReading from '@/components/RelatedReading.astro';
 import { site } from '@/data/site';
 import { agentGroups } from '@/data/catalogue';
 import { agentPrices, estimatorRates as R, money, projectFrom, teamRates, audit } from '@/data/pricing';
@@ -493,6 +494,9 @@ const stepNames = { type: 'Project', scope: 'Scope', extras: 'Platforms', when: 
   <Section id="faq" eyebrow="FAQ" title="Cost questions." width="narrow" align="center">
     <Accordion items={faqs} schema name="estimate-faq" />
   </Section>
+
+  <!-- ============ Guides (S10): posts that link to this page ============ -->
+  <RelatedReading />
 
   <CtaBand title="Want a fixed price instead of a range?" text="Tell us what you need. After a short call, your fixed quote arrives within 24 hours." location="estimate-final" />
 </BaseLayout>

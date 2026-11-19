@@ -15,6 +15,7 @@ import Icon from '@/components/Icon.astro';
 import Steps from '@/components/Steps.astro';
 import Accordion from '@/components/Accordion.astro';
 import CtaBand from '@/components/CtaBand.astro';
+import RelatedReading from '@/components/RelatedReading.astro';
 import AgentCard from '@/components/AgentCard.astro';
 import ServiceCard from '@/components/ServiceCard.astro';
 import CaseCard from '@/components/CaseCard.astro';
@@ -366,6 +367,9 @@ const agentsLead =
       </Section>
     )
   }
+
+  <!-- ============ Guides (S10): posts that link to this page ============ -->
+  <RelatedReading />
 
   <CtaBand title="Tell us what you need. Get a fixed quote within 24 hours." location={`service-final-${slug}`} />
 </BaseLayout>

@@ -1,0 +1,77 @@
+---
+/** Tag page (S10): /resources/tags/<tag>/, built only for tags with 2+ posts (liveTags), so there are no thin pages. */
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Icon from '@/components/Icon.astro';
+import PostCard from '@/components/PostCard.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import '@/styles/page-kit.css';
+import { getPosts, liveTags } from '@/lib/posts';
+import { itemList } from '@/lib/schema';
+
+export async function getStaticPaths() {
+  const all = await getPosts();
+  const topics = liveTags(all);
+  return topics.map((t) => ({ params: { tag: t.slug }, props: { topic: t, others: topics.filter((o) => o.slug !== t.slug) } }));
+}
+type Topic = ReturnType<typeof liveTags>[number];
+interface Props {
+  topic: Topic;
+  others: Topic[];
+}
+const { topic, others } = Astro.props;
+const path = `/resources/tags/${topic.slug}/`;
+const title = `${topic.name}: Guides and Answers`;
+---
+
+<BaseLayout
+  seo={{ title: title.length <= 46 ? title : topic.name, description: `${topic.blurb} ${topic.posts.length} guides from Visionbotix.`.slice(0, 155) }}
+  pageType="CollectionPage"
+  schema={[itemList({ path, name: topic.name, items: topic.posts.map((p) => ({ name: p.data.title, path: `/resources/${p.id}/` })) })]}
+>
+  <section class="container pk-hero" data-compact aria-labelledby="tag-title">
+    <div class="pk-copy">
+      <Breadcrumbs items={[{ name: 'Resources', href: '/resources/' }, { name: topic.name, href: path }]} />
+      <p class="eyebrow">Topic · {topic.posts.length} guides</p>
+      <h1 id="tag-title" class="pk-title">{topic.name}</h1>
+      <p class="lead pk-lead">{topic.blurb}</p>
+    </div>
+  </section>
+
+  <Section id="posts" space="tight">
+    <ul role="list" class="post-grid" data-stagger>
+      {topic.posts.map((p) => <PostCard post={p} heading="h2" />)}
+    </ul>
+    <p class="others">
+      {
+        others.map((o) => (
+          <a class="pk-rel-chip glass-chip press" href={`/resources/tags/${o.slug}/`}>
+            <Icon name="hash" size={14} />
+            <span>{o.name}</span>
+          </a>
+        ))
+      }
+      <a class="pk-rel-chip glass-chip press" href="/resources/">
+        <Icon name="arrow-right" size={14} />
+        <span>All guides</span>
+      </a>
+    </p>
+  </Section>
+
+  <CtaBand location={`tag-final-${topic.slug}`} />
+</BaseLayout>
+
+<style>
+  .post-grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  }
+  .others {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-block-start: var(--space-6);
+  }
+</style>

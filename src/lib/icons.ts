@@ -30,6 +30,8 @@ const UI = [
   'calculator', 'copy', 'rotate-ccw', 'pencil',
   // S7 live demos
   'heart-pulse', 'phone-off', 'mic-off', 'keyboard', 'wrench', 'shopping-bag', 'maximize-2', 'circle-play', 'ban', 'check-check', 'volume-2', 'user-round',
+  // S10 resources
+  'book-open', 'list', 'rss', 'library', 'hash',
 ] as const;
 
 // Brand names are prefixed where they would clash with a UI icon ('x' = close, 'brand-x' = X/Twitter).

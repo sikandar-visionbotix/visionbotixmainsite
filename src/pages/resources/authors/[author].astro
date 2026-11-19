@@ -1,0 +1,88 @@
+---
+/** Author page (S10): /resources/authors/<slug>/. Real people only (src/data/resources.ts). JSON-LD: ProfilePage + Person. */
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Button from '@/components/Button.astro';
+import PostCard from '@/components/PostCard.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import '@/styles/page-kit.css';
+import { site } from '@/data/site';
+import { authors, type AuthorSlug } from '@/data/resources';
+import { getPosts, type PostEntry } from '@/lib/posts';
+import { person, abs } from '@/lib/schema';
+
+export async function getStaticPaths() {
+  const all = await getPosts();
+  return authors.map((a) => ({ params: { author: a.slug }, props: { slug: a.slug, posts: all.filter((p) => p.data.author === a.slug) } }));
+}
+interface Props {
+  slug: AuthorSlug;
+  posts: PostEntry[];
+}
+const { slug, posts } = Astro.props;
+const a = authors.find((x) => x.slug === slug)!;
+const path = `/resources/authors/${slug}/`;
+const p = person({ ...a, path });
+---
+
+<BaseLayout
+  seo={{ title: `${a.name}, ${a.jobTitle}`.slice(0, 46), description: `${a.bio}`.slice(0, 152).replace(/\s\S*$/, '') + '…' }}
+  pageType="ProfilePage"
+  schema={[{ ...p, mainEntityOfPage: { '@id': `${abs(path)}#webpage` } }]}
+>
+  <section class="container pk-hero" data-compact aria-labelledby="author-title">
+    <div class="pk-copy">
+      <Breadcrumbs items={[{ name: 'Resources', href: '/resources/' }, { name: a.name, href: path }]} />
+      <div class="who">
+        <span class="avatar mono" aria-hidden="true">{a.name.split(' ').map((w) => w[0]).join('')}</span>
+        <div>
+          <h1 id="author-title" class="pk-title">{a.name}</h1>
+          <p class="mono subtle">{a.jobTitle}</p>
+        </div>
+      </div>
+      <p class="lead pk-lead">{a.bio}</p>
+      <p class="pk-chiprow">
+        <span class="mono subtle">Writes about</span>
+        {a.knowsAbout.map((k) => <span class="pk-chip small">{k}</span>)}
+      </p>
+      <div class="cluster">
+        <Button href={a.url} variant="glass" icon="arrow-up-right" target="_blank" rel="noopener me">LinkedIn</Button>
+        <Button href={site.contact.bookingUrl} icon="arrow-right" data-event="book_call" data-event-location={`author-${slug}`}>Book a call</Button>
+      </div>
+    </div>
+  </section>
+
+  <Section id="posts" eyebrow="Articles" title={`${posts.length} guides by ${a.name.split(' ')[0]}.`} space="tight">
+    <ul role="list" class="post-grid" data-stagger>
+      {posts.map((post) => <PostCard post={post} />)}
+    </ul>
+  </Section>
+
+  <CtaBand location={`author-final-${slug}`} />
+</BaseLayout>
+
+<style>
+  .who {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+  .avatar {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 4.5rem;
+    block-size: 4.5rem;
+    border-radius: 50%;
+    background: var(--grad-brand);
+    color: var(--btn-primary-fg);
+    font-weight: 700;
+    font-size: 1.4rem;
+  }
+  .post-grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  }
+</style>

@@ -1,6 +1,8 @@
 // @ts-check
 import { defineConfig, fontProviders } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
+import { satteri } from '@astrojs/markdown-satteri';
+import { priceTokens } from './src/lib/markdown-tokens.ts';
 
 /** @param {string} file */
 const geist = (file) => `./node_modules/@fontsource-variable/${file}`;
@@ -11,6 +13,8 @@ export default defineConfig({
   site: 'https://visionbotix.com',
   trailingSlash: 'always',
   build: { format: 'directory', inlineStylesheets: 'auto' },
+  // S10: posts write price tokens ({{price:ai-receptionist}}); the build fills them from src/data/pricing.ts.
+  markdown: { processor: satteri({ mdastPlugins: [priceTokens] }) },
   prefetch: { prefetchAll: false, defaultStrategy: 'hover' },
   integrations: [
     sitemap({

@@ -1,0 +1,129 @@
+---
+/**
+ * /resources/ hub (S10): featured guides, every post, topics (tags with 2+ posts), RSS. Copy in src/data/resources.ts;
+ * posts from getPosts(). JSON-LD: CollectionPage + Blog (with its posts) + ItemList.
+ */
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Icon from '@/components/Icon.astro';
+import TextReveal from '@/components/TextReveal.astro';
+import PostCard from '@/components/PostCard.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import '@/styles/page-kit.css';
+import { resourcesHero, authors } from '@/data/resources';
+import { getPosts, liveTags } from '@/lib/posts';
+import { blog, itemList } from '@/lib/schema';
+
+const all = await getPosts();
+const path = '/resources/';
+const featured = all.filter((p) => p.data.featured).slice(0, 2);
+const rest = all.filter((p) => !featured.includes(p));
+const topics = liveTags(all);
+const items = all.map((p) => ({ path: `/resources/${p.id}/`, headline: p.data.title }));
+---
+
+<BaseLayout
+  seo={{
+    title: 'Resources: AI Agent and Software Cost Guides',
+    description: 'Cost guides, comparisons and explainers on AI agents, app development and offshore teams, with real 2026 prices and the sources behind them.',
+  }}
+  pageType="CollectionPage"
+  schema={[blog(items), itemList({ path, name: 'Visionbotix guides', items: items.map((i) => ({ name: i.headline, path: i.path })) })]}
+>
+  <section class="container pk-hero" data-compact aria-labelledby="res-title">
+    <div class="pk-copy">
+      <Breadcrumbs items={[{ name: 'Resources', href: path }]} />
+      <p class="eyebrow">{resourcesHero.eyebrow} · {all.length} {all.length === 1 ? 'guide' : 'guides'}</p>
+      <TextReveal id="res-title" text={resourcesHero.title} accent={resourcesHero.accent} class="display res-title" />
+      <p class="lead pk-lead">{resourcesHero.lead}</p>
+      <p class="topics-row">
+        {
+          topics.map((t) => (
+            <a class="pk-rel-chip glass-chip press" href={`/resources/tags/${t.slug}/`}>
+              <Icon name="hash" size={14} />
+              <span>{t.name}</span>
+            </a>
+          ))
+        }
+        <a class="pk-rel-chip glass-chip press" href="/resources/rss.xml">
+          <Icon name="rss" size={14} />
+          <span>RSS</span>
+        </a>
+      </p>
+    </div>
+  </section>
+
+  {
+    featured.length > 0 && (
+      <Section id="featured" eyebrow="Start here" title="The two questions we hear most." space="tight">
+        <ul role="list" class="feat-grid" data-stagger>
+          {featured.map((p) => (
+            <PostCard post={p} feature heading="h3" />
+          ))}
+        </ul>
+      </Section>
+    )
+  }
+
+  <Section id="all" eyebrow="All guides" title="Every guide, newest first." space="tight">
+    <ul role="list" class="post-grid" data-stagger>
+      {rest.map((p) => <PostCard post={p} />)}
+    </ul>
+  </Section>
+
+  <Section id="topics" band eyebrow="Topics" title="Browse by topic." space="tight">
+    <ul role="list" class="pk-cards" data-cols="3" data-stagger>
+      {
+        topics.map((t) => (
+          <li class="pk-card glass-subtle spotlight lift">
+            <a class="card-cover" href={`/resources/tags/${t.slug}/`} aria-hidden="true" tabindex="-1" />
+            <span class="pk-num">{t.posts.length} guides</span>
+            <h3 class="h4">
+              <a href={`/resources/tags/${t.slug}/`}>{t.name}</a>
+            </h3>
+            <p class="muted small">{t.blurb}</p>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="who small muted">
+      <Icon name="user-round" size={15} />
+      <span>Written by {authors.map((a) => <a class="link" href={`/resources/authors/${a.slug}/`}>{a.name}</a>)}, who builds these systems with our team. Other companies' prices are linked to their source; ours come from the <a class="link" href="/pricing/">pricing page</a>.</span>
+    </p>
+  </Section>
+
+  <CtaBand title="Rather talk it through? Book a free strategy call." location="resources-hub-final" />
+</BaseLayout>
+
+<style>
+  .res-title {
+    max-width: 22ch;
+  }
+  .topics-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .feat-grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  }
+  .post-grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  }
+  @media (min-width: 64rem) {
+    .post-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .who {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    margin-block-start: var(--space-5);
+  }
+</style>

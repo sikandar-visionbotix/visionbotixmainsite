@@ -15,6 +15,7 @@ import { z } from 'astro/zod';
 import { iconNames } from '@/lib/icons';
 import { services as serviceList, industries as industryList, products as productList, engagements } from '@/data/catalogue';
 import { bundles as bundleList, localCurrencies } from '@/data/pricing';
+import { tagSlugs, authorSlugs } from '@/data/resources';
 
 const md = (base: string) => glob({ base: `./src/content/${base}`, pattern: '**/[^_]*.md' });
 
@@ -403,23 +404,57 @@ const products = defineCollection({
     }),
 });
 
-/* ---------- posts (S10) ---------- */
+/* ---------- posts (S10) ----------
+ * /resources/<slug>/, read through `getPosts()` (src/lib/posts.ts). Truth rules on top of the shared ones:
+ *  - our own prices are price tokens ({{price:ai-receptionist}}, src/lib/tokens.ts), never typed;
+ *  - every market figure (someone else's price, rate or statistic) sits in a paragraph, list item or table row that
+ *    links its source, and the source is listed in `sources` (scripts/check-posts.mjs enforces both);
+ *  - the author is a real person from src/data/resources.ts; no invented experience, clients or outcomes.
+ * `related` names the money pages the post sells into; the post must also link them in its body, and those pages
+ * link back ("Guides on this topic", RelatedReading). */
 const posts = defineCollection({
   loader: md('posts'),
-  schema: ({ image }) =>
-    z.object({
-      title: z.string().max(70),
-      description: z.string().min(70).max(155),
+  schema: base
+    .omit({ order: true })
+    .extend({
+      seo: seo.extend({
+        /** ≤ 46 chars: " | Visionbotix" is appended (total ≤ 60). Must contain the primary keyword. */
+        title: z.string().max(46),
+      }),
+      /** The H1: the question or promise, in full. */
+      title: z.string().min(20).max(90),
+      /** Card line on the hub, tag and author pages. */
+      excerpt: z.string().min(60).max(170),
+      format: z.enum(['guide', 'cost-guide', 'comparison', 'explainer', 'glossary']),
       pubDate: z.coerce.date(),
-      updated: z.coerce.date().optional(),
-      author: z.string(),
-      tags: z.array(z.string()).default([]),
-      keyword: z.string(),
-      cover: image().optional(),
-      coverAlt: z.string().optional(),
-      draft: z.boolean().default(false),
-      faq,
-      related: z.array(z.union([reference('agents'), reference('services')])).default([]),
+      author: z.enum(authorSlugs),
+      tags: z.array(z.enum(tagSlugs)).min(1).max(3),
+      featured: z.boolean().default(false),
+      /** External sources for every market figure in the post (name, publisher, URL). */
+      sources: z.array(z.object({ title: z.string().min(4), publisher: z.string().min(2), url: z.url() })).max(20).default([]),
+      /** Glossary posts: the terms, shown A–Z with anchors and emitted as a DefinedTermSet. */
+      terms: z
+        .array(z.object({ term: z.string().max(48), definition: z.string().min(60).max(420), link: z.string().startsWith('/').optional() }))
+        .default([]),
+      faq: z.array(z.object({ q: z.string().min(8), a: z.string().min(20) })).min(3).max(7),
+      related: z.object({
+        agents: z.array(reference('agents')).max(4).default([]),
+        services: z.array(reference('services')).max(3).default([]),
+        industries: z.array(reference('industries')).max(3).default([]),
+        locations: z.array(reference('locations')).max(3).default([]),
+      }),
+    })
+    .refine((d) => d.seo.title.toLowerCase().includes(d.keywords.primary.toLowerCase()), {
+      message: 'seo.title must contain keywords.primary (the title is the strongest on-page signal).',
+      path: ['seo', 'title'],
+    })
+    .refine((d) => d.related.agents.length + d.related.services.length + d.related.industries.length + d.related.locations.length >= 2, {
+      message: 'A post must sell into at least 2 money pages (related agents, services, industries or locations).',
+      path: ['related'],
+    })
+    .refine((d) => (d.format === 'glossary') === d.terms.length > 0, {
+      message: 'Glossary posts need `terms`; other formats must not have them.',
+      path: ['terms'],
     }),
 });
 

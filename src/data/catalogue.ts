@@ -130,6 +130,7 @@ export const company = [
   { href: '/process/', name: 'How we work' },
   { href: '/work/', name: 'Our work' },
   { href: '/locations/', name: 'Where we work' },
+  { href: '/resources/', name: 'Resources' },
   { href: '/careers/', name: 'Careers' },
   { href: '/contact/', name: 'Contact' },
 ];

@@ -1,0 +1,726 @@
+---
+/**
+ * Post template (S10): /resources/<slug>/.
+ * Breadcrumbs → kicker, H1, byline (author, updated, reading time) → "Short answer" box (the summary, answer-first for
+ * AI search) → contents (sticky on desktop) + body (price tokens filled at build) → glossary terms (glossary posts) →
+ * next-step panel → FAQ → sources → "Put this into practice" (the money pages in `related`) → author → keep reading → CTA.
+ * JSON-LD: BlogPosting (author Person, citations), FAQPage, BreadcrumbList, DefinedTermSet for the glossary.
+ */
+import { render } from 'astro:content';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Button from '@/components/Button.astro';
+import Icon from '@/components/Icon.astro';
+import '@/styles/page-kit.css';
+import Accordion from '@/components/Accordion.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import AgentCard from '@/components/AgentCard.astro';
+import ServiceCard from '@/components/ServiceCard.astro';
+import PostCard from '@/components/PostCard.astro';
+import { site } from '@/data/site';
+import { agents as agentCatalogue, industries as industryCatalogue } from '@/data/catalogue';
+import { formats, authorBySlug, tagBySlug } from '@/data/resources';
+import { getPosts, liveTags, relatedPosts, readingMinutes, wordCount, relatedPaths, postDate, isoDate, filled, type PostEntry } from '@/lib/posts';
+import { getServices } from '@/lib/services';
+import { getIndustries } from '@/lib/industries';
+import { getLocations } from '@/lib/locations';
+import { blogPosting, person, definedTermSet } from '@/lib/schema';
+
+export async function getStaticPaths() {
+  const all = await getPosts();
+  return all.map((post) => ({ params: { slug: post.id }, props: { post, all } }));
+}
+interface Props {
+  post: PostEntry;
+  all: PostEntry[];
+}
+const { post, all } = Astro.props;
+const d = post.data;
+const slug = post.id;
+const path = `/resources/${slug}/`;
+const { Content, headings } = await render(post);
+const toc = headings.filter((h) => h.depth === 2);
+const author = authorBySlug(d.author);
+const authorPath = `/resources/authors/${author.slug}/`;
+const live = new Set(liveTags(all).map((t) => t.slug));
+const minutes = readingMinutes(post);
+const more = relatedPosts(post, all);
+const faqs = d.faq.map((f) => ({ q: f.q, a: filled(f.a) }));
+
+const [services, industries, locations] = await Promise.all([getServices(), getIndustries(), getLocations()]);
+const relAgents = d.related.agents.map((r) => agentCatalogue.find((a) => a.slug === r.id)!).filter(Boolean);
+const relServices = d.related.services.map((r) => services.find((s) => s.id === r.id)!).filter(Boolean);
+const relIndustries = d.related.industries.map((r) => industries.find((i) => i.id === r.id)!).filter(Boolean);
+const relLocations = d.related.locations.map((r) => locations.find((l) => l.id === r.id)!).filter(Boolean);
+const industryIcon = (id: string) => industryCatalogue.find((i) => i.slug === id)?.icon ?? 'building-2';
+
+const termId = (t: string) => `term-${t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
+const terms = [...d.terms].sort((a, b) => a.term.localeCompare(b.term, 'en', { sensitivity: 'base' })).map((t) => ({ ...t, id: termId(t.term) }));
+const letters = [...new Set(terms.map((t) => t.term[0]!.toUpperCase()))];
+
+const schema = [
+  blogPosting({
+    path,
+    headline: d.title,
+    description: d.seo.description,
+    published: d.pubDate,
+    modified: d.updated,
+    authorPath,
+    image: `/og/resources/${slug}.png`,
+    keywords: [d.keywords.primary, ...d.keywords.secondary],
+    section: tagBySlug(d.tags[0]!)?.name ?? 'Resources',
+    wordCount: wordCount(post),
+    citations: d.sources,
+    about: relatedPaths(d).filter((p) => /^\/(ai-agents|services)\//.test(p)),
+  }),
+  person({ ...author, path: authorPath }),
+  ...(terms.length ? [definedTermSet(path, d.title, terms)] : []),
+];
+---
+
+<BaseLayout
+  seo={{ title: d.seo.title, description: d.seo.description, type: 'article', publishedTime: d.pubDate.toISOString(), modifiedTime: d.updated.toISOString() }}
+  schema={schema}
+>
+  <!-- ============ Header ============ -->
+  <header class="container post-hero" aria-labelledby="post-title">
+    <Breadcrumbs items={[{ name: 'Resources', href: '/resources/' }, { name: d.title, href: path }]} />
+    <p class="post-kicker eyebrow">
+      <span>{formats[d.format]}</span>
+      {
+        d.tags.map((t) => (
+          <>
+            <span aria-hidden="true" class="sep">·</span>
+            {live.has(t) ? <a href={`/resources/tags/${t}/`}>{tagBySlug(t)!.name}</a> : <span>{tagBySlug(t)!.name}</span>}
+          </>
+        ))
+      }
+    </p>
+    <h1 id="post-title" class="post-h1">{d.title}</h1>
+    <p class="byline small">
+      <a class="byline-author" href={authorPath} rel="author">
+        <span class="avatar mono" aria-hidden="true">{author.name.split(' ').map((w) => w[0]).join('')}</span>
+        <span>
+          <strong>{author.name}</strong>
+          <span class="subtle">{author.jobTitle}</span>
+        </span>
+      </a>
+      <span class="byline-facts mono subtle">
+        <span>Updated <time datetime={isoDate(d.updated)}>{postDate(d.updated)}</time></span>
+        <span>{minutes} min read</span>
+      </span>
+    </p>
+  </header>
+
+  <div class="container post-layout">
+    <div class="post-main">
+      <aside class="short glass-strong" aria-label="Short answer">
+        <p class="short-label mono"><Icon name="sparkles" size={14} /> Short answer</p>
+        <p class="short-text">{filled(d.summary)}</p>
+      </aside>
+
+      {
+        toc.length > 2 && (
+          <details class="toc-mobile glass-subtle">
+            <summary>
+              <Icon name="list" size={16} /> On this page
+            </summary>
+            <ol role="list">
+              {toc.map((h) => (
+                <li>
+                  <a href={`#${h.slug}`}>{h.text}</a>
+                </li>
+              ))}
+            </ol>
+          </details>
+        )
+      }
+
+      <article class="post-body prose" aria-labelledby="post-title">
+        <Content />
+      </article>
+
+      {
+        terms.length > 0 && (
+          <section class="glossary" aria-labelledby="terms-title">
+            <h2 id="terms-title" class="h3">All terms, A–Z</h2>
+            <p class="letters mono" aria-label="Jump to a letter">
+              {letters.map((l) => (
+                <a href={`#letter-${l}`}>{l}</a>
+              ))}
+            </p>
+            {letters.map((l) => (
+              <div class="letter-group" id={`letter-${l}`}>
+                <p class="letter mono" aria-hidden="true">{l}</p>
+                <dl>
+                  {terms
+                    .filter((t) => t.term[0]!.toUpperCase() === l)
+                    .map((t) => (
+                      <div class="term glass-subtle" id={t.id}>
+                        <dt>
+                          <a href={`#${t.id}`} class="term-name">{t.term}</a>
+                        </dt>
+                        <dd>
+                          {filled(t.definition)}
+                          {t.link && (
+                            <>
+                              {' '}
+                              <a class="link" href={t.link}>Learn more<span class="visually-hidden"> about {t.term}</span></a>
+                            </>
+                          )}
+                        </dd>
+                      </div>
+                    ))}
+                </dl>
+              </div>
+            ))}
+          </section>
+        )
+      }
+
+      <aside class="next glass-strong" aria-labelledby="next-title">
+        <div>
+          <p id="next-title" class="next-title">Want this worked out for your business?</p>
+          <p class="muted small">Book a free 30-minute call. We look at your workflows and give you a fixed quote within 24 hours, or price it yourself in the estimator.</p>
+        </div>
+        <div class="cluster">
+          <Button href={site.contact.bookingUrl} icon="arrow-right" data-event="book_call" data-event-location={`post-${slug}`}>Book a free call</Button>
+          <Button href="/estimate/" variant="glass" icon="calculator">Estimate a project</Button>
+        </div>
+      </aside>
+    </div>
+
+    {
+      toc.length > 2 && (
+        <nav class="toc" aria-label="On this page">
+          <p class="toc-title mono">On this page</p>
+          <ol role="list">
+            {toc.map((h) => (
+              <li>
+                <a href={`#${h.slug}`}>{h.text}</a>
+              </li>
+            ))}
+          </ol>
+          <a class="toc-top small subtle" href="#main">Back to top</a>
+        </nav>
+      )
+    }
+  </div>
+
+  <!-- ============ FAQ ============ -->
+  <Section id="faq" eyebrow="FAQ" title="Questions people also ask." width="narrow" align="center">
+    <Accordion items={faqs} schema name="post-faq" />
+  </Section>
+
+  <!-- ============ Sources ============ -->
+  {
+    d.sources.length > 0 && (
+      <section class="container sources" aria-labelledby="sources-title">
+        <h2 id="sources-title" class="h4">Sources</h2>
+        <p class="small subtle">Market figures from other companies are their published numbers, linked here so you can check them. Our own prices come from our <a class="link" href="/pricing/">pricing page</a>.</p>
+        <ol>
+          {d.sources.map((s) => (
+            <li class="small">
+              <a class="link" href={s.url} rel="noopener" target="_blank">{s.title}</a> <span class="subtle">· {s.publisher}</span>
+            </li>
+          ))}
+        </ol>
+      </section>
+    )
+  }
+
+  <!-- ============ Put this into practice ============ -->
+  <Section id="practice" eyebrow="Put this into practice" title="Where to go from here." space="tight">
+    {
+      relAgents.length > 0 && (
+        <ul role="list" class="rel-grid" data-stagger>
+          {relAgents.map((a) => (
+            <AgentCard slug={a.slug} name={a.name} line={a.line} group={a.group} icon={a.icon} />
+          ))}
+        </ul>
+      )
+    }
+    {
+      relServices.length > 0 && (
+        <ul role="list" class="rel-grid" data-stagger>
+          {relServices.map((s) => (
+            <ServiceCard slug={s.id} name={s.data.name} line={s.data.tagline} icon={s.data.icon} />
+          ))}
+        </ul>
+      )
+    }
+    {
+      (relIndustries.length > 0 || relLocations.length > 0) && (
+        <p class="rel-chips">
+          {relIndustries.map((i) => (
+            <a class="pk-rel-chip glass-chip press" href={`/industries/${i.id}/`}>
+              <Icon name={industryIcon(i.id)} size={15} />
+              <span>AI agents for {i.data.who}</span>
+            </a>
+          ))}
+          {relLocations.map((l) => (
+            <a class="pk-rel-chip glass-chip press" href={`/locations/${l.id}/`}>
+              <span class="mono code" aria-hidden="true">{l.data.code}</span>
+              <span>Working with us from {l.data.inName}</span>
+            </a>
+          ))}
+        </p>
+      )
+    }
+  </Section>
+
+  <!-- ============ Author ============ -->
+  <div class="container"><section class="author-box glass-subtle" aria-labelledby="author-title">
+    <span class="avatar avatar-lg mono" aria-hidden="true">{author.name.split(' ').map((w) => w[0]).join('')}</span>
+    <div>
+      <p class="mono subtle small">Written by</p>
+      <h2 id="author-title" class="h4"><a href={authorPath}>{author.name}</a></h2>
+      <p class="small muted">{author.bio}</p>
+      <p class="small">
+        <a class="link" href={author.url} rel="noopener me" target="_blank">LinkedIn</a> · <a class="link" href={authorPath}>All articles</a>
+      </p>
+    </div>
+  </section></div>
+
+  <!-- ============ Keep reading ============ -->
+  {
+    more.length > 0 && (
+      <Section id="more" eyebrow="Keep reading" title="Related guides." space="tight">
+        <ul role="list" class="more-grid" data-stagger>
+          {more.map((p) => (
+            <PostCard post={p} />
+          ))}
+        </ul>
+      </Section>
+    )
+  }
+
+  <CtaBand location={`post-final-${slug}`} />
+</BaseLayout>
+
+<style>
+  .post-hero {
+    display: grid;
+    gap: var(--space-4);
+    padding-block: calc(var(--header-h) + clamp(1.25rem, 0.5rem + 3vw, 3rem)) var(--space-6);
+  }
+  .post-kicker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.6rem;
+  }
+  .post-kicker .sep {
+    color: var(--fg-subtle);
+  }
+  .post-kicker a {
+    text-decoration: none;
+  }
+  .post-kicker a:hover {
+    text-decoration: underline;
+  }
+  .post-h1 {
+    font-size: clamp(2rem, 1.4rem + 2.6vw, 3.25rem);
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    font-weight: 680;
+    max-width: 24ch;
+    text-wrap: balance;
+  }
+  .byline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3) var(--space-5);
+  }
+  .byline-author {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    text-decoration: none;
+  }
+  .byline-author > span:last-child {
+    display: grid;
+    line-height: 1.3;
+  }
+  .byline-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 1rem;
+    font-size: 0.78rem;
+  }
+  .avatar {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
+    border-radius: 50%;
+    background: var(--grad-brand);
+    color: var(--btn-primary-fg);
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+  .avatar-lg {
+    inline-size: 3.5rem;
+    block-size: 3.5rem;
+    font-size: 1.05rem;
+  }
+
+  /* ---- layout: article + sticky contents ---- */
+  .post-layout {
+    display: grid;
+    gap: var(--space-7);
+    padding-block-end: var(--space-6);
+  }
+  .post-main {
+    display: grid;
+    gap: var(--space-6);
+    min-inline-size: 0;
+    max-inline-size: 46rem;
+  }
+  .post-main > * {
+    min-inline-size: 0;
+  }
+  @media (min-width: 64rem) {
+    .post-layout {
+      grid-template-columns: minmax(0, 46rem) minmax(12rem, 16rem);
+      justify-content: space-between;
+    }
+    .toc-mobile {
+      display: none;
+    }
+  }
+  .toc {
+    display: none;
+  }
+  @media (min-width: 64rem) {
+    .toc {
+      display: grid;
+      align-content: start;
+      gap: var(--space-3);
+      position: sticky;
+      top: calc(var(--header-h) + var(--space-5));
+      max-block-size: calc(100vh - var(--header-h) - var(--space-7));
+      overflow-y: auto;
+    }
+  }
+  .toc-title {
+    font-size: 0.72rem;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--fg-subtle);
+  }
+  .toc ol,
+  .toc-mobile ol {
+    display: grid;
+    gap: 0.15rem;
+  }
+  .toc a,
+  .toc-mobile a {
+    display: block;
+    padding: 0.35rem 0 0.35rem 0.75rem;
+    border-inline-start: 2px solid var(--border);
+    font-size: var(--step--1);
+    line-height: 1.35;
+    color: var(--fg-muted);
+    text-decoration: none;
+  }
+  .toc a:hover,
+  .toc-mobile a:hover {
+    color: var(--fg);
+    border-color: var(--accent);
+  }
+  .toc-top {
+    text-decoration: none;
+  }
+  .toc-mobile {
+    --glass-radius: var(--radius-md);
+    padding: var(--space-3) var(--space-4);
+  }
+  .toc-mobile > * {
+    position: relative;
+    z-index: 2;
+  }
+  .toc-mobile summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    min-block-size: 2.25rem;
+  }
+  .toc-mobile ol {
+    margin-block-start: var(--space-2);
+  }
+
+  /* ---- short answer ---- */
+  .short {
+    --glass-radius: var(--radius-lg);
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-5);
+    border-inline-start: 3px solid var(--accent);
+  }
+  .short > * {
+    position: relative;
+    z-index: 2;
+  }
+  .short-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .short-text {
+    font-size: var(--step-1);
+    line-height: 1.5;
+  }
+
+  /* ---- body ---- */
+  .post-body {
+    font-size: var(--step-0);
+    line-height: 1.7;
+    color: var(--fg-muted);
+  }
+  .post-body :global(> * + *) {
+    margin-block-start: var(--space-4);
+  }
+  .post-body :global(h2) {
+    margin-block-start: var(--space-8);
+    font-size: var(--step-3);
+    line-height: 1.15;
+    letter-spacing: var(--tracking-heading);
+    color: var(--fg);
+    text-wrap: balance;
+    scroll-margin-top: calc(var(--header-h) + var(--space-5));
+  }
+  .post-body :global(h2:first-child) {
+    margin-block-start: 0;
+  }
+  .post-body :global(h3) {
+    margin-block-start: var(--space-6);
+    font-size: var(--step-1);
+    line-height: 1.3;
+    color: var(--fg);
+    scroll-margin-top: calc(var(--header-h) + var(--space-5));
+  }
+  .post-body :global(h2 + *),
+  .post-body :global(h3 + *) {
+    margin-block-start: var(--space-3);
+  }
+  .post-body :global(strong) {
+    color: var(--fg);
+  }
+  .post-body :global(ul),
+  .post-body :global(ol) {
+    display: grid;
+    gap: 0.45rem;
+    padding-inline-start: 1.3rem;
+  }
+  .post-body :global(ul) {
+    list-style: disc;
+  }
+  .post-body :global(ol) {
+    list-style: decimal;
+  }
+  .post-body :global(li::marker) {
+    color: var(--accent);
+  }
+  .post-body :global(blockquote) {
+    padding: var(--space-3) var(--space-4);
+    border-inline-start: 3px solid var(--accent-2);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    background: color-mix(in srgb, var(--fg) 5%, transparent);
+    color: var(--fg);
+  }
+  .post-body :global(code) {
+    padding: 0.1em 0.35em;
+    border-radius: 0.35rem;
+    background: color-mix(in srgb, var(--fg) 9%, transparent);
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+  }
+  .post-body :global(pre) {
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--fg) 6%, transparent);
+    overflow-x: auto;
+    font-size: var(--step--1);
+  }
+  .post-body :global(pre code) {
+    padding: 0;
+    background: none;
+  }
+  .post-body :global(table) {
+    display: block;
+    inline-size: 100%;
+    max-inline-size: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    font-size: var(--step--1);
+    line-height: 1.45;
+  }
+  .post-body :global(th),
+  .post-body :global(td) {
+    padding: 0.6rem 0.75rem;
+    text-align: start;
+    vertical-align: top;
+    border-block-end: 1px solid var(--border);
+    min-inline-size: 7rem;
+  }
+  .post-body :global(thead th) {
+    color: var(--fg);
+    font-weight: 620;
+    background: color-mix(in srgb, var(--fg) 5%, transparent);
+  }
+  .post-body :global(tbody td:first-child) {
+    color: var(--fg);
+    font-weight: 540;
+  }
+  .post-body :global(hr) {
+    border: 0;
+    border-block-start: 1px solid var(--border);
+    margin-block: var(--space-7);
+  }
+
+  /* ---- glossary ---- */
+  .glossary {
+    display: grid;
+    gap: var(--space-5);
+  }
+  .letters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .letters a {
+    display: grid;
+    place-items: center;
+    min-inline-size: 2.25rem;
+    min-block-size: 2.25rem;
+    border-radius: var(--radius-xs);
+    background: color-mix(in srgb, var(--fg) 7%, transparent);
+    text-decoration: none;
+  }
+  .letters a:hover {
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+  }
+  .letter-group {
+    display: grid;
+    gap: var(--space-3);
+    scroll-margin-top: calc(var(--header-h) + var(--space-4));
+  }
+  .letter {
+    font-size: var(--step-2);
+    color: var(--accent);
+  }
+  .letter-group dl {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .term {
+    --glass-radius: var(--radius-md);
+    display: grid;
+    gap: var(--space-1);
+    padding: var(--space-4);
+    scroll-margin-top: calc(var(--header-h) + var(--space-4));
+  }
+  .term > * {
+    position: relative;
+    z-index: 2;
+  }
+  .term:target {
+    outline: 2px solid var(--accent);
+  }
+  .term-name {
+    font-weight: 640;
+    color: var(--fg);
+    text-decoration: none;
+  }
+  .term dd {
+    margin: 0;
+    color: var(--fg-muted);
+    font-size: var(--step--1);
+    line-height: 1.6;
+  }
+
+  /* ---- next step ---- */
+  .next {
+    --glass-radius: var(--radius-lg);
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-5);
+  }
+  .next > * {
+    position: relative;
+    z-index: 2;
+  }
+  .next-title {
+    font-size: var(--step-1);
+    font-weight: 640;
+    margin-block-end: var(--space-1);
+  }
+
+  /* ---- sources, related, author ---- */
+  .sources > * {
+    max-inline-size: 46rem;
+  }
+  .sources {
+    display: grid;
+    gap: var(--space-3);
+    padding-block: var(--space-4) var(--space-6);
+  }
+  .sources ol {
+    display: grid;
+    gap: 0.4rem;
+    padding-inline-start: 1.3rem;
+    list-style: decimal;
+    color: var(--fg-muted);
+  }
+  .sources a {
+    overflow-wrap: anywhere;
+  }
+  .rel-grid,
+  .more-grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  }
+  .rel-grid + .rel-grid,
+  .rel-grid + .rel-chips {
+    margin-block-start: var(--space-4);
+  }
+  .rel-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .code {
+    font-size: 0.72rem;
+    color: var(--accent);
+  }
+  .author-box {
+    --glass-radius: var(--radius-lg);
+    max-inline-size: 46rem;
+    display: flex;
+    gap: var(--space-4);
+    align-items: flex-start;
+    padding: var(--space-5);
+    margin-block: var(--space-6);
+  }
+  .author-box > * {
+    position: relative;
+    z-index: 2;
+  }
+  .author-box > div {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .author-box h2 a {
+    text-decoration: none;
+  }
+</style>
