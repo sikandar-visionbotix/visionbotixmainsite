@@ -26,6 +26,8 @@ const UI = [
   // S5 products, company pages, prompt-first hero
   'cable', 'satellite', 'activity', 'swords', 'gavel', 'hard-drive', 'wifi-off', 'microchip', 'send-horizontal', 'wand-sparkles',
   'arrow-left', 'map', 'heart', 'flask-conical', 'download', 'corner-down-left', 'building', 'scan-search',
+  // S6 estimator and exit offer
+  'calculator', 'copy', 'rotate-ccw', 'pencil',
 ] as const;
 
 // Brand names are prefixed where they would clash with a UI icon ('x' = close, 'brand-x' = X/Twitter).

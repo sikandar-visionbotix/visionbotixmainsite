@@ -6,6 +6,7 @@
  * Booking link and WhatsApp number come from site.contact (TODO(owner)); their blocks adapt when they are set.
  */
 import '@/styles/page-kit.css';
+import '@/styles/forms.css';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Section from '@/components/Section.astro';
 import Breadcrumbs from '@/components/Breadcrumbs.astro';
@@ -44,6 +45,7 @@ const faqs: FaqItem[] = [
     description: 'Tell us what you want to build or automate. An engineer replies within one business day, and a fixed quote follows within 24 hours of a call.',
   }}
   pageType="ContactPage"
+  exitOffer={false}
 >
   <section class="container pk-hero" data-compact aria-labelledby="ct-title">
     <div class="pk-copy">
@@ -57,7 +59,7 @@ const faqs: FaqItem[] = [
   <section class="container ct-grid" aria-label="Contact options">
     <!-- ============ Form ============ -->
     <div id="quote" class="ct-form-wrap glass-strong">
-      <form class="ct-form" method="post" action="/api/contact/" data-contact data-email={site.contact.email} novalidate>
+      <form class="ct-form" method="post" action="/api/contact/" data-contact data-email={site.contact.email} data-turnstile={site.turnstile.siteKey ?? undefined} novalidate>
         <h2 class="h3">Send us a brief</h2>
         <div class="ct-two">
           <div class="field">
@@ -131,8 +133,8 @@ const faqs: FaqItem[] = [
           <label for="f-website">Website</label>
           <input id="f-website" name="website" tabindex="-1" autocomplete="off" />
         </div>
-        <input type="hidden" name="started" value="" data-started />
-        <input type="hidden" name="timezone" value="" data-tz />
+        <input type="hidden" name="form" value="contact" />
+        <div data-ts-slot></div>
         <div class="ct-submit">
           <Button type="submit" size="lg" icon="send-horizontal" data-event="form_submit_click" data-event-location="contact">Send brief</Button>
           <p class="small subtle">We use your details only to reply. <a class="link" href="/privacy/">Privacy policy</a></p>
@@ -225,6 +227,8 @@ const faqs: FaqItem[] = [
 </BaseLayout>
 
 <script>
+  import { attachLead, track } from '@/scripts/lead';
+
   const form = document.querySelector<HTMLFormElement>('[data-contact]');
   if (form) {
     const q = new URLSearchParams(location.search);
@@ -234,15 +238,16 @@ const faqs: FaqItem[] = [
     if (t && [...topic.options].some((o) => o.value === t)) topic.value = t;
     const brief = q.get('brief');
     if (brief && !msg.value) msg.value = brief.slice(0, 5000);
-    (form.querySelector('[data-started]') as HTMLInputElement).value = String(Date.now());
-    try {
-      (form.querySelector('[data-tz]') as HTMLInputElement).value = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    } catch {}
+    const lead = attachLead(form, 'contact');
+    // Visitors sent by an AI assistant (D49): pre-select that answer; they can still change it.
+    const source = form.elements.namedItem('source') as HTMLSelectElement;
+    const aiOption = [...source.options].find((o) => /\bAI\b/.test(o.value));
+    if (window.vbxSrc?.ai && !source.value && aiOption) source.value = aiOption.value;
 
     const status = form.querySelector<HTMLElement>('[data-status]')!;
     const done = document.querySelector<HTMLElement>('[data-done]')!;
     const btn = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
-    const email = form.dataset.email ?? 'hello@visionbotix.com';
+    const email = form.dataset.email ?? 'info@visionbotix.com';
 
     const showErrors = (errors: Record<string, string>) => {
       for (const f of ['name', 'email', 'message']) {
@@ -266,7 +271,7 @@ const faqs: FaqItem[] = [
     };
     const mailto = (d: Record<string, string>) => {
       const body = Object.entries(d)
-        .filter(([k, v]) => v && !['website', 'started', 'message'].includes(k))
+        .filter(([k, v]) => v && !['website', 'started', 'message', 'form', 'cf-turnstile-response'].includes(k))
         .map(([k, v]) => `${k}: ${v}`)
         .join('\n');
       return `mailto:${email}?subject=${encodeURIComponent(`Project enquiry from ${d.name ?? ''}`)}&body=${encodeURIComponent(`${d.message ?? ''}\n\n${body}`)}`;
@@ -281,10 +286,15 @@ const faqs: FaqItem[] = [
       btn.disabled = true;
       status.textContent = 'Sending…';
       try {
+        const token = await lead.token();
+        if (token) d['cf-turnstile-response'] = token;
         const r = await fetch(form.action, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) });
         const j = await r.json().catch(() => ({}));
         if (r.ok && j.ok) {
-          window.dispatchEvent(new CustomEvent('vbx:track', { detail: { event: 'form_submit', topic: d.topic || 'none' } }));
+          track('form_submit', { topic: d.topic || 'none' });
+          try {
+            sessionStorage.setItem('vbx-lead', '1');
+          } catch {}
           form.hidden = true;
           done.hidden = false;
           done.focus();
@@ -303,7 +313,8 @@ const faqs: FaqItem[] = [
         a.href = mailto(d);
         a.textContent = 'send it by email instead';
         status.append('We could not send the form just now. Please ', a, ` (it opens your email app with your brief filled in), or write to ${email}.`);
-        window.dispatchEvent(new CustomEvent('vbx:track', { detail: { event: 'form_fallback' } }));
+        track('form_fallback', { form: 'contact' });
+        lead.reset();
       } finally {
         btn.disabled = false;
       }
@@ -347,71 +358,6 @@ const faqs: FaqItem[] = [
     .ct-two {
       grid-template-columns: 1fr 1fr;
     }
-  }
-  .field {
-    display: grid;
-    gap: 0.4rem;
-  }
-  .field label {
-    font-size: var(--step--1);
-    font-weight: 560;
-  }
-  .opt {
-    font-weight: 400;
-    color: var(--fg-subtle);
-  }
-  .field input,
-  .field select,
-  .field textarea {
-    inline-size: 100%;
-    min-block-size: 2.875rem;
-    padding: 0.6rem 0.85rem;
-    border: 1px solid var(--border-strong, var(--border));
-    border-radius: var(--radius-md);
-    font: inherit;
-    font-size: 1rem;
-    color: var(--fg);
-    background: color-mix(in srgb, var(--bg) 55%, transparent);
-  }
-  .field select option,
-  .field select optgroup {
-    color: #111;
-    background: #fff;
-  }
-  .field textarea {
-    resize: vertical;
-    line-height: 1.5;
-  }
-  .field :is(input, select, textarea):focus-visible {
-    outline: 2px solid var(--focus);
-    outline-offset: 1px;
-  }
-  .field [aria-invalid] {
-    border-color: #ef4444;
-  }
-  .field-err {
-    font-size: var(--step--1);
-    color: var(--danger, #f87171);
-  }
-  .ct-check {
-    display: flex;
-    gap: 0.6rem;
-    align-items: flex-start;
-    font-size: var(--step--1);
-    cursor: pointer;
-  }
-  .ct-check input {
-    inline-size: 1.15rem;
-    block-size: 1.15rem;
-    margin-block-start: 0.15rem;
-    accent-color: var(--accent);
-  }
-  .ct-hp {
-    position: absolute;
-    inline-size: 1px;
-    block-size: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
   }
   .ct-submit {
     display: flex;

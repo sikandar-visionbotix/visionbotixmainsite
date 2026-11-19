@@ -140,3 +140,44 @@ export function serviceLabel(slug: string): string | null {
   if (!p) return null;
   return `From ${money(p.from)}${p.per === 'month' ? '/mo' : ''}`;
 }
+
+/**
+ * Estimator cost drivers (S6, D46). Set by Claude under the owner's pricing mandate (D23). /estimate/ and the
+ * "What drives the price" section on /pricing/ read these; the logic is in src/data/estimator.ts.
+ * - Feature amounts are added to the project type's "from" price (projectFrom).
+ * - Shares are fractions of the running subtotal (0.5 = +50%).
+ * The result is indicative: the signed fixed quote is the binding price.
+ */
+export const estimatorRates = {
+  features: {
+    accounts: 1500,
+    payments: 2000,
+    admin: 2500,
+    realtime: 2500,
+    files: 1000,
+    reporting: 2000,
+    languages: 1500,
+    offline: 3000,
+    migration: 2500,
+    aiRag: 4000,
+    aiAgent: 7000,
+  },
+  integrations: { none: 0, few: 1500, some: 4000, many: 8000 },
+  /** Each extra surface (web, mobile, desktop) beyond the first, as a share of the subtotal. */
+  extraSurface: 0.5,
+  /** Mobile app for only one of iOS or Android (the "from" price covers both from one codebase). */
+  singleMobile: -0.15,
+  /** AI projects: each extra channel beyond the first, and a phone line for a non-voice agent. */
+  extraChannel: 1000,
+  phoneChannel: 2500,
+  /** "Design it for us": a share of the subtotal, never less than one design sprint. */
+  designShare: 0.12,
+  designMin: projectFrom.designSprint,
+  sensitive: 0.15,
+  stage: { prototype: -0.25, mvp: 0, production: 0.4 },
+  rush: 0.25,
+  /** Top of the range = bottom × spread (builds), × agentSpread (packaged agents, integrations vary), × teamSpread (seniority). */
+  spread: 1.5,
+  agentSpread: 1.3,
+  teamSpread: 1.25,
+} as const;

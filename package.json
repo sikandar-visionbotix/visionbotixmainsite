@@ -12,7 +12,9 @@
     "preview": "astro preview",
     "check": "astro check",
     "astro": "astro",
-    "contrast": "node scripts/check-contrast.mjs"
+    "contrast": "node scripts/check-contrast.mjs",
+    "check:estimator": "node scripts/check-estimator.mjs",
+    "check:links": "node scripts/check-links.mjs"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.12",

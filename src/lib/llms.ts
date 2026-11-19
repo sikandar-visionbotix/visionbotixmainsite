@@ -8,6 +8,7 @@ import { getAgents } from '@/lib/agents';
 import { getServices } from '@/lib/services';
 import { getProducts } from '@/lib/products';
 import { getWork } from '@/lib/work';
+import { typicalProjects, estimate, rangeLabel } from '@/data/estimator';
 
 const u = (p: string) => new URL(p, site.url).href;
 const f = site.facts;
@@ -26,6 +27,12 @@ export async function llmsTxt(full: boolean): Promise<string> {
       `Office: ${site.address.street}, ${site.address.locality}, ${site.address.countryName}. Legal name: ${site.legalName}. Founder: ${site.founder.name}.`,
     `Contact: ${site.contact.email} · ${site.contact.phone} · ${u('/contact/')} (fixed quote within 24 hours of a call).`,
     `Pricing (USD, "from"): packaged AI agents from ${money(minSetup)} setup + ${money(minMonthly)}/month; ${audit.name} ${money(audit.price)}; dedicated engineers from ${money(Math.min(...teamRates.map((r) => r.monthly)))}/month, hourly from ${money(hourlyFrom)}. Details: ${u('/pricing/')}`,
+    `Typical project costs (indicative ranges from our price list; a fixed quote follows a call): ${typicalProjects
+      .map((p) => {
+        const e = estimate(p.input);
+        return `${p.name.toLowerCase()} ${rangeLabel(e)} (${e.weeksLabel})`;
+      })
+      .join('; ')}. Estimator: ${u('/estimate/')}`,
     'Promises: NDA from the first call; the client owns 100% of the code and IP; fixed price or monthly, paid by milestone; overlap hours with the US, UK, Europe, the Gulf and Australia; weekly demos; 30 days of post-launch support.',
     '',
   );
@@ -53,6 +60,7 @@ export async function llmsTxt(full: boolean): Promise<string> {
     `- [About](${u('/about/')})`,
     `- [How we work](${u('/process/')})`,
     `- [Pricing](${u('/pricing/')})`,
+    `- [Project cost estimator](${u('/estimate/')})`,
     `- [Contact](${u('/contact/')})`,
     `- [Careers](${u('/careers/')})`,
     `- [Privacy policy](${u('/privacy/')})`,

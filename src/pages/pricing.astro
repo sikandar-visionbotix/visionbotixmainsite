@@ -16,6 +16,9 @@ import { agentsByGroup, servicesByPillar, agents } from '@/data/catalogue';
 import { agentPrices, bundles, audit, servicePrices, teamRates, hourlyFrom, money, serviceLabel } from '@/data/pricing';
 import { bundleCopy } from '@/data/agents-hub';
 import { abs, type FaqItem, type Thing } from '@/lib/schema';
+import { typicalProjects, estimate, rangeLabel, toQuery } from '@/data/estimator';
+
+const typical = typicalProjects.filter((p) => p.input.type !== 'agents').map((p) => ({ ...p, e: estimate(p.input), href: `/estimate/?${toQuery(p.input)}` }));
 
 const nameOf = (slug: string) => agents.find((a) => a.slug === slug)?.name ?? slug;
 const bundleRows = bundles.map((b) => {
@@ -29,6 +32,7 @@ const minMonthly = Math.min(...monthlyAgents.map((p) => p.monthly!));
 const minTeam = Math.min(...teamRates.map((r) => r.monthly));
 
 const jump = [
+  { href: '/estimate/', label: 'Cost estimator' },
   { href: '#agents', label: 'Packaged agents' },
   { href: '#bundles', label: 'Bundles' },
   { href: '#audit', label: 'AI audit' },
@@ -127,6 +131,18 @@ const catalog: Thing = {
         </ul>
       </nav>
     </div>
+  </section>
+
+  <!-- ============ Estimator promo (S6) ============ -->
+  <section class="container pp-est-wrap" aria-label="Cost estimator">
+    <a class="pp-est glass-subtle spotlight press" href="/estimate/" data-event="estimator_open" data-event-location="pricing-hero">
+      <span class="pk-icon" aria-hidden="true"><Icon name="calculator" size={20} /></span>
+      <span>
+        <strong>Estimate your project in 2 minutes.</strong>
+        <span class="small muted"> A price range, a timeline and what drives the cost, for apps, software and AI agents.</span>
+      </span>
+      <Icon name="arrow-right" size={18} />
+    </a>
   </section>
 
   <!-- ============ Agents ============ -->
@@ -265,6 +281,35 @@ const catalog: Thing = {
         ))
       }
     </div>
+    <h3 class="h4 pp-typical-title">Typical project costs</h3>
+    <div class="pp-table-wrap glass-subtle" data-reveal>
+      <table class="pp-table">
+        <caption class="visually-hidden">Typical project costs in US dollars</caption>
+        <thead>
+          <tr>
+            <th scope="col">Project</th>
+            <th scope="col">Typical cost</th>
+            <th scope="col">Timeline</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            typical.map((p) => (
+              <tr>
+                <th scope="row">
+                  <a href={p.href}>{p.name}</a>
+                </th>
+                <td class="mono">{rangeLabel(p.e)}</td>
+                <td>{p.e.weeksLabel}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="pk-foot">
+      <Button href="/estimate/" variant="glass" icon="calculator" data-event="estimator_open" data-event-location="pricing-projects">Estimate your own project</Button>
+    </div>
   </Section>
 
   <!-- ============ Teams ============ -->
@@ -306,6 +351,29 @@ const catalog: Thing = {
 </BaseLayout>
 
 <style>
+  .pp-est-wrap {
+    padding-block-end: var(--space-4);
+  }
+  .pp-est {
+    --glass-radius: var(--radius-lg);
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: var(--space-4);
+    align-items: center;
+    padding: var(--space-4) var(--space-5);
+    color: var(--fg);
+    text-decoration: none;
+  }
+  .pp-est > * {
+    position: relative;
+    z-index: 2;
+  }
+  .pp-est:hover strong {
+    color: var(--accent);
+  }
+  .pp-typical-title {
+    margin-block: var(--space-6) var(--space-3);
+  }
   .pp-jump {
     display: flex;
     flex-wrap: wrap;

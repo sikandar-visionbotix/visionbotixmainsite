@@ -9,7 +9,7 @@ summary: We collect only what you choose to send us, plus analytics if you accep
 
 This website, visionbotix.com, is operated by Visionbotix SMC-Private Limited ("Visionbotix", "we", "us" or "our"), an AI and software development studio based at 2nd Floor, Meridian Software Technology Park, Satellite Town, Murree Road, Rawalpindi, Pakistan.
 
-We are the controller of the personal data described in this policy. For any privacy question or request, email us at [hello@visionbotix.com](mailto:hello@visionbotix.com).
+We are the controller of the personal data described in this policy. For any privacy question or request, email us at [info@visionbotix.com](mailto:info@visionbotix.com).
 
 ## What this policy covers
 
@@ -33,8 +33,12 @@ When you use our contact or quote form, we collect:
 - a description of what you need
 - your budget range (optional)
 - how you heard about us (optional)
+- your time zone, so we can suggest call times
+- the first page you opened on our site and the website that sent you there (for example a search engine or an AI assistant such as ChatGPT), so we know which pages and channels bring enquiries
 
-We use this information to reply to you, prepare a quote and keep a record of our conversation. The form is processed by a serverless function on our hosting provider and delivered to our inbox by an email delivery provider (Resend).
+Our cost estimator's "send the breakdown" form collects your name, work email, an optional note, your estimate and the same time zone and visit details.
+
+We use this information to reply to you, prepare a quote and keep a record of our conversation. The form is processed by a serverless function on our hosting provider, delivered to our inbox by an email delivery provider (Resend) and may also be recorded in the spreadsheet or CRM we use to keep track of enquiries. To keep out spam, our forms may use Cloudflare Turnstile, which checks technical signals from your browser to tell people from automated programs.
 
 We do not sell this information and we do not use it for unrelated marketing. You can ask us to delete it at any time.
 
@@ -42,9 +46,13 @@ We do not sell this information and we do not use it for unrelated marketing. Yo
 
 Our homepage has a box where you can describe your project to see which of our services are relevant. This runs entirely in your browser. The text you type is not sent to us or stored by us, unless you choose to carry it into the contact form and submit that form.
 
+### The cost estimator
+
+Our cost estimator works out a price range in your browser. Your answers are not sent to us. They are kept only in the page address, so you can bookmark or share the result, unless you choose to send us the breakdown or carry it into the contact form.
+
 ### Booking a call
 
-If you book a call with us, the booking is handled by our scheduling provider. It collects the details you enter (such as your name, email address and chosen time) and shares them with us so we can hold the meeting. Your use of the scheduling tool is also governed by that provider's own privacy policy.
+If you book a call with us, the booking is handled by our scheduling provider, Cal.com. It collects the details you enter (such as your name, email address and chosen time) and shares them with us so we can hold the meeting. Your use of the scheduling tool is also governed by that provider's own privacy policy.
 
 ### WhatsApp
 
@@ -84,6 +92,9 @@ The table below lists the cookies and browser storage the site uses.
 |---|---|---|---|---|
 | Theme preference | Visionbotix (localStorage) | Remembers light or dark mode | Strictly necessary | Until you clear it |
 | Consent choice | Visionbotix (localStorage) | Remembers your cookie choice | Strictly necessary | Until you clear it |
+| Visit source | Visionbotix (sessionStorage) | Remembers how this visit started (the referring website and first page), for a form you choose to send and, if you accept analytics, for measurement | Functional | Until you close the tab |
+| Offer shown | Visionbotix (localStorage) | Remembers that you have seen our "before you go" offer, so it is not shown again | Functional | Until you clear it |
+| Enquiry sent | Visionbotix (sessionStorage) | Stops that offer appearing after you have sent us a form | Functional | Until you close the tab |
 | `_ga`, `_ga_*` | Google Analytics 4 | Distinguishes visitors and sessions for usage statistics | Analytics, consent required | Up to 13 months |
 | `_clck`, `_clsk` | Microsoft Clarity | Links page views into sessions for heatmaps and replays | Analytics, consent required | Up to 1 year |
 
@@ -103,7 +114,9 @@ We share personal data only with service providers that help us run the site and
 
 - **Vercel**, our hosting provider, which serves the site, runs the contact form function and keeps server logs.
 - **Resend**, our email delivery provider, which delivers form submissions to our inbox.
-- **Our scheduling provider**, if you book a call.
+- **Cloudflare**, if our forms use its Turnstile spam check.
+- **The spreadsheet or CRM service** we use to keep track of enquiries.
+- **Cal.com**, our scheduling provider, if you book a call.
 - **Google** and **Microsoft**, for analytics, only if you have given consent.
 - **Meta**, if you choose to contact us on WhatsApp.
 
@@ -164,7 +177,7 @@ Wherever you are, you can ask us what we hold about you and ask us to correct or
 
 ### How to exercise your rights
 
-Email [hello@visionbotix.com](mailto:hello@visionbotix.com) with your request. We may ask you to confirm your identity before acting on it. We will respond within 30 days. If we need more time for a complex request, we will tell you why within that period.
+Email [info@visionbotix.com](mailto:info@visionbotix.com) with your request. We may ask you to confirm your identity before acting on it. We will respond within 30 days. If we need more time for a complex request, we will tell you why within that period.
 
 To withdraw analytics consent, use the **Cookie settings** link in the footer. You can also clear cookies and local storage in your browser settings.
 
@@ -183,6 +196,6 @@ Visionbotix SMC-Private Limited
 Satellite Town, Murree Road
 Rawalpindi, Pakistan
 
-Email: [hello@visionbotix.com](mailto:hello@visionbotix.com)
+Email: [info@visionbotix.com](mailto:info@visionbotix.com)
 
 This policy was last reviewed on 19 November 2026.

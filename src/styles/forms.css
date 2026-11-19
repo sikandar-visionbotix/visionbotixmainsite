@@ -1,0 +1,70 @@
+/* Form fields shared by /contact/ and /estimate/ (moved from the contact page in S6). */
+.field {
+  display: grid;
+  gap: 0.4rem;
+}
+.field label {
+  font-size: var(--step--1);
+  font-weight: 560;
+}
+.opt {
+  font-weight: 400;
+  color: var(--fg-subtle);
+}
+.field input,
+.field select,
+.field textarea {
+  inline-size: 100%;
+  min-block-size: 2.875rem;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--border-strong, var(--border));
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-size: 1rem;
+  color: var(--fg);
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+}
+.field select option,
+.field select optgroup {
+  color: #111;
+  background: #fff;
+}
+.field textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+.field :is(input, select, textarea):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+.field [aria-invalid] {
+  border-color: #ef4444;
+}
+.field-err {
+  font-size: var(--step--1);
+  color: var(--danger, #f87171);
+}
+.ct-check {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  font-size: var(--step--1);
+  cursor: pointer;
+}
+.ct-check input {
+  inline-size: 1.15rem;
+  block-size: 1.15rem;
+  margin-block-start: 0.15rem;
+  accent-color: var(--accent);
+}
+.ct-hp {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+/* Cloudflare Turnstile (S6): invisible unless Cloudflare asks for an interaction. */
+.ts-box:not(:empty) {
+  margin-block: var(--space-2);
+}

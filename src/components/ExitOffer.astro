@@ -1,0 +1,140 @@
+---
+/**
+ * Exit-intent offer (S6, D47). Desktop with a mouse only (≥ 64rem, fine pointer), after 12 s on the page, when the
+ * pointer leaves through the top of the window. Shown once per visitor ever (localStorage "vbx-exit"), never after a
+ * lead was sent in this tab, never over another open dialog or menu. Native <dialog>: focus trap, Esc and a close
+ * button for free. Offer: the free estimator first, the paid AI audit second (there is no free audit, D23).
+ */
+import Button from './Button.astro';
+import Icon from './Icon.astro';
+import { audit, money } from '@/data/pricing';
+---
+
+<dialog class="exit glass-strong" data-exit aria-labelledby="exit-title">
+  <form method="dialog" class="exit-close-form">
+    <button class="exit-close press" aria-label="Close" data-event="exit_offer_close"><Icon name="x" size={18} /></button>
+  </form>
+  <span class="exit-icon" aria-hidden="true"><Icon name="calculator" size={22} /></span>
+  <p class="eyebrow">Before you go</p>
+  <h2 id="exit-title" class="h3">What would your project cost?</h2>
+  <p class="muted">Answer a few questions and get a price range, a timeline and what drives the cost. Two minutes, no email needed.</p>
+  <div class="exit-actions">
+    <Button href="/estimate/" icon="arrow-right" data-event="exit_offer_click" data-event-location="exit-estimate">Estimate my project</Button>
+    <a class="link small" href="/contact/?topic=ai-opportunity-audit#quote" data-event="exit_offer_click" data-event-location="exit-audit">
+      Or start with the {audit.name}, {money(audit.price)}
+    </a>
+  </div>
+</dialog>
+
+<script>
+  import { track } from '@/scripts/lead';
+
+  const dlg = document.querySelector<HTMLDialogElement>('[data-exit]');
+  const KEY = 'vbx-exit';
+  const seen = () => {
+    try {
+      return !!localStorage.getItem(KEY) || !!sessionStorage.getItem('vbx-lead');
+    } catch {
+      return true; // storage blocked: we could not remember the choice, so never show it
+    }
+  };
+  const busy = () => {
+    try {
+      return !!document.querySelector('dialog[open], :popover-open');
+    } catch {
+      return !!document.querySelector('dialog[open]');
+    }
+  };
+  if (dlg && typeof dlg.showModal === 'function' && matchMedia('(pointer: fine) and (min-width: 64rem)').matches && !seen()) {
+    let armed = false;
+    setTimeout(() => (armed = true), 12000);
+    const onOut = (e: MouseEvent) => {
+      if (!armed || e.relatedTarget || e.clientY > 0 || busy() || seen()) return;
+      document.removeEventListener('mouseout', onOut);
+      try {
+        localStorage.setItem(KEY, String(Date.now()));
+      } catch {}
+      dlg.showModal();
+      track('exit_offer_view', { page: location.pathname });
+    };
+    document.addEventListener('mouseout', onOut);
+    // Click on the backdrop closes it.
+    dlg.addEventListener('click', (e) => {
+      if (e.target === dlg) dlg.close();
+    });
+  }
+</script>
+
+<style>
+  .exit {
+    --glass-radius: var(--radius-xl);
+    inline-size: min(30rem, calc(100vw - 2 * var(--gutter)));
+    padding: clamp(1.5rem, 1rem + 2vw, 2.25rem);
+    border: 0;
+    color: var(--fg);
+    text-align: center;
+  }
+  .exit[open] {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-3);
+  }
+  .exit > * {
+    position: relative;
+    z-index: 2;
+  }
+  .exit::backdrop {
+    background: color-mix(in srgb, var(--bg) 55%, transparent);
+    backdrop-filter: blur(6px);
+  }
+  .exit-close-form {
+    position: absolute;
+    inset-block-start: 0.75rem;
+    inset-inline-end: 0.75rem;
+    z-index: 3;
+  }
+  .exit-close {
+    display: grid;
+    place-items: center;
+    inline-size: 2.25rem;
+    block-size: 2.25rem;
+    border: 0;
+    border-radius: 50%;
+    color: var(--fg-muted);
+    background: transparent;
+    cursor: pointer;
+  }
+  .exit-close:hover {
+    color: var(--fg);
+    background: color-mix(in srgb, var(--fg) 8%, transparent);
+  }
+  .exit-icon {
+    display: grid;
+    place-items: center;
+    inline-size: 3rem;
+    block-size: 3rem;
+    border-radius: var(--radius-md);
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+  .exit .eyebrow {
+    margin: 0;
+  }
+  .exit-actions {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-3);
+    margin-block-start: var(--space-2);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .exit[open] {
+      animation: exit-in 260ms var(--ease-out, ease-out);
+    }
+    @keyframes exit-in {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+      }
+    }
+  }
+</style>

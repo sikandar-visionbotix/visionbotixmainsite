@@ -20,9 +20,13 @@ type Common = {
 };
 type Props = Common & (({ href: string } & Omit<HTMLAttributes<'a'>, 'class'>) | ({ href?: never } & Omit<HTMLAttributes<'button'>, 'class'>));
 
-const { variant = 'primary', size = 'md', icon, iconLeading, block = false, class: className, href, ...rest } = Astro.props as Common & {
+const { variant = 'primary', size = 'md', icon, iconLeading, block = false, class: className, href, type, ...rest } = Astro.props as Common & {
   href?: string;
+  type?: 'button' | 'submit' | 'reset';
 } & Record<string, unknown>;
+// Pass `type` explicitly: a second type attribute after a default one is ignored by browsers (S6 fix: submit buttons
+// rendered as type="button" and the contact form could not be sent).
+const buttonType = type ?? 'button';
 
 const external = typeof href === 'string' && /^https?:\/\//.test(href) && !href.startsWith('https://visionbotix.com');
 const linkAttrs = external ? { target: '_blank', rel: 'noopener' } : {};
@@ -38,7 +42,7 @@ const classes = ['btn', `btn-${variant}`, `btn-${size}`, 'press', { 'btn-block':
       {external && <span class="visually-hidden"> (opens in a new tab)</span>}
     </a>
   ) : (
-    <button type="button" class:list={classes} {...rest}>
+    <button type={buttonType} class:list={classes} {...rest}>
       {iconLeading && <Icon name={iconLeading} size={18} />}
       <span class="btn-label"><slot /></span>
       {icon && <Icon name={icon} size={18} class="btn-icon" />}

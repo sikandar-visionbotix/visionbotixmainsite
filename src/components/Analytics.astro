@@ -5,6 +5,17 @@
  * "Decline" nothing loads. The choice is kept in localStorage ("vbx-consent") and can be changed from the footer's
  * "Cookie settings" button ([data-consent-open]). Conversion events: any click on [data-event] plus `vbx:track`
  * CustomEvents (prompt hero, contact form) are sent to GA4 once consent is given.
+ *
+ * S6 (D49): every event carries `ai_source` (ChatGPT, Perplexity, Claude, Gemini, Copilot…) when the visit came from an
+ * AI assistant (BaseLayout's visit-source script), the user property `ai_source` is set, and an `ai_referral` event
+ * fires once per visit. Event catalogue:
+ *   key events (mark as "key events" in GA4): form_submit, estimate_send, book_call, whatsapp_click
+ *   funnel: estimator_start, estimator_step, estimator_complete, estimate_quote, quote_click, pricing_click,
+ *           exit_offer_view, exit_offer_click, exit_offer_close, prompt_submit, prompt_result, prompt_quote
+ *   other: form_fallback, email_click, phone_click, product_visit, careers_apply, ai_referral
+ * GA4 setup (owner): Admin → Custom definitions → add event-scoped dimensions `ai_source`, `location`, `type`, `step`
+ * and a user-scoped `ai_source`; Admin → Channel groups → copy the default and add "AI assistants" above Referral with
+ * source matching: chatgpt|openai|perplexity|claude|anthropic|gemini|copilot|deepseek|grok|meta\.ai|mistral|you\.com|phind|poe|kagi
  */
 import { site } from '@/data/site';
 import Button from './Button.astro';
@@ -36,6 +47,7 @@ const enabled = !!(ga4 || clarity);
           window.dataLayer = window.dataLayer || [];
           function gtag() { window.dataLayer.push(arguments); }
           window.gtag = window.gtag || gtag;
+          var src = window.vbxSrc || {};
           function load() {
             if (loaded) return;
             loaded = true;
@@ -45,7 +57,13 @@ const enabled = !!(ga4 || clarity);
               s.src = 'https://www.googletagmanager.com/gtag/js?id=' + ga4;
               document.head.appendChild(s);
               gtag('js', new Date());
+              if (src.ai) gtag('set', 'user_properties', { ai_source: src.ai });
               gtag('config', ga4, { cookie_expires: 34128000, allow_google_signals: false, allow_ad_personalization_signals: false });
+              if (src.ai) {
+                var sent = null;
+                try { sent = sessionStorage.getItem('vbx-ai-sent'); sessionStorage.setItem('vbx-ai-sent', '1'); } catch (e) {}
+                if (!sent) gtag('event', 'ai_referral', { ai_source: src.ai, ai_referrer: src.ref || src.utm, landing_page: src.land });
+              }
             }
             if (clarity) {
               (function (c, l, a, r, i, t, y) {
@@ -58,7 +76,9 @@ const enabled = !!(ga4 || clarity);
           }
           function track(name, params) {
             if (get() !== 'granted' || !ga4) return;
-            gtag('event', name, params || {});
+            params = params || {};
+            if (src.ai && !params.ai_source) params.ai_source = src.ai;
+            gtag('event', name, params);
           }
           var state = get();
           if (state === 'granted') load();

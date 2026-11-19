@@ -1,0 +1,1230 @@
+---
+/**
+ * /estimate/ (S6, D46): interactive project cost estimator. A 2–4 step wizard (type → scope → platforms/channels →
+ * stage and timeline) computes an indicative range, timeline and the cost drivers in the browser with
+ * src/data/estimator.ts; nothing is sent until the visitor sends the breakdown (→ api/contact.js, form "estimate") or
+ * carries it into the quote form. Answers live in the URL (?t=…), so a result can be shared or opened from the table.
+ * Without JS the page still shows the typical-costs table, the cost drivers and the FAQ (also what AI search reads).
+ */
+import '@/styles/page-kit.css';
+import '@/styles/forms.css';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Button from '@/components/Button.astro';
+import Icon from '@/components/Icon.astro';
+import Accordion from '@/components/Accordion.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import { site } from '@/data/site';
+import { agentGroups } from '@/data/catalogue';
+import { agentPrices, estimatorRates as R, money, projectFrom, teamRates, audit } from '@/data/pricing';
+import {
+  typeOptions,
+  aiKinds,
+  featureOptions,
+  integrationOptions,
+  aiFeatureOptions,
+  aiFeatureTypes,
+  platformOptions,
+  platformTypes,
+  channelOptions,
+  stageOptions,
+  timelineOptions,
+  designOptions,
+  roleKeys,
+  monthOptions,
+  agentChoices,
+  typicalProjects,
+  estimate,
+  rangeLabel,
+  toQuery,
+} from '@/data/estimator';
+import { abs, ORG_ID, type FaqItem, type Thing } from '@/lib/schema';
+import type { IconName } from '@/lib/icons';
+
+const typical = typicalProjects.map((p) => ({ ...p, e: estimate(p.input), href: `/estimate/?${toQuery(p.input)}` }));
+const t = (name: string) => typical.find((p) => p.name.startsWith(name))!.e;
+const pctLabel = (n: number) => `${n > 0 ? '+' : ''}${Math.round(n * 100)}%`;
+
+const drivers: { icon: IconName; title: string; amount: string; body: string }[] = [
+  { icon: 'layers', title: 'Type of project', amount: `from ${money(projectFrom.webApp)}`, body: `The starting price: websites from ${money(projectFrom.webApp)}, custom software from ${money(projectFrom.customSoftware)}, mobile apps from ${money(projectFrom.mobileApp)}, SaaS MVPs from ${money(projectFrom.saasMvp)}, custom AI agents from ${money(projectFrom.customAgent)}.` },
+  { icon: 'list-checks', title: 'Features', amount: `+${money(R.features.files)} to +${money(R.features.aiAgent)} each`, body: `Accounts and roles +${money(R.features.accounts)}, payments +${money(R.features.payments)}, an admin dashboard +${money(R.features.admin)}, real-time features +${money(R.features.realtime)}, an AI agent inside the product +${money(R.features.aiAgent)}.` },
+  { icon: 'plug', title: 'Integrations', amount: `+${money(R.integrations.few)} to +${money(R.integrations.many)}`, body: 'Every system it must talk to (CRM, ERP, payments, calendars, internal APIs) adds work to connect, test and monitor.' },
+  { icon: 'monitor-smartphone', title: 'Platforms', amount: `${pctLabel(R.extraSurface)} per extra platform`, body: 'A web app plus iOS and Android apps is more work than one of them. iOS and Android share one codebase, so together they count as one platform.' },
+  { icon: 'palette', title: 'Design', amount: `+${Math.round(R.designShare * 100)}%, from ${money(R.designMin)}`, body: 'UI and UX design for your screens. If you already have designs in Figma, this part drops out.' },
+  { icon: 'shield-check', title: 'Sensitive data', amount: pctLabel(R.sensitive), body: 'Health, finance or personal records need extra security work, audit logs and compliance checks.' },
+  { icon: 'gauge', title: 'Stage', amount: `${pctLabel(R.stage.prototype)} to ${pctLabel(R.stage.production)}`, body: 'A prototype to test an idea costs less than a first launch. Software built for high traffic or audits from day one costs more.' },
+  { icon: 'timer', title: 'Deadline', amount: `${pctLabel(R.rush)} for a rush`, body: 'A hard, early date means a larger team working in parallel. A flexible date costs nothing extra.' },
+];
+
+const faqs: FaqItem[] = [
+  {
+    q: 'How much does it cost to build an app?',
+    a: `With us, a business website or simple web app typically costs ${rangeLabel(t('Business website'))}, a mobile app for iOS and Android with accounts and an admin ${rangeLabel(t('Mobile app'))}, and a SaaS MVP with subscriptions ${rangeLabel(t('SaaS MVP'))}. The estimator above gives a range for your own answers in about two minutes.`,
+  },
+  {
+    q: 'How much does a custom AI agent or chatbot cost?',
+    a: `A chatbot over your own documents typically costs ${rangeLabel(t('AI chatbot'))}, and a custom AI agent that works inside your systems ${rangeLabel(t('Custom AI agent'))}. Ready-made agents start from ${money(Math.min(...Object.values(agentPrices).filter((p) => p.monthly).map((p) => p.setup)))} setup plus a monthly fee.`,
+  },
+  {
+    q: 'How accurate is this estimate?',
+    a: 'It is built from the same public price list we quote from: the starting price for your type of project plus a set amount for each feature and choice. It shows a range because details we cannot ask here, such as how complex each integration is, move the price. After a free call you get a fixed quote within 24 hours, and that quote is the price you pay.',
+  },
+  {
+    q: 'What is not included in the estimate?',
+    a: 'Hosting, app store fees and third-party services (for example maps, SMS or AI model usage) are billed at cost and are not in the range. Ongoing support after the 30 days included with every project is quoted separately, as a monthly plan or hourly.',
+  },
+  {
+    q: 'How do I pay?',
+    a: 'Projects are fixed price and paid by milestone: you pay for each milestone after you have seen it working at a weekly demo. You own 100% of the code and IP. Dedicated engineers are billed monthly.',
+  },
+  {
+    q: 'Do you store my answers?',
+    a: 'No. The estimator runs in your browser and nothing is sent to us unless you choose to send the breakdown or carry it into the quote form. Your answers are kept in the page address only, so you can share or bookmark the result.',
+  },
+];
+
+const app: Thing = {
+  '@type': 'WebApplication',
+  '@id': `${abs('/estimate/')}#app`,
+  name: 'Visionbotix project cost estimator',
+  url: abs('/estimate/'),
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Any (runs in the browser)',
+  isAccessibleForFree: true,
+  offers: { '@type': 'Offer', price: 0, priceCurrency: 'USD' },
+  publisher: { '@id': ORG_ID },
+};
+
+const buildTypes = 'ai web mobile saas software vision-iot';
+const stepNames = { type: 'Project', scope: 'Scope', extras: 'Platforms', when: 'Stage and timing' };
+---
+
+<BaseLayout
+  seo={{
+    title: 'App, Software and AI Agent Cost Estimator',
+    description: `Estimate what your app, website, SaaS MVP or AI agent will cost in 2 minutes: a price range, timeline and the cost drivers, from our public price list.`,
+  }}
+  schema={[app]}
+  exitOffer={false}
+>
+  <section class="container pk-hero" data-compact aria-labelledby="es-title">
+    <div class="pk-copy">
+      <Breadcrumbs items={[{ name: 'Pricing', href: '/pricing/' }, { name: 'Cost estimator', href: '/estimate/' }]} />
+      <p class="eyebrow">Cost estimator</p>
+      <h1 id="es-title" class="pk-title">What will your app or AI agent cost?</h1>
+      <p class="lead pk-lead">
+        Answer up to four questions and get a price range, a timeline and what drives the cost, worked out from our public price list. Websites start from {money(projectFrom.webApp)},
+        mobile apps from {money(projectFrom.mobileApp)} and custom AI agents from {money(projectFrom.customAgent)}. Nothing is sent to us unless you ask.
+      </p>
+    </div>
+  </section>
+
+  <section class="container est" aria-label="Estimator">
+    <noscript>
+      <p class="est-noscript glass-subtle">The estimator needs JavaScript. The typical costs below and our <a class="link" href="/pricing/">pricing page</a> work without it.</p>
+    </noscript>
+
+    <div class="est-app glass-strong" data-est-app>
+      <ol class="est-progress mono" role="list" data-progress>
+        {
+          Object.entries(stepNames).map(([k, v], i) => (
+            <li data-progress-step={k}>
+              <span class="est-progress-n">{i + 1}</span> {v}
+            </li>
+          ))
+        }
+      </ol>
+
+      <form class="est-form" data-est novalidate>
+        <!-- 1. Type -->
+        <fieldset class="est-step" data-step="type">
+          <legend class="h3" tabindex="-1">What do you want to build?</legend>
+          <div class="est-cards">
+            {
+              typeOptions.map((o) => (
+                <label class="est-card">
+                  <input class="est-hidden-input" type="radio" name="type" value={o.value} required />
+                  <span class="est-card-icon" aria-hidden="true">
+                    <Icon name={o.icon as IconName} size={20} />
+                  </span>
+                  <span class="est-card-title">{o.label}</span>
+                  <span class="est-card-line small muted">{o.line}</span>
+                  {o.from && (
+                    <span class="est-card-from mono small">
+                      from {money(o.from)}
+                      {o.fromSuffix}
+                    </span>
+                  )}
+                </label>
+              ))
+            }
+          </div>
+        </fieldset>
+
+        <!-- 2. Scope -->
+        <fieldset class="est-step" data-step="scope" hidden>
+          <legend class="h3" tabindex="-1">What does it need to do?</legend>
+
+          <div class="est-block" data-types="ai">
+            <p class="est-q">What kind of AI?</p>
+            <div class="est-cards est-cards-2">
+              {
+                aiKinds.map((k, i) => (
+                  <label class="est-card est-card-sm">
+                    <input class="est-hidden-input" type="radio" name="aiKind" value={k.value} checked={i === 0} />
+                    <span class="est-card-title">{k.label}</span>
+                    <span class="est-card-line small muted">{k.line}</span>
+                    <span class="est-card-from mono small">from {money(k.from)}</span>
+                  </label>
+                ))
+              }
+            </div>
+          </div>
+
+          <div class="est-block" data-types="agents">
+            <p class="est-q">Which agents? <span class="opt">Pick one or more. Bundles are applied automatically.</span></p>
+            {
+              Object.entries(agentGroups)
+                .filter(([g]) => agentChoices.some((a) => a.group === g))
+                .map(([g, info]) => (
+                  <div class="est-agent-group">
+                    <p class="est-sub mono">{info.label}</p>
+                    <div class="est-checks">
+                      {agentChoices
+                        .filter((a) => a.group === g)
+                        .map((a) => (
+                          <label class="est-check">
+                            <input type="checkbox" name="agents" value={a.slug} />
+                            <span>
+                              {a.name}
+                              <span class="mono small subtle">
+                                {' '}
+                                {money(agentPrices[a.slug]!.setup)} + {money(agentPrices[a.slug]!.monthly!)}/mo
+                              </span>
+                            </span>
+                          </label>
+                        ))}
+                    </div>
+                  </div>
+                ))
+            }
+            <p class="small subtle">
+              Need an MCP connector, an LLM security audit or an AI MVP? Those are fixed-price projects: see <a class="link" href="/pricing/#agents">pricing</a>.
+            </p>
+          </div>
+
+          <div class="est-block" data-types="team">
+            <p class="est-q">Who do you need, full time?</p>
+            <div class="est-team">
+              {
+                teamRates.map((r, i) => (
+                  <div class="est-team-row">
+                    <label for={`tm-${roleKeys[i]}`}>
+                      {r.role} <span class="mono small subtle">from {money(r.monthly)}/mo</span>
+                    </label>
+                    <input id={`tm-${roleKeys[i]}`} class="est-num" type="number" name="team" inputmode="numeric" min="0" max="20" value={i === 1 ? 1 : 0} />
+                  </div>
+                ))
+              }
+            </div>
+            <p class="est-q">For how long?</p>
+            <div class="est-pills">
+              {
+                monthOptions.map((m) => (
+                  <label class="est-pill">
+                    <input class="est-hidden-input" type="radio" name="months" value={m} checked={m === 6} />
+                    <span>
+                      {m} month{m > 1 ? 's' : ''}
+                    </span>
+                  </label>
+                ))
+              }
+            </div>
+          </div>
+
+          <div class="est-block" data-types={buildTypes}>
+            <p class="est-q">Features <span class="opt">Tick what applies</span></p>
+            <div class="est-checks est-checks-2">
+              {
+                featureOptions.map((f) => (
+                  <label class="est-check" data-types={f.types.join(' ')}>
+                    <input type="checkbox" name="features" value={f.value} />
+                    <span>{f.label}</span>
+                  </label>
+                ))
+              }
+            </div>
+            <div data-types={aiFeatureTypes.join(' ')}>
+              <p class="est-q">AI inside the product?</p>
+              <div class="est-pills">
+                {
+                  aiFeatureOptions.map((o, i) => (
+                    <label class="est-pill">
+                      <input class="est-hidden-input" type="radio" name="aiFeature" value={o.value} checked={i === 0} />
+                      <span>{o.label}</span>
+                    </label>
+                  ))
+                }
+              </div>
+            </div>
+            <p class="est-q">How many other systems must it connect to? <span class="opt">CRM, ERP, payments, calendars, your APIs</span></p>
+            <div class="est-pills">
+              {
+                integrationOptions.map((o, i) => (
+                  <label class="est-pill">
+                    <input class="est-hidden-input" type="radio" name="integrations" value={o.value} checked={i === 0} />
+                    <span>{o.label}</span>
+                  </label>
+                ))
+              }
+            </div>
+            <label class="est-check est-sensitive">
+              <input type="checkbox" name="sensitive" value="1" />
+              <span>It handles sensitive data (health, finance or personal records)</span>
+            </label>
+          </div>
+          <p class="field-err" data-err="scope" hidden></p>
+        </fieldset>
+
+        <!-- 3. Platforms / channels and design -->
+        <fieldset class="est-step" data-step="extras" hidden>
+          <legend class="h3" tabindex="-1">Where will people use it?</legend>
+          <div class="est-block" data-types={platformTypes.join(' ')}>
+            <p class="est-q">Platforms</p>
+            <div class="est-checks est-checks-2">
+              {
+                platformOptions.map((p) => (
+                  <label class="est-check">
+                    <input type="checkbox" name="platforms" value={p.value} />
+                    <span>{p.label}</span>
+                  </label>
+                ))
+              }
+            </div>
+            <p class="est-q">Design</p>
+            <div class="est-pills">
+              {
+                designOptions.map((o, i) => (
+                  <label class="est-pill">
+                    <input class="est-hidden-input" type="radio" name="design" value={o.value} checked={i === 0} />
+                    <span>{o.label}</span>
+                  </label>
+                ))
+              }
+            </div>
+          </div>
+          <div class="est-block" data-types="ai">
+            <p class="est-q">Channels <span class="opt">Where people reach the AI</span></p>
+            <div class="est-checks est-checks-2">
+              {
+                channelOptions.map((c) => (
+                  <label class="est-check">
+                    <input type="checkbox" name="channels" value={c.value} />
+                    <span>{c.label}</span>
+                  </label>
+                ))
+              }
+            </div>
+          </div>
+          <p class="field-err" data-err="extras" hidden></p>
+        </fieldset>
+
+        <!-- 4. Stage and timing -->
+        <fieldset class="est-step" data-step="when" hidden>
+          <legend class="h3" tabindex="-1">How far, and how fast?</legend>
+          <p class="est-q">Stage</p>
+          <div class="est-cards est-cards-3">
+            {
+              stageOptions.map((o) => (
+                <label class="est-card est-card-sm">
+                  <input class="est-hidden-input" type="radio" name="stage" value={o.value} checked={o.value === 'mvp'} />
+                  <span class="est-card-title">{o.label}</span>
+                  <span class="est-card-line small muted">{o.line}</span>
+                </label>
+              ))
+            }
+          </div>
+          <p class="est-q">Timeline</p>
+          <div class="est-cards est-cards-3">
+            {
+              timelineOptions.map((o) => (
+                <label class="est-card est-card-sm">
+                  <input class="est-hidden-input" type="radio" name="timeline" value={o.value} checked={o.value === 'standard'} />
+                  <span class="est-card-title">{o.label}</span>
+                  <span class="est-card-line small muted">{o.line}</span>
+                </label>
+              ))
+            }
+          </div>
+        </fieldset>
+
+        <div class="est-nav">
+          <Button variant="ghost" iconLeading="arrow-left" data-back hidden>Back</Button>
+          <p class="est-running small" aria-live="polite" data-running></p>
+          <Button type="submit" icon="arrow-right" data-next><span data-next-label>Next</span></Button>
+        </div>
+        <p class="field-err" data-err="type" hidden></p>
+      </form>
+
+      <!-- Result -->
+      <section class="est-result" data-result hidden aria-labelledby="er-title">
+        <p class="eyebrow" data-r-title></p>
+        <h2 id="er-title" class="est-range" tabindex="-1" data-r-range></h2>
+        <p class="est-range-sub" data-r-sub></p>
+
+        <div class="est-result-grid">
+          <div>
+            <h3 class="h4">What drives the price</h3>
+            <table class="est-drivers">
+              <caption class="visually-hidden">Cost breakdown, bottom of the range</caption>
+              <tbody data-r-drivers></tbody>
+            </table>
+            <ul role="list" class="est-notes small muted" data-r-notes></ul>
+            <div class="est-tools">
+              <Button variant="ghost" size="sm" iconLeading="pencil" data-edit>Edit answers</Button>
+              <Button variant="ghost" size="sm" iconLeading="copy" data-copy>Copy link</Button>
+              <Button variant="ghost" size="sm" iconLeading="rotate-ccw" data-restart>Start over</Button>
+            </div>
+          </div>
+
+          <div class="est-next glass-subtle">
+            <h3 class="h4">Turn it into a fixed price</h3>
+            <p class="small muted">A range is a start. After a free call you get a fixed quote within 24 hours, and you pay by milestone.</p>
+            <Button href="/contact/#quote" icon="arrow-right" block data-quote data-event="estimate_quote" data-event-location="estimate-result">Get my fixed quote</Button>
+
+            <form class="est-send" data-send data-turnstile={site.turnstile.siteKey ?? undefined} novalidate>
+              <p class="est-send-title"><Icon name="mail" size={16} /> Or send us this breakdown</p>
+              <div class="field">
+                <label for="s-name">Name</label>
+                <input id="s-name" name="name" autocomplete="name" required maxlength="120" />
+                <p class="field-err" id="se-name" hidden></p>
+              </div>
+              <div class="field">
+                <label for="s-email">Work email</label>
+                <input id="s-email" name="email" type="email" autocomplete="email" required maxlength="200" />
+                <p class="field-err" id="se-email" hidden></p>
+              </div>
+              <div class="field">
+                <label for="s-note">Anything we should know? <span class="opt">optional</span></label>
+                <textarea id="s-note" name="note" rows="3" maxlength="2000"></textarea>
+              </div>
+              <div class="ct-hp" aria-hidden="true">
+                <label for="s-website">Website</label>
+                <input id="s-website" name="website" tabindex="-1" autocomplete="off" />
+              </div>
+              <div data-ts-slot></div>
+              <Button type="submit" variant="glass" icon="send-horizontal" block>Send the breakdown</Button>
+              <p class="small subtle">An engineer reviews it and replies within one business day. <a class="link" href="/privacy/">Privacy</a></p>
+              <p class="small" role="status" aria-live="polite" data-send-status></p>
+            </form>
+            <div class="est-sent" data-sent hidden tabindex="-1">
+              <Icon name="mail-check" size={22} />
+              <p><strong>Sent.</strong> An engineer will reply within one business day with questions or a time for a call.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <aside class="est-aside" aria-label="How the estimate works">
+      <ul role="list" class="pk-checks">
+        <li><Icon name="check" size={15} strokeWidth={2.5} /> Built from our <a class="link" href="/pricing/">public price list</a></li>
+        <li><Icon name="check" size={15} strokeWidth={2.5} /> A range, not a quote: the fixed quote after a call is binding</li>
+        <li><Icon name="check" size={15} strokeWidth={2.5} /> Fixed price, paid by milestone, 100% of the code is yours</li>
+        <li><Icon name="check" size={15} strokeWidth={2.5} /> Runs in your browser; nothing is sent unless you choose</li>
+      </ul>
+      <p class="small muted">
+        Not sure what to build yet? The {audit.name} ({money(audit.price)}) ends in a ranked plan. <a class="link" href="/services/ai-consulting/">What's in it</a>
+      </p>
+    </aside>
+  </section>
+
+  <!-- ============ Typical costs (static, also for search and AI answers) ============ -->
+  <Section id="typical" eyebrow="Typical costs" title="What projects like yours usually cost." lead="Ranges for common projects, from the same price list. Open one in the estimator to adjust it." space="tight">
+    <div class="pp-table-wrap glass-subtle" data-reveal>
+      <table class="est-table">
+        <caption class="visually-hidden">Typical project costs in US dollars</caption>
+        <thead>
+          <tr>
+            <th scope="col">Project</th>
+            <th scope="col">Typical cost</th>
+            <th scope="col">Timeline</th>
+            <th scope="col"><span class="visually-hidden">Adjust</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            typical.map((p) => (
+              <tr>
+                <th scope="row">{p.name}</th>
+                <td class="mono">{rangeLabel(p.e)}</td>
+                <td class="small">{p.e.weeksLabel}</td>
+                <td>
+                  <a class="pk-more small" href={p.href} data-event="estimator_preset" data-event-location="typical-table">
+                    Adjust <Icon name="arrow-right" size={14} />
+                  </a>
+                </td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </Section>
+
+  <Section id="drivers" eyebrow="Cost drivers" title="What moves the price, and by how much." space="tight">
+    <ul role="list" class="pk-cards" data-cols="4" data-stagger>
+      {
+        drivers.map((d) => (
+          <li class="pk-card glass-subtle">
+            <span class="pk-icon" aria-hidden="true">
+              <Icon name={d.icon} size={20} />
+            </span>
+            <h3 class="h4">{d.title}</h3>
+            <p class="mono small est-driver-amount">{d.amount}</p>
+            <p class="small muted">{d.body}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section id="faq" eyebrow="FAQ" title="Cost questions." width="narrow" align="center">
+    <Accordion items={faqs} schema name="estimate-faq" />
+  </Section>
+
+  <CtaBand title="Want a fixed price instead of a range?" text="Tell us what you need. After a short call, your fixed quote arrives within 24 hours." location="estimate-final" />
+</BaseLayout>
+
+<script>
+  import { estimate, fromQuery, isBuild, rangeLabel, summaryText, toQuery, defaultPlatforms, typeLabel, type EstimateInput, type Estimate, type ProjectType } from '@/data/estimator';
+  import { money } from '@/data/pricing';
+  import { attachLead, track } from '@/scripts/lead';
+
+  const form = document.querySelector<HTMLFormElement>('[data-est]');
+  const app = document.querySelector<HTMLElement>('[data-est-app]');
+  if (form && app) {
+    const $ = <T extends Element = HTMLElement>(sel: string, root: ParentNode = app) => root.querySelector<T>(sel)!;
+    const steps = [...form.querySelectorAll<HTMLFieldSetElement>('[data-step]')];
+    const result = $('[data-result]');
+    const back = $<HTMLButtonElement>('[data-back]');
+    const next = $<HTMLButtonElement>('[data-next]');
+    const running = $('[data-running]');
+    const progress = [...app.querySelectorAll<HTMLElement>('[data-progress-step]')];
+    let current = 'type';
+    let started = false;
+    let last: { input: EstimateInput; e: Estimate } | null = null;
+
+    const type = () => (new FormData(form).get('type') as ProjectType | null) ?? null;
+    const stepsFor = (t: ProjectType | null) =>
+      !t ? ['type'] : t === 'agents' || t === 'team' ? ['type', 'scope'] : t === 'vision-iot' ? ['type', 'scope', 'when'] : ['type', 'scope', 'extras', 'when'];
+
+    /** Show only the blocks and options that apply to the chosen type; disabled controls drop out of FormData. */
+    function applyType(t: ProjectType | null) {
+      for (const el of form!.querySelectorAll<HTMLElement>('[data-types]')) {
+        const on = !!t && el.dataset.types!.split(' ').includes(t);
+        el.hidden = !on;
+        el.querySelectorAll<HTMLInputElement>('input').forEach((i) => {
+          // An input is live only if every [data-types] ancestor applies.
+          const blocks = [] as HTMLElement[];
+          for (let p: HTMLElement | null = i.parentElement; p && p !== form; p = p.parentElement) if (p.dataset.types) blocks.push(p);
+          i.disabled = !blocks.every((b) => !!t && b.dataset.types!.split(' ').includes(t));
+        });
+      }
+      const stepList = stepsFor(t);
+      progress.forEach((li) => (li.hidden = !stepList.includes(li.dataset.progressStep!)));
+      const extras = progress.find((li) => li.dataset.progressStep === 'extras');
+      if (extras) extras.lastChild!.textContent = t === 'ai' ? ' Channels' : ' Platforms';
+    }
+
+    function setDefaults(t: ProjectType) {
+      const plats = defaultPlatforms[t] ?? [];
+      form!.querySelectorAll<HTMLInputElement>('input[name="platforms"]').forEach((i) => (i.checked = plats.includes(i.value as never)));
+      const kind = (new FormData(form!).get('aiKind') as string) || 'chatbot';
+      form!.querySelectorAll<HTMLInputElement>('input[name="channels"]').forEach((i) => (i.checked = i.value === (kind === 'voice' ? 'phone' : 'webchat')));
+    }
+
+    function read(): EstimateInput {
+      const fd = new FormData(form!);
+      const all = (k: string) => fd.getAll(k).map(String);
+      const t = fd.get('type') as ProjectType;
+      return {
+        type: t,
+        aiKind: (fd.get('aiKind') as EstimateInput['aiKind']) ?? undefined,
+        features: all('features') as EstimateInput['features'],
+        integrations: (fd.get('integrations') as EstimateInput['integrations']) ?? 'none',
+        aiFeature: (fd.get('aiFeature') as EstimateInput['aiFeature']) ?? 'none',
+        platforms: all('platforms') as EstimateInput['platforms'],
+        channels: all('channels') as EstimateInput['channels'],
+        design: (fd.get('design') as EstimateInput['design']) ?? 'us',
+        sensitive: fd.has('sensitive'),
+        stage: isBuild(t) ? ((fd.get('stage') as EstimateInput['stage']) ?? 'mvp') : 'mvp',
+        timeline: isBuild(t) ? ((fd.get('timeline') as EstimateInput['timeline']) ?? 'standard') : 'standard',
+        agents: all('agents'),
+        team: t === 'team' ? all('team').map((n) => Number(n) || 0) : undefined,
+        months: Number(fd.get('months')) || 6,
+      } as EstimateInput;
+    }
+
+    /** Put a saved input back into the controls (from ?t=… links). */
+    function write(i: EstimateInput) {
+      const set = (name: string, values: string[]) =>
+        form!.querySelectorAll<HTMLInputElement>(`input[name="${name}"]`).forEach((el) => {
+          if (el.type === 'number') return;
+          el.checked = values.includes(el.value);
+        });
+      set('type', [i.type]);
+      applyType(i.type);
+      setDefaults(i.type);
+      if (i.aiKind) set('aiKind', [i.aiKind]);
+      set('features', i.features ?? []);
+      set('integrations', [i.integrations ?? 'none']);
+      set('aiFeature', [i.aiFeature ?? 'none']);
+      if (i.platforms?.length) set('platforms', i.platforms);
+      if (i.channels?.length) set('channels', i.channels);
+      set('design', [i.design ?? 'us']);
+      set('sensitive', i.sensitive ? ['1'] : []);
+      set('stage', [i.stage ?? 'mvp']);
+      set('timeline', [i.timeline ?? 'standard']);
+      set('agents', i.agents ?? []);
+      if (i.team) form!.querySelectorAll<HTMLInputElement>('input[name="team"]').forEach((el, n) => (el.value = String(i.team![n] ?? 0)));
+      if (i.months) set('months', [String(i.months)]);
+    }
+
+    function updateRunning() {
+      const t = type();
+      if (!t) return void (running.textContent = '');
+      const input = read();
+      if ((t === 'agents' && !input.agents?.length) || (t === 'team' && !input.team?.some(Boolean))) return void (running.textContent = '');
+      running.textContent = `So far: ${rangeLabel(estimate(input))}`;
+    }
+
+    function validate(step: string): string {
+      const input = read();
+      if (step === 'type' && !input.type) return 'Choose what you want to build.';
+      if (step === 'scope' && input.type === 'agents' && !input.agents?.length) return 'Pick at least one agent.';
+      if (step === 'scope' && input.type === 'team' && !input.team?.some(Boolean)) return 'Add at least one person.';
+      if (step === 'extras' && input.type === 'ai' && !input.channels?.length) return 'Choose at least one channel.';
+      if (step === 'extras' && isBuild(input.type) && input.type !== 'ai' && !input.platforms?.length) return 'Choose at least one platform.';
+      return '';
+    }
+    const showErr = (step: string, msg: string) => {
+      const p = form!.querySelector<HTMLElement>(`[data-err="${step}"]`) ?? form!.querySelector<HTMLElement>('[data-err="type"]')!;
+      p.textContent = msg;
+      p.hidden = !msg;
+    };
+
+    function show(step: string, focus = true) {
+      current = step;
+      const list = stepsFor(type());
+      steps.forEach((s) => (s.hidden = s.dataset.step !== step));
+      result.hidden = true;
+      form!.hidden = false;
+      back.hidden = list.indexOf(step) <= 0;
+      const isLast = list.indexOf(step) === list.length - 1 && !!type();
+      next.querySelector('[data-next-label]')!.textContent = isLast ? 'See my estimate' : 'Next';
+      progress.forEach((li) => {
+        const idx = list.indexOf(li.dataset.progressStep!);
+        li.toggleAttribute('data-done', idx >= 0 && idx < list.indexOf(step));
+        if (li.dataset.progressStep === step) li.setAttribute('aria-current', 'step');
+        else li.removeAttribute('aria-current');
+      });
+      updateRunning();
+      if (focus) steps.find((s) => s.dataset.step === step)?.querySelector<HTMLElement>('legend')?.focus();
+    }
+
+    function render(input: EstimateInput) {
+      const e = estimate(input);
+      last = { input, e };
+      const q = toQuery(input);
+      history.replaceState(null, '', `${location.pathname}?${q}#estimate`);
+      $('[data-r-title]').textContent = `${e.title} · indicative estimate`;
+      $('[data-r-range]').textContent = rangeLabel(e);
+      $('[data-r-sub]').textContent =
+        e.kind === 'team' ? `${money(e.low)}–${money(e.high)} for ${e.months} month${e.months! > 1 ? 's' : ''} · ${e.weeksLabel}` : e.kind === 'agents' ? `${e.weeksLabel} · monthly fee from ${money(e.monthlyLow!)}` : `one-off, fixed price · ${e.weeksLabel}`;
+      const rows = e.drivers.map((d) => {
+        const tr = document.createElement('tr');
+        const th = Object.assign(document.createElement('th'), { scope: 'row', textContent: d.label });
+        const parts = [d.amount ? (d.amount < 0 ? `−${money(-d.amount)}` : money(d.amount)) : '', d.monthly ? `${d.monthly < 0 ? '−' : ''}${money(Math.abs(d.monthly))}/mo` : ''].filter(Boolean);
+        const td = Object.assign(document.createElement('td'), { className: 'mono', textContent: parts.join(' + ') });
+        if (d.amount < 0 || (d.monthly ?? 0) < 0) td.classList.add('est-save');
+        tr.append(th, td);
+        return tr;
+      });
+      $('[data-r-drivers]').replaceChildren(...rows);
+      $('[data-r-notes]').replaceChildren(...e.notes.map((n) => Object.assign(document.createElement('li'), { textContent: n })));
+      // Carry the breakdown into the quote form.
+      const link = `${location.origin}${location.pathname}?${q}`;
+      const topic = topicFor(input);
+      $<HTMLAnchorElement>('[data-quote]').href = `/contact/?${new URLSearchParams({ ...(topic ? { topic } : {}), brief: `${summaryText(e, link)}\n\nAbout my project: ` })}#quote`;
+      form!.hidden = true;
+      result.hidden = false;
+      progress.forEach((li) => {
+        li.setAttribute('data-done', '');
+        li.removeAttribute('aria-current');
+      });
+      $('[data-r-range]').focus();
+      track('estimator_complete', { type: input.type, value_low: e.low, value_high: e.high });
+    }
+
+    function topicFor(i: EstimateInput): string {
+      const map: Record<string, string> = { web: 'web-app-development', mobile: 'mobile-app-development', saas: 'saas-mvp-development', software: 'custom-software-development', 'vision-iot': 'computer-vision', team: 'dedicated-teams' };
+      if (i.type === 'ai') return { chatbot: 'ai-chatbot-development', voice: 'ai-voice-agents', rag: 'generative-ai-development', agent: 'ai-agent-development' }[i.aiKind ?? 'chatbot']!;
+      if (i.type === 'agents') return i.agents?.length === 1 ? i.agents[0]! : '';
+      return map[i.type] ?? '';
+    }
+
+    // ---- events ----
+    form.addEventListener('change', (ev) => {
+      const target = ev.target as HTMLInputElement;
+      if (!started) {
+        started = true;
+        track('estimator_start', {});
+      }
+      if (target.name === 'type') {
+        applyType(target.value as ProjectType);
+        setDefaults(target.value as ProjectType);
+        showErr('type', '');
+        // Choosing a type is the whole question: move on.
+        show('scope');
+        track('estimator_step', { step: 'type', type: target.value });
+        return;
+      }
+      if (target.name === 'aiKind') setDefaults('ai');
+      showErr(current, '');
+      updateRunning();
+    });
+    form.addEventListener('input', updateRunning);
+
+    form.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      const msg = validate(current);
+      showErr(current, msg);
+      if (msg) return;
+      const list = stepsFor(type());
+      const i = list.indexOf(current);
+      track('estimator_step', { step: current, type: type() });
+      if (i < list.length - 1) show(list[i + 1]!);
+      else render(read());
+    });
+    back.addEventListener('click', () => {
+      const list = stepsFor(type());
+      show(list[Math.max(0, list.indexOf(current) - 1)]!);
+    });
+    $('[data-edit]').addEventListener('click', () => show(stepsFor(type())[1] ?? 'type'));
+    $('[data-restart]').addEventListener('click', () => {
+      form.reset();
+      applyType(null);
+      history.replaceState(null, '', location.pathname);
+      show('type');
+    });
+    $('[data-copy]').addEventListener('click', async (ev) => {
+      const label = (ev.currentTarget as HTMLElement).querySelector('.btn-label')!;
+      try {
+        await navigator.clipboard.writeText(location.href.replace(/#.*$/, ''));
+        label.textContent = 'Link copied';
+      } catch {
+        label.textContent = 'Copy the address bar';
+      }
+      setTimeout(() => (label.textContent = 'Copy link'), 2500);
+    });
+
+    // ---- send the breakdown ----
+    const send = $<HTMLFormElement>('[data-send]');
+    const sendStatus = $('[data-send-status]');
+    const lead = attachLead(send, 'estimate');
+    send.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      if (!last) return;
+      const d = Object.fromEntries([...new FormData(send)].map(([k, v]) => [k, String(v)]));
+      const errs: Record<string, string> = {};
+      if ((d.name ?? '').trim().length < 2) errs.name = 'Please enter your name.';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test((d.email ?? '').trim())) errs.email = 'Please enter a valid email address.';
+      for (const f of ['name', 'email']) {
+        const p = document.getElementById(`se-${f}`)!;
+        const input = send.elements.namedItem(f) as HTMLInputElement;
+        p.textContent = errs[f] ?? '';
+        p.hidden = !errs[f];
+        input.toggleAttribute('aria-invalid', !!errs[f]);
+      }
+      const firstErr = ['name', 'email'].find((f) => errs[f]);
+      if (firstErr) return (send.elements.namedItem(firstErr) as HTMLElement).focus();
+      const link = location.href.replace(/#.*$/, '');
+      const body = {
+        ...d,
+        form: 'estimate',
+        topic: topicFor(last.input) || typeLabel(last.input.type),
+        range: rangeLabel(last.e),
+        message: `${summaryText(last.e, link)}${d.note ? `\n\nNote from the visitor:\n${d.note}` : ''}`,
+      } as Record<string, string>;
+      delete body.note;
+      const btn = send.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+      btn.disabled = true;
+      sendStatus.textContent = 'Sending…';
+      try {
+        const token = await lead.token();
+        if (token) body['cf-turnstile-response'] = token;
+        const r = await fetch('/api/contact/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const j = await r.json().catch(() => ({}));
+        if (!(r.ok && j.ok)) throw new Error('fallback');
+        track('estimate_send', { type: last.input.type, value_low: last.e.low, value_high: last.e.high });
+        try {
+          sessionStorage.setItem('vbx-lead', '1');
+        } catch {}
+        send.hidden = true;
+        const done = $('[data-sent]');
+        done.hidden = false;
+        done.focus();
+      } catch {
+        const a = Object.assign(document.createElement('a'), {
+          className: 'link',
+          href: `mailto:info@visionbotix.com?subject=${encodeURIComponent(`Estimate: ${rangeLabel(last.e)}`)}&body=${encodeURIComponent(body.message!)}`,
+          textContent: 'send it by email instead',
+        });
+        sendStatus.replaceChildren('We could not send it just now. Please ', a, '.');
+        track('form_fallback', { form: 'estimate' });
+        lead.reset();
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    // ---- start: from a shared link, or fresh ----
+    const saved = fromQuery(location.search);
+    if (saved) {
+      write(saved);
+      const msg = stepsFor(saved.type).map(validate).find(Boolean);
+      if (msg) show('scope', false);
+      else render(saved);
+    } else {
+      applyType(null);
+      show('type', false);
+    }
+  }
+</script>
+
+<style>
+  .est {
+    display: grid;
+    gap: var(--space-5);
+    align-items: start;
+    padding-block-end: var(--space-6);
+    scroll-margin-block-start: 6rem;
+  }
+  @media (min-width: 64rem) {
+    .est {
+      grid-template-columns: minmax(0, 1fr) 17rem;
+    }
+  }
+  :global(html:not(.js)) .est-app {
+    display: none;
+  }
+  .est-noscript {
+    padding: var(--space-4);
+  }
+  .est-app {
+    --glass-radius: var(--radius-xl);
+    padding: clamp(1.25rem, 0.75rem + 2vw, 2.25rem);
+  }
+  .est-app > * {
+    position: relative;
+    z-index: 2;
+  }
+  .est-progress {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    margin-block-end: var(--space-5);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--fg-subtle);
+  }
+  .est-progress li[hidden] {
+    display: none;
+  }
+  .est-progress li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .est-progress-n {
+    display: grid;
+    place-items: center;
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+  }
+  .est-progress li[aria-current] {
+    color: var(--fg);
+  }
+  .est-progress li[aria-current] .est-progress-n {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .est-progress li[data-done] .est-progress-n {
+    border-color: transparent;
+    color: var(--bg);
+    background: var(--accent);
+  }
+  .est-step {
+    display: grid;
+    gap: var(--space-3);
+    min-inline-size: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .est-step[hidden],
+  .est-block[hidden],
+  [data-types][hidden] {
+    display: none;
+  }
+  .est-step legend {
+    margin-block-end: var(--space-3);
+    padding: 0;
+  }
+  .est-step legend:focus {
+    outline: none;
+  }
+  .est-block {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .est-q {
+    margin-block-start: var(--space-2);
+    font-weight: 600;
+  }
+  .est-sub {
+    margin-block: var(--space-2) var(--space-1);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .est-hidden-input {
+    position: absolute;
+    opacity: 0;
+    inline-size: 1px;
+    block-size: 1px;
+    pointer-events: none;
+  }
+  .est-cards {
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+  }
+  .est-cards-2 {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  }
+  .est-cards-3 {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+  }
+  .est-card {
+    position: relative;
+    display: grid;
+    align-content: start;
+    gap: 0.35rem;
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: color-mix(in srgb, var(--bg) 35%, transparent);
+    cursor: pointer;
+    transition:
+      border-color 160ms,
+      background-color 160ms;
+  }
+  .est-card-sm {
+    padding: var(--space-3) var(--space-4);
+  }
+  .est-card:hover {
+    border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  }
+  .est-card:has(input:checked) {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .est-card:has(input:focus-visible),
+  .est-pill:has(input:focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .est-card-icon {
+    color: var(--accent);
+  }
+  .est-card-title {
+    font-weight: 620;
+  }
+  .est-card-from {
+    margin-block-start: auto;
+    padding-block-start: 0.35rem;
+    color: var(--fg-muted);
+  }
+  .est-checks {
+    display: grid;
+    gap: var(--space-2);
+  }
+  @media (min-width: 40rem) {
+    .est-checks-2 {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .est-check {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: var(--step--1);
+    cursor: pointer;
+  }
+  .est-check[hidden] {
+    display: none;
+  }
+  .est-check:has(input:checked) {
+    border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+  }
+  .est-check input {
+    flex: none;
+    inline-size: 1.1rem;
+    block-size: 1.1rem;
+    margin-block-start: 0.1rem;
+    accent-color: var(--accent);
+  }
+  .est-sensitive {
+    margin-block-start: var(--space-2);
+  }
+  .est-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .est-pill {
+    position: relative;
+    padding: 0.5rem 0.95rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: var(--step--1);
+    cursor: pointer;
+  }
+  .est-pill:has(input:checked) {
+    border-color: var(--accent);
+    color: var(--fg);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+  .est-team {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .est-team-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: var(--step--1);
+  }
+  .est-num {
+    inline-size: 4.5rem;
+    min-block-size: 2.5rem;
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--border-strong, var(--border));
+    border-radius: var(--radius-sm, 8px);
+    font: inherit;
+    text-align: center;
+    color: var(--fg);
+    background: color-mix(in srgb, var(--bg) 55%, transparent);
+  }
+  .est-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-block-start: var(--space-5);
+    padding-block-start: var(--space-4);
+    border-block-start: 1px solid var(--border);
+  }
+  .est-nav [data-back][hidden] {
+    display: none;
+  }
+  .est-running {
+    flex: 1;
+    min-inline-size: 10rem;
+    font-family: var(--font-mono);
+    color: var(--fg-muted);
+  }
+  .est-nav [data-next] {
+    margin-inline-start: auto;
+  }
+  .est-result[hidden],
+  .est-form[hidden] {
+    display: none;
+  }
+  .est-range {
+    margin-block: var(--space-2) var(--space-1);
+    font-size: clamp(2rem, 1.4rem + 2.6vw, 3.25rem);
+    font-weight: 720;
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+  }
+  .est-range:focus {
+    outline: none;
+  }
+  .est-range-sub {
+    color: var(--fg-muted);
+  }
+  .est-result-grid {
+    display: grid;
+    gap: var(--space-5);
+    margin-block-start: var(--space-5);
+  }
+  @media (min-width: 52rem) {
+    .est-result-grid {
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+      align-items: start;
+    }
+  }
+  .est-drivers {
+    inline-size: 100%;
+    margin-block-start: var(--space-3);
+    border-collapse: collapse;
+    font-size: var(--step--1);
+  }
+  .est-drivers :global(th),
+  .est-drivers :global(td) {
+    padding: 0.55rem 0.25rem;
+    text-align: start;
+    vertical-align: top;
+    font-weight: 400;
+    border-block-end: 1px solid var(--border);
+  }
+  .est-drivers :global(td) {
+    text-align: end;
+    white-space: nowrap;
+  }
+  .est-drivers :global(.est-save) {
+    color: var(--success, #34d399);
+  }
+  .est-notes {
+    display: grid;
+    gap: var(--space-2);
+    margin-block-start: var(--space-4);
+    padding-inline-start: 1.1rem;
+    list-style: disc;
+  }
+  .est-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-block-start: var(--space-4);
+  }
+  .est-next {
+    --glass-radius: var(--radius-lg);
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-5);
+  }
+  .est-next > * {
+    position: relative;
+    z-index: 2;
+  }
+  .est-send {
+    display: grid;
+    gap: var(--space-3);
+    margin-block-start: var(--space-3);
+    padding-block-start: var(--space-4);
+    border-block-start: 1px solid var(--border);
+  }
+  .est-send[hidden],
+  .est-sent[hidden] {
+    display: none;
+  }
+  .est-send-title {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-weight: 600;
+  }
+  .est-sent {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    color: var(--fg);
+  }
+  .est-sent:focus {
+    outline: none;
+  }
+  .est-aside {
+    display: grid;
+    gap: var(--space-4);
+    font-size: var(--step--1);
+  }
+  @media (min-width: 64rem) {
+    .est-aside {
+      position: sticky;
+      inset-block-start: 6.5rem;
+    }
+  }
+  .pp-table-wrap {
+    --glass-radius: var(--radius-lg);
+    padding: var(--space-2) clamp(0.75rem, 0.5rem + 1vw, 1.5rem);
+    overflow-x: auto;
+  }
+  .est-table {
+    position: relative;
+    z-index: 2;
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--step--1);
+  }
+  .est-table th,
+  .est-table td {
+    padding: 0.75rem 0.6rem;
+    text-align: start;
+    vertical-align: top;
+    border-block-end: 1px solid var(--border);
+  }
+  .est-table thead th {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--fg-subtle);
+  }
+  .est-table tbody th {
+    font-weight: 600;
+  }
+  .est-table td.mono {
+    white-space: nowrap;
+  }
+  @media (max-width: 40rem) {
+    .est-table thead {
+      display: none;
+    }
+    .est-table tr {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      padding-block: 0.6rem;
+      border-block-end: 1px solid var(--border);
+    }
+    .est-table th,
+    .est-table td {
+      padding: 0.15rem 0.25rem;
+      border: 0;
+    }
+    .est-table tbody th {
+      grid-column: 1 / -1;
+    }
+  }
+  .est-driver-amount {
+    color: var(--accent);
+  }
+</style>

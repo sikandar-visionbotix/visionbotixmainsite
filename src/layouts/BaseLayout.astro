@@ -14,6 +14,7 @@ import Backdrop from '@/components/Backdrop.astro';
 import Header from '@/components/Header.astro';
 import Footer from '@/components/Footer.astro';
 import Analytics from '@/components/Analytics.astro';
+import ExitOffer from '@/components/ExitOffer.astro';
 import { site } from '@/data/site';
 import { graph, organization, website, webPage, abs, type Thing } from '@/lib/schema';
 
@@ -24,8 +25,10 @@ interface Props {
   /** Pages like the styleguide can opt out of header/footer chrome. */
   chrome?: boolean;
   pageType?: string;
+  /** Exit-intent offer (S6, D47). Off on pages where someone is already converting (contact, estimate, thanks). */
+  exitOffer?: boolean;
 }
-const { seo, schema = [], backdrop = 'orbs', chrome = true, pageType } = Astro.props;
+const { seo, schema = [], backdrop = 'orbs', chrome = true, pageType, exitOffer = true } = Astro.props;
 const url = abs(Astro.url.pathname);
 ---
 
@@ -45,6 +48,39 @@ const url = abs(Astro.url.pathname);
         if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
         d.dataset.theme = t;
         d.classList.add('js');
+      })();
+    </script>
+    <!--
+      Visit source (S6, D49): the first page of this tab's visit and where it came from, flagging AI assistants.
+      Kept in sessionStorage (this tab only, gone when it closes). Used only for GA4 after consent, and in a form the
+      visitor chooses to send ("Arrived from").
+    -->
+    <script is:inline>
+      (function () {
+        try {
+          var k = 'vbx-src';
+          var s = sessionStorage.getItem(k);
+          if (!s) {
+            var host = location.hostname.replace(/^www\./, '');
+            var ref = '';
+            try {
+              ref = document.referrer ? new URL(document.referrer).hostname.replace(/^www\./, '') : '';
+            } catch (e) {}
+            if (ref === host) ref = '';
+            var utm = (new URLSearchParams(location.search).get('utm_source') || '').toLowerCase().slice(0, 60);
+            var AI = [
+              [/chatgpt|openai/, 'ChatGPT'], [/perplexity/, 'Perplexity'], [/claude\.ai|anthropic/, 'Claude'],
+              [/gemini\.google|bard\.google/, 'Gemini'], [/copilot/, 'Copilot'], [/deepseek/, 'DeepSeek'],
+              [/grok\.com|(^|\.)x\.ai/, 'Grok'], [/meta\.ai/, 'Meta AI'], [/chat\.mistral|mistral\.ai/, 'Mistral'],
+              [/(^|\.)you\.com/, 'You.com'], [/phind/, 'Phind'], [/poe\.com/, 'Poe'], [/kagi\.com/, 'Kagi']
+            ];
+            var ai = '';
+            for (var i = 0; i < AI.length && !ai; i++) if (AI[i][0].test(ref) || AI[i][0].test(utm)) ai = AI[i][1];
+            s = JSON.stringify({ ai: ai, ref: ref, utm: utm, land: location.pathname });
+            sessionStorage.setItem(k, s);
+          }
+          window.vbxSrc = JSON.parse(s);
+        } catch (e) {}
       })();
     </script>
     <meta name="theme-color" content="#0b0d12" />
@@ -72,6 +108,7 @@ const url = abs(Astro.url.pathname);
       <slot />
     </main>
     {chrome && <Footer />}
+    {chrome && exitOffer && <ExitOffer />}
     <Analytics />
     <script>
       import '@/scripts/runtime';

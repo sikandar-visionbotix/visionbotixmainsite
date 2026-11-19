@@ -116,6 +116,6 @@ We may update these terms from time to time. The "updated" date at the top of th
 
 ## Contact us
 
-If you have a question about these terms, email [hello@visionbotix.com](mailto:hello@visionbotix.com) or write to Visionbotix SMC-Private Limited, 2nd Floor, Meridian Software Technology Park, Satellite Town, Murree Road, Rawalpindi, Pakistan.
+If you have a question about these terms, email [info@visionbotix.com](mailto:info@visionbotix.com) or write to Visionbotix SMC-Private Limited, 2nd Floor, Meridian Software Technology Park, Satellite Town, Murree Road, Rawalpindi, Pakistan.
 
 These terms were last reviewed on 19 November 2026.

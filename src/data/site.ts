@@ -16,11 +16,11 @@ export const site = {
   ogDefault: '/images/og/default.png',
 
   contact: {
-    email: 'hello@visionbotix.com', // owner will create this inbox (2026-11-19); also receives form enquiries
+    email: 'info@visionbotix.com', // owner, 2026-11-20: existing Zoho inbox; also receives form enquiries (api/contact.js default)
     phone: '+92 51 8896050', // TODO(owner): confirm still current (TRACKER "Needs from owner")
     phoneHref: 'tel:+92518896050',
     whatsapp: null as string | null, // TODO(owner): WhatsApp Business number, digits only, e.g. "923001234567"
-    bookingUrl: '/contact/', // TODO(owner): Cal.com or Calendly link; until then the contact page
+    bookingUrl: 'https://cal.com/sikandar-farooq-cbdx8q/free-strategy-call', // owner, 2026-11-20 (Cal.com, 30-min free strategy call)
   },
 
   address: {
@@ -93,10 +93,20 @@ export const site = {
    * no banner, no script and no "Cookie settings" link render at all. TODO(owner): paste the IDs.
    * GA4: Admin → Data streams → Measurement ID ("G-XXXXXXX"). Keep Google Signals off; set data retention to 14 months.
    * Clarity: clarity.microsoft.com → Settings → Project ID.
+   * Either paste them here, or (no code change) set PUBLIC_GA4_ID / PUBLIC_CLARITY_ID in Vercel → Settings →
+   * Environment Variables and redeploy. GA4 setup for the conversion events: overhaul/TRACKER.md (S6, D49).
    */
   analytics: {
-    ga4: null as string | null,
-    clarity: null as string | null,
+    ga4: (import.meta.env.PUBLIC_GA4_ID || null) as string | null,
+    clarity: (import.meta.env.PUBLIC_CLARITY_ID || null) as string | null,
+  },
+  /**
+   * Cloudflare Turnstile spam check on the contact and estimate forms (S6, D48). Set PUBLIC_TURNSTILE_SITE_KEY here or in
+   * Vercel, AND the matching TURNSTILE_SECRET_KEY in Vercel (server only), then redeploy. With neither set, the forms
+   * rely on the honeypot, fill time and origin checks. Never set only the secret: every form would be refused.
+   */
+  turnstile: {
+    siteKey: (import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || null) as string | null,
   },
   /** IndexNow key (Bing, Yandex, Seznam, Naver). The matching key file is public/<key>.txt. */
   indexNowKey: '53935372858f2b1b18f76e0002961315',
