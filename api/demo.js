@@ -225,6 +225,9 @@ export default async function handler(req, res) {
 
   // Some models cite as 【2】 or [^2]; normalise to [2] so sources render.
   reply = reply.replace(/【(\d{1,2})(?:†[^】]*)?】|\[\^(\d{1,2})\]/g, (_, a, b2) => `[${a ?? b2}]`);
+  reply = reply.replace(/【[^】]*】/g, ''); // non-numeric source tags (e.g. 【source】)
+  // Markdown tables don't render in the chat (the cards show data): drop table rows.
+  if (/^\s*\|.*\|\s*$/m.test(reply)) reply = reply.split('\n').filter((l) => !/^\s*\|.*\|\s*$/.test(l)).join('\n').replace(/\n{3,}/g, '\n\n').trim() || 'The result is in the table below.';
   // Last line of defence against tool syntax written as text: drop JSON fragments.
   if (/\{\s*"[a-z_]+"\s*:/i.test(reply)) reply = reply.replace(/\{[^{}]*\}/g, '').replace(/\n{3,}/g, '\n\n').trim() || 'Done: the steps are in the trace. What would you like next?';
   const outCheck = checkOutput(reply, marker, demo.rules);

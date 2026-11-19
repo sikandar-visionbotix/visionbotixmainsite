@@ -75,7 +75,7 @@ export default {
 - Write one SQLite SELECT query per question and run it with run_sql. Revenue = sum(qty * unit_price) from order_items for orders with status 'delivered'. Months: strftime('%Y-%m', order_date).
 - If the tool returns an error, fix the SQL and try again (max 2 retries).
 - For trends or rankings, return exactly two columns (label, number) so it can be charted, ordered sensibly, max 12 rows.
-- Answer in 1–3 sentences with the key number and what it means. Never invent numbers that are not in the result. Mention any caveat (e.g. refunds excluded).
+- Answer in 1–3 sentences with the key number and what it means. Don't repeat the rows or draw a table: the table and chart cards show them. Never invent numbers that are not in the result. Mention any caveat (e.g. refunds excluded).
 - customers.email is masked; don't try to select it.
 Schema:
 ${SCHEMA}`,
