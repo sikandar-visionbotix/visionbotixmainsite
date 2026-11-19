@@ -1,0 +1,189 @@
+---
+/**
+ * /demos/ hub (S7, D57): the live agent demo lab. Five live demos plus the site concierge, how the sandbox and its
+ * guardrails work, the agents whose live demos come in S7b (scripted previews meanwhile), FAQ and CTA.
+ */
+import '@/styles/page-kit.css';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Icon from '@/components/Icon.astro';
+import Button from '@/components/Button.astro';
+import Accordion from '@/components/Accordion.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import { liveDemos } from '@/data/demos';
+import { agents, agentGroups, type AgentGroup } from '@/data/catalogue';
+import { platformSteps, hubFaqs } from '@/data/demo-lab';
+import { itemList } from '@/lib/schema';
+
+// Group the demos by the agent's job (catalogue order).
+const groupOf = (agent: string) => agents.find((a) => a.slug === agent)?.group ?? 'answer';
+const groups = (Object.keys(agentGroups) as AgentGroup[]).map((g) => ({ key: g, ...agentGroups[g], demos: liveDemos.filter((d) => groupOf(d.agent) === g) })).filter((g) => g.demos.length);
+---
+
+<BaseLayout
+  seo={{
+    title: 'Live AI Agent Demos: Try Them Now',
+    description: `Try ${liveDemos.length} live AI agent demos: voice receptionist, support, WhatsApp, SDR, social media, SEO, ads, documents, text-to-SQL, MCP and more, with every step shown.`,
+  }}
+  pageType="CollectionPage"
+  schema={[itemList({ path: '/demos/', name: 'Live AI agent demos', items: liveDemos.map((d) => ({ name: `${d.agentName} live demo`, path: `/demos/${d.id}/` })) })]}
+>
+  <section class="container pk-hero" data-compact aria-labelledby="dl-title">
+    <div class="pk-copy">
+      <Breadcrumbs items={[{ name: 'Live demos', href: '/demos/' }]} />
+      <p class="pk-eyebrow eyebrow"><span class="pk-eyebrow-icon" aria-hidden="true"><Icon name="circle-play" size={14} /></span> Agent demo lab</p>
+      <h1 id="dl-title" class="pk-title">Live AI agent demos. Don't take our word for it.</h1>
+      <p class="lead pk-lead">
+        Put all {liveDemos.length} of our AI agents to work for fictional businesses: call a clinic, fix a damaged order, book a site visit, write a week of posts,
+        move an ad budget, process invoices, query a database, connect tools over MCP, or try to jailbreak a bank's chatbot. Each one uses real tools, follows
+        real rules and shows you every step it takes and why.
+      </p>
+      <ul role="list" class="pk-facts">
+        <li><Icon name="sparkles" size={16} /><span>Real AI, live, no sign-up</span></li>
+        <li><Icon name="shield-check" size={16} /><span>Guardrails and approval gates you can test</span></li>
+        <li><Icon name="wrench" size={16} /><span>A trace of every tool call</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <Section id="live" eyebrow="Live now" title="Pick an agent and put it to work." space="tight">
+    <nav class="dl-jump" aria-label="Demo groups">
+      {groups.map((g) => <a class="pk-chip" href={`#g-${g.key}`}>{g.label}</a>)}
+    </nav>
+    {
+      groups.map((g) => (
+        <section class="dl-group" id={`g-${g.key}`} aria-labelledby={`gh-${g.key}`}>
+          <h3 class="h4 dl-group-head" id={`gh-${g.key}`}>
+            {g.label} <span class="muted small">· {g.blurb}</span>
+          </h3>
+          <ul role="list" class="dl-grid" data-stagger>
+            {g.demos.map((d) => (
+              <li class="dl-card glass-strong spotlight lift" data-link>
+                <a class="card-cover" href={`/demos/${d.id}/`} aria-hidden="true" tabindex="-1" />
+                <div class="dl-card-head">
+                  <span class="pk-snap-icon" aria-hidden="true">
+                    <Icon name={d.icon} size={22} />
+                  </span>
+                  <div>
+                    <h4 class="h4">
+                      <a href={`/demos/${d.id}/`}>{d.agentName}</a>
+                    </h4>
+                    <p class="mono subtle small">{d.business}{d.id === 'mvp' ? '' : ' · fictional'}</p>
+                  </div>
+                </div>
+                <p class="muted small">{d.page.summary.split('. ')[0]!.replace(/\.$/, '')}.</p>
+                <p class="small dl-you">
+                  <Icon name="user-round" size={14} /> You play {d.youAre}.
+                </p>
+                <span class="pk-more small">
+                  Try it live <Icon name="arrow-right" size={14} />
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+    <div class="dl-card dl-concierge glass-subtle">
+      <div class="dl-card-head">
+        <span class="pk-snap-icon" aria-hidden="true"><Icon name="sparkles" size={22} /></span>
+        <div>
+          <h3 class="h4">Site concierge</h3>
+          <p class="mono subtle small">Visionbotix · this website</p>
+        </div>
+      </div>
+      <p class="muted small">Our own AI concierge answers questions about our agents, prices and process from this website, and sets up a call. It's in the corner of every page.</p>
+      <Button size="sm" variant="glass" icon="sparkles" data-open-concierge="" class="dl-ask">Ask our AI</Button>
+    </div>
+  </Section>
+
+  <Section id="how" eyebrow="How the lab works" title="Real agents, safe sandbox." lead="Every demo runs on the same platform we use to build agents for clients: provider-agnostic, tool-based, with guardrails in code and a full audit trail." space="tight">
+    <ol role="list" class="pk-cards" data-cols="4" data-stagger>
+      {
+        platformSteps.map((s, i) => (
+          <li class="pk-card glass-subtle">
+            <span class="pk-num mono">{String(i + 1).padStart(2, '0')}</span>
+            <h3 class="h4">{s.title}</h3>
+            <p class="muted small">{s.body}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </Section>
+
+  <Section id="faq" eyebrow="FAQ" title="About the demos." width="narrow" space="tight">
+    <Accordion items={hubFaqs} schema name="demos-faq" />
+  </Section>
+
+  <CtaBand title="Seen enough? Let's build <em>yours</em>." text="Book a free 30-minute call. We'll pick the right agent for your business and quote a fixed price within 24 hours." location="demos-hub" />
+</BaseLayout>
+
+<script>
+  document.querySelector('[data-open-concierge]')?.addEventListener('click', () => document.querySelector<HTMLButtonElement>('[data-cg-open]')?.click());
+</script>
+
+<style>
+  .dl-grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  }
+  .dl-card {
+    position: relative;
+    display: grid;
+    gap: var(--space-3);
+    align-content: start;
+    padding: clamp(1.1rem, 0.9rem + 1vw, 1.5rem);
+    border-radius: var(--radius-xl);
+  }
+  .dl-card > :not(.card-cover) {
+    position: relative;
+    z-index: 2;
+  }
+  .dl-card .card-cover {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    border-radius: inherit;
+  }
+  .dl-card:has(h4 a:focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+  }
+  .dl-card-head {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+  }
+  .dl-you {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    color: var(--fg-muted);
+  }
+  .dl-concierge :global(.dl-ask) {
+    justify-self: start;
+  }
+  .dl-jump {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-block-end: var(--space-5);
+  }
+  .dl-group {
+    display: grid;
+    gap: var(--space-3);
+    margin-block-end: var(--space-6);
+    scroll-margin-top: calc(var(--header-h) + 1rem);
+  }
+  .dl-group-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem;
+  }
+  .dl-concierge {
+    max-inline-size: 30rem;
+  }
+</style>

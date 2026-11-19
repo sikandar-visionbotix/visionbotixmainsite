@@ -1,0 +1,209 @@
+---
+/**
+ * /demos/<id>/ (S7, D57): one page per live agent demo. Indexable ("AI receptionist demo" and similar searches):
+ * answer-first hero, the full live widget (conversation + trace + panels), what to try, the guardrails, how the
+ * sandbox works, what it becomes in your business, FAQ, other demos and a CTA. Config in src/data/demos.ts; the agent
+ * runs in api/demo.js.
+ */
+import '@/styles/page-kit.css';
+import { getEntry } from 'astro:content';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Button from '@/components/Button.astro';
+import Icon from '@/components/Icon.astro';
+import Accordion from '@/components/Accordion.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import LiveDemo from '@/components/demo/LiveDemo.astro';
+import { liveDemos, type LiveDemoConfig } from '@/data/demos';
+import { priceLabel } from '@/data/pricing';
+import { site } from '@/data/site';
+import { abs, type FaqItem } from '@/lib/schema';
+import { platformSteps, demoFaqs } from '@/data/demo-lab';
+
+export function getStaticPaths() {
+  return liveDemos.map((demo) => ({ params: { slug: demo.id }, props: { demo } }));
+}
+interface Props {
+  demo: LiveDemoConfig;
+}
+const { demo } = Astro.props;
+const agent = await getEntry('agents', demo.agent);
+if (!agent) throw new Error(`demos: no agent content for ${demo.agent}`);
+const a = agent.data;
+const price = priceLabel(demo.agent);
+const path = `/demos/${demo.id}/`;
+const others = liveDemos.filter((d) => d.id !== demo.id);
+
+const faqs: FaqItem[] = [
+  {
+    q: `Is this ${demo.agentName.toLowerCase()} demo real AI or a recording?`,
+    a: `It is real. Every reply comes live from a large language model (by default the open-weight gpt-oss-120b, served by Groq or Cerebras, with Google Gemini as a backup) that decides which tools to call. The business, its calendar, orders and documents are fictional sample data, so you can try anything without consequences.`,
+  },
+  ...demoFaqs(demo),
+  {
+    q: `What would the ${demo.agentName} look like in my business?`,
+    a: `The same agent, connected to your real systems (${a.integrations.slice(0, 4).join(', ')} and more), trained on your own information and rules, with your approval gates. ${a.timeline}${price ? `, ${price.replace(/^From/, 'from')}` : ''}. See the <a href="/ai-agents/${demo.agent}/">${demo.agentName} page</a> for what is included.`,
+  },
+];
+const app = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  '@id': `${abs(path)}#demo`,
+  name: `${demo.agentName} live demo`,
+  url: abs(path),
+  description: demo.page.description,
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Any (web browser)',
+  isAccessibleForFree: true,
+  offers: { '@type': 'Offer', price: 0, priceCurrency: 'USD' },
+  provider: { '@id': `${site.url}/#organization` },
+};
+---
+
+<BaseLayout seo={{ title: demo.page.title, description: demo.page.description }} schema={[app]}>
+  <section class="container pk-hero dm-hero" data-compact aria-labelledby="dm-title">
+    <div class="pk-copy">
+      <Breadcrumbs items={[{ name: 'Live demos', href: '/demos/' }, { name: demo.agentName, href: path }]} />
+      <p class="pk-eyebrow eyebrow">
+        <span class="pk-eyebrow-icon" aria-hidden="true"><Icon name={demo.icon} size={14} /></span>
+        Live demo · {demo.agentName}
+      </p>
+      <h1 id="dm-title" class="pk-title">{demo.page.h1}</h1>
+      <p class="lead pk-lead">{demo.page.summary}</p>
+      <ul role="list" class="pk-facts">
+        <li><Icon name="user-round" size={16} /><span>You play {demo.youAre}</span></li>
+        <li><Icon name="shield-check" size={16} /><span>Fictional business, sample data, sandboxed tools</span></li>
+        <li><Icon name="wrench" size={16} /><span>Every step shown, with the agent's reason</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="container dm-stage" aria-label="Live demo">
+    <LiveDemo demo={demo} layout="full" uid="dm" autoload timeline={a.timeline} />
+  </section>
+
+  <Section id="try" eyebrow="Put it to the test" title="Things to try." space="tight">
+    <div class="pk-cols">
+      <div class="pk-col glass-subtle">
+        <h2 class="pk-col-head h4"><Icon name="circle-play" size={18} /> Try this</h2>
+        <ul role="list" class="pk-checks">
+          {
+            demo.tryThis.map((t) => (
+              <li>
+                <Icon name="arrow-right" size={15} />
+                {t}
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div class="pk-col glass-subtle">
+        <h2 class="pk-col-head h4"><Icon name="shield-check" size={18} /> Guardrails in this demo</h2>
+        <ul role="list" class="pk-checks">
+          {
+            demo.guardrails.map((g) => (
+              <li>
+                <Icon name="check" size={15} strokeWidth={2.5} />
+                {g}
+              </li>
+            ))
+          }
+        </ul>
+        <p class="small muted">The rules live in the tools, in code. The model can't talk its way past them, which is why a prompt injection doesn't get far.</p>
+      </div>
+    </div>
+  </Section>
+
+  <Section id="how" eyebrow="Under the hood" title="What happens when you send a message." space="tight">
+    <ol role="list" class="pk-cards" data-cols="4" data-stagger>
+      {
+        platformSteps.map((s, i) => (
+          <li class="pk-card glass-subtle">
+            <span class="pk-num mono">{String(i + 1).padStart(2, '0')}</span>
+            <h3 class="h4">{s.title}</h3>
+            <p class="muted small">{s.body}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </Section>
+
+  <Section id="yours" eyebrow="For your business" title={`The ${demo.agentName}, on your systems.`} space="tight">
+    <div class="dm-yours glass-strong">
+      <div>
+        <p class="lead">{a.tagline}</p>
+        <ul role="list" class="pk-facts">
+          {price && <li><Icon name="wallet" size={16} /><span><strong>{price}</strong></span></li>}
+          <li><Icon name="timer" size={16} /><span>{a.timeline}</span></li>
+          <li><Icon name="plug" size={16} /><span>Connects to {a.integrations.slice(0, 5).join(', ')} and more</span></li>
+        </ul>
+      </div>
+      <div class="cluster">
+        <Button href={`${site.contact.bookingUrl}?notes=${encodeURIComponent(`Interested in the ${demo.agentName} (from the live demo page)`)}`} icon="arrow-right" data-event="book_call" data-event-location={`demo-page-${demo.id}`}>Get this agent: book a call</Button>
+        <Button href={`/ai-agents/${demo.agent}/`} variant="glass">How the {demo.agentName} works</Button>
+      </div>
+    </div>
+  </Section>
+
+  <Section id="faq" eyebrow="FAQ" title="About this demo." width="narrow" space="tight">
+    <Accordion items={faqs} schema name="demo-faq" />
+  </Section>
+
+  <Section id="more" eyebrow="More live demos" title="Try another agent." space="tight">
+    <ul role="list" class="pk-cards" data-cols="4" data-stagger>
+      {
+        others.map((d) => (
+          <li class="pk-card glass-subtle spotlight lift" data-link>
+            <a class="card-cover" href={`/demos/${d.id}/`} aria-hidden="true" tabindex="-1" />
+            <span class="pk-icon" aria-hidden="true">
+              <Icon name={d.icon} size={20} />
+            </span>
+            <h3 class="h4">
+              <a href={`/demos/${d.id}/`}>{d.agentName}</a>
+            </h3>
+            <p class="muted small">{d.businessLine}</p>
+            <span class="pk-more small">
+              Try it live <Icon name="arrow-right" size={14} />
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <CtaBand
+    title="Want one that works on <em>your</em> data?"
+    text="Book a free 30-minute call. We'll map the agent to your systems and rules, and quote a fixed price within 24 hours."
+    secondary={{ label: 'See all live demos', href: '/demos/' }}
+    location={`demo-${demo.id}`}
+  />
+</BaseLayout>
+
+<style>
+  .dm-hero {
+    padding-block-end: var(--space-5);
+  }
+  .dm-stage {
+    padding-block-end: var(--section-y);
+  }
+  .dm-yours {
+    display: grid;
+    gap: var(--space-5);
+    padding: clamp(1.25rem, 1rem + 1.5vw, 2rem);
+    border-radius: var(--radius-xl);
+  }
+  .dm-yours > * {
+    position: relative;
+    z-index: 2;
+  }
+  @media (min-width: 900px) {
+    .dm-yours {
+      grid-template-columns: 1.4fr 1fr;
+      align-items: center;
+    }
+    .dm-yours .cluster {
+      justify-content: flex-end;
+    }
+  }
+</style>

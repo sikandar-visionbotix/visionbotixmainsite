@@ -16,6 +16,8 @@ import Accordion from '@/components/Accordion.astro';
 import CtaBand from '@/components/CtaBand.astro';
 import AgentDemo from '@/components/AgentDemo.astro';
 import AgentCard from '@/components/AgentCard.astro';
+import LiveDemo from '@/components/demo/LiveDemo.astro';
+import { demoForAgent } from '@/data/demos';
 import { site } from '@/data/site';
 import { agentGroups, agents as catalogue, services, industries, industriesLive } from '@/data/catalogue';
 const IndTag = industriesLive ? 'a' : 'span';
@@ -49,6 +51,8 @@ const relatedIndustries = d.related.industries.map((s) => industries.find((x) =>
 const agentName = (s: string) => catalogue.find((c) => c.slug === s)?.name ?? s;
 const updated = d.updated.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 const isProject = price.monthly === null;
+// S7: agents with a live demo get a "Try it live" switch in the hero; the scripted preview stays the default view.
+const live = demoForAgent(slug);
 /** Columns that avoid a lonely last card: 4 → 2×2 or 4 across, 5 → 5 across (wide screens), otherwise 3. */
 const cols = (n: number, four: 2 | 4) => (n === 4 ? four : n === 5 ? 5 : 3);
 ---
@@ -81,8 +85,33 @@ const cols = (n: number, four: 2 | 4) => (n === 4 ? four : n === 5 ? 5 : 3);
     </div>
 
     <div class="ag-visual" id="see-it-work" data-demo-slot={slug}>
-      <p class="demo-label mono"><span class="demo-dot" aria-hidden="true"></span>See it work</p>
-      <AgentDemo {...d.demo} icon={d.demo.icon ?? d.icon} id="agent-demo" />
+      <div class="demo-bar">
+        <p class="demo-label mono"><span class="demo-dot" aria-hidden="true"></span><span data-demo-label>See it work</span></p>
+        {
+          live ? (
+            <button type="button" class="demo-switch press" data-demo-live aria-controls="agent-live" aria-expanded="false">
+              <Icon name="circle-play" size={15} /> <span>Try it live</span>
+            </button>
+          ) : (
+            <a class="demo-switch" href="/demos/">
+              <Icon name="circle-play" size={15} /> <span>Try a live agent</span>
+            </a>
+          )
+        }
+      </div>
+      <div data-demo-scripted>
+        <AgentDemo {...d.demo} icon={d.demo.icon ?? d.icon} id="agent-demo" />
+      </div>
+      {
+        live && (
+          <div class="ag-live" id="agent-live" hidden>
+            <LiveDemo demo={live} layout="compact" uid="agent-live-demo" timeline={d.timeline} />
+            <a class="ag-live-full small" href={`/demos/${live.id}/`}>
+              Open the full demo with the trace and panels <Icon name="maximize-2" size={14} />
+            </a>
+          </div>
+        )
+      }
     </div>
   </section>
 
@@ -457,6 +486,59 @@ const cols = (n: number, four: 2 | 4) => (n === 4 ? four : n === 5 ? 5 : 3);
     letter-spacing: var(--tracking-eyebrow);
     text-transform: uppercase;
     color: var(--fg-muted);
+  }
+  .demo-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    inline-size: 100%;
+    max-inline-size: 31rem;
+  }
+  .demo-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.8rem;
+    border: 0;
+    border-radius: var(--radius-pill);
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--fg);
+    background: color-mix(in srgb, var(--fg) 8%, transparent);
+    box-shadow: inset 0 0 0 1px var(--border-strong);
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .demo-switch:hover {
+    background: color-mix(in srgb, var(--fg) 13%, transparent);
+  }
+  [data-demo-scripted],
+  .ag-live {
+    inline-size: 100%;
+    max-inline-size: 31rem;
+  }
+  [data-demo-scripted] {
+    display: flex;
+    justify-content: inherit;
+  }
+  [data-demo-scripted][hidden],
+  .ag-live[hidden] {
+    display: none;
+  }
+  .ag-live {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .ag-live-full {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    justify-self: center;
+    color: var(--fg-muted);
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
   .demo-dot {
     inline-size: 0.45rem;
@@ -894,3 +976,25 @@ const cols = (n: number, four: 2 | 4) => (n === 4 ? four : n === 5 ? 5 : 3);
     margin-block-start: var(--space-6);
   }
 </style>
+
+<script>
+  // "Try it live" (S7): swap the scripted preview for the live demo widget, and back.
+  const sw = document.querySelector<HTMLButtonElement>('[data-demo-live]');
+  if (sw) {
+    const scripted = document.querySelector<HTMLElement>('[data-demo-scripted]')!;
+    const live = document.querySelector<HTMLElement>('#agent-live')!;
+    const label = document.querySelector<HTMLElement>('[data-demo-label]')!;
+    sw.addEventListener('click', () => {
+      const on = live.hidden;
+      live.hidden = !on;
+      scripted.hidden = on;
+      sw.setAttribute('aria-expanded', String(on));
+      sw.querySelector('span')!.textContent = on ? 'Scripted preview' : 'Try it live';
+      label.textContent = on ? 'Live demo · real AI' : 'See it work';
+      if (on) {
+        live.querySelector<HTMLElement>('[data-live-demo]')!.dispatchEvent(new FocusEvent('focusin'));
+        window.dispatchEvent(new CustomEvent('vbx:track', { detail: { event: 'demo_open', demo: live.querySelector<HTMLElement>('[data-live-demo]')!.dataset.liveDemo, location: 'agent-hero' } }));
+      }
+    });
+  }
+</script>

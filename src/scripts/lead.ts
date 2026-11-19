@@ -45,6 +45,40 @@ function loadTurnstile(): Promise<void> {
   return tsLoading;
 }
 
+/**
+ * A Turnstile widget outside a form (S7 live demos): rendered into `box` on first use, invisible unless Cloudflare
+ * needs an interaction. token() resolves '' when there is no key or it fails (the server decides).
+ */
+export function turnstileBox(key: string | undefined, box: HTMLElement, action: string) {
+  let widget: string | undefined;
+  let started = false;
+  const start = () => {
+    if (!key || started) return;
+    started = true;
+    loadTurnstile()
+      .then(() => {
+        widget = window.turnstile!.render(box, { sitekey: key, action, appearance: 'interaction-only', theme: document.documentElement.dataset.theme === 'light' ? 'light' : 'dark' });
+      })
+      .catch(() => {});
+  };
+  return {
+    start,
+    async token(): Promise<string> {
+      if (!key) return '';
+      start();
+      for (let i = 0; i < 75; i++) {
+        const t = window.turnstile?.getResponse(widget);
+        if (t) return t;
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      return '';
+    },
+    reset() {
+      if (widget !== undefined) window.turnstile?.reset(widget);
+    },
+  };
+}
+
 export interface LeadForm {
   /** Resolves with the Turnstile token ('' when Turnstile is off or failed to load: the server decides). */
   token(): Promise<string>;

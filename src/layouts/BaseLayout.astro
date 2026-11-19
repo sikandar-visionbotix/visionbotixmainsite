@@ -15,6 +15,7 @@ import Header from '@/components/Header.astro';
 import Footer from '@/components/Footer.astro';
 import Analytics from '@/components/Analytics.astro';
 import ExitOffer from '@/components/ExitOffer.astro';
+import Concierge from '@/components/demo/Concierge.astro';
 import { site } from '@/data/site';
 import { graph, organization, website, webPage, abs, type Thing } from '@/lib/schema';
 
@@ -27,8 +28,10 @@ interface Props {
   pageType?: string;
   /** Exit-intent offer (S6, D47). Off on pages where someone is already converting (contact, estimate, thanks). */
   exitOffer?: boolean;
+  /** Site concierge, "Ask our AI" (S7). Off where it would get in the way (thanks page). */
+  concierge?: boolean;
 }
-const { seo, schema = [], backdrop = 'orbs', chrome = true, pageType, exitOffer = true } = Astro.props;
+const { seo, schema = [], backdrop = 'orbs', chrome = true, pageType, exitOffer = true, concierge = true } = Astro.props;
 const url = abs(Astro.url.pathname);
 ---
 
@@ -109,6 +112,7 @@ const url = abs(Astro.url.pathname);
     </main>
     {chrome && <Footer />}
     {chrome && exitOffer && <ExitOffer />}
+    {chrome && concierge && <Concierge />}
     <Analytics />
     <script>
       import '@/scripts/runtime';

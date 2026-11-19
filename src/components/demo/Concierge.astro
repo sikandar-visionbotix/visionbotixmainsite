@@ -1,0 +1,63 @@
+---
+/**
+ * Site concierge (S7): "Ask our AI" on every page. A launcher button and a non-modal panel holding a compact
+ * LiveDemo (id "concierge", api/_demo/demos/concierge.js). The demo client loads only when the panel first opens.
+ * The conversation is kept in sessionStorage (this tab only), so it follows the visitor from page to page, and the
+ * panel reopens on the next page if it was open.
+ */
+import Icon from '@/components/Icon.astro';
+import LiveDemo from './LiveDemo.astro';
+import { conciergeConfig } from '@/data/demos';
+---
+
+<div data-concierge>
+  <button type="button" class="cg-launch press" data-cg-open aria-haspopup="dialog" aria-controls="cg-panel">
+    <Icon name="sparkles" size={18} />
+    <span class="cg-launch-label">Ask our AI</span>
+  </button>
+  <dialog class="cg-panel" id="cg-panel" aria-label="Visionbotix AI concierge">
+    <LiveDemo demo={conciergeConfig} layout="compact" uid="cg" closable />
+  </dialog>
+</div>
+
+<script>
+  const KEY = 'vbx-cg';
+  const wrap = document.querySelector<HTMLElement>('[data-concierge]');
+  if (wrap) {
+    const panel = wrap.querySelector<HTMLDialogElement>('dialog')!;
+    const launch = wrap.querySelector<HTMLButtonElement>('[data-cg-open]')!;
+    const root = panel.querySelector<HTMLElement>('[data-live-demo]')!;
+    let api: { save: (open: boolean) => void; focus: () => void } | null = null;
+    const load = async () => (api ??= (await import('@/scripts/demo/client')).mount(root, KEY));
+    const open = async (focus = true) => {
+      panel.show();
+      launch.hidden = true;
+      launch.setAttribute('aria-expanded', 'true');
+      const a = await load();
+      a.save(true);
+      if (focus) a.focus();
+    };
+    const close = () => {
+      panel.close();
+      launch.hidden = false;
+      launch.setAttribute('aria-expanded', 'false');
+      api?.save(false);
+      launch.focus();
+    };
+    launch.addEventListener('click', () => {
+      window.dispatchEvent(new CustomEvent('vbx:track', { detail: { event: 'concierge_open' } }));
+      void open();
+    });
+    root.querySelector('[data-close]')?.addEventListener('click', close);
+    panel.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        close();
+      }
+    });
+    // Reopen on this page if it was open on the previous one (same tab).
+    try {
+      if (JSON.parse(sessionStorage.getItem(KEY) || '{}').open) void open(false);
+    } catch {}
+  }
+</script>

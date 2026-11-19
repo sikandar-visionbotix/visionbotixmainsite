@@ -151,7 +151,10 @@ const isExternal = (href: string) => /^https?:\/\//.test(href);
       }
     </ul>
     <div class="section-foot">
-      <Button href="/ai-agents/" variant="glass" icon="arrow-right">See all {agents.length} agents</Button>
+      <div class="cluster">
+        <Button href="/demos/" icon="circle-play" data-event="demo_hub_click" data-event-location="home-agents">Try all 16 agents live</Button>
+        <Button href="/ai-agents/" variant="glass" icon="arrow-right">See all {agents.length} agents</Button>
+      </div>
       <p class="small subtle">Also: SEO, ads, reviews, documents, data, MCP connectors and guardrail audits.</p>
     </div>
   </Section>

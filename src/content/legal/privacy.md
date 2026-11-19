@@ -1,7 +1,7 @@
 ---
 title: Privacy Policy
 description: How Visionbotix collects, uses and protects personal data on visionbotix.com, including inquiries, consent-based analytics and your rights.
-updated: 2026-11-19
+updated: 2026-11-20
 summary: We collect only what you choose to send us, plus analytics if you accept them in the cookie banner. We use your details to reply to you and prepare a quote, we never sell them, and you can ask us to delete them at any time.
 ---
 
@@ -80,9 +80,17 @@ These stay on your device, are not sent to us, and are needed for the site to wo
 
 Our hosting provider (Vercel) automatically records technical information when your browser requests a page, such as your IP address, browser type, the page requested and the time of the request. These logs are kept by our host for security, abuse prevention and reliability.
 
-### Features we may add later
+### Live AI demos
 
-We plan to add live AI agent demos to the site. If and when we add them, we will update this policy before they go live to explain what data they use.
+Our live demos (at /demos/ and on some agent pages) and the "Ask our AI" concierge in the corner of every page let you chat with AI agents. The demo businesses and their data are fictional. Here is what happens to what you send:
+
+- **What we process:** the messages you type or speak, your time zone (so the sample calendars show your dates), a small sandbox state that your browser sends back with each message, and your IP address for rate limits and the Cloudflare Turnstile human check.
+- **The AI providers:** your messages are sent to **Groq** (United States) to generate the reply and to score them for prompt-injection attempts. When Groq is busy, the same message goes to one of our backup providers instead: **Cerebras** (United States), **Google's Gemini API** or **OpenRouter** (United States), which passes it to the model's host. Some of these are free services whose terms allow the provider to use what you send to improve their products, which is one more reason to use made-up details. We do not use your messages to train AI models.
+- **Voice:** the receptionist demo uses your browser's own speech recognition. In Chrome, your audio is sent to Google to be transcribed; Safari may use Apple's service. We receive only the text. The agent's voice is produced by your browser.
+- **Logs:** for each turn we log the demo name, your message and the reply (shortened to 300 characters), which tools ran, any guardrail warnings and the timing. These logs stay in our host's logs for no more than 30 days, to stop abuse and improve the demos. We do not use them for advertising.
+- **The concierge:** if you ask it to have our team contact you, it shows exactly what it will send (your name, email, what you need and, if you gave them, budget and timeline, plus your messages in that chat). Nothing is sent until you press **Send**; after that it is handled like a contact form enquiry.
+
+Please use made-up details in the demos: they are a sandbox. A filter removes card numbers and API keys before a message reaches the AI.
 
 ## Cookies and similar technologies
 
@@ -95,6 +103,7 @@ The table below lists the cookies and browser storage the site uses.
 | Visit source | Visionbotix (sessionStorage) | Remembers how this visit started (the referring website and first page), for a form you choose to send and, if you accept analytics, for measurement | Functional | Until you close the tab |
 | Offer shown | Visionbotix (localStorage) | Remembers that you have seen our "before you go" offer, so it is not shown again | Functional | Until you clear it |
 | Enquiry sent | Visionbotix (sessionStorage) | Stops that offer appearing after you have sent us a form | Functional | Until you close the tab |
+| Concierge chat | Visionbotix (sessionStorage) | Keeps your conversation with the "Ask our AI" concierge while you move between pages | Functional | Until you close the tab |
 | `_ga`, `_ga_*` | Google Analytics 4 | Distinguishes visitors and sessions for usage statistics | Analytics, consent required | Up to 13 months |
 | `_clck`, `_clsk` | Microsoft Clarity | Links page views into sessions for heatmaps and replays | Analytics, consent required | Up to 1 year |
 
@@ -105,6 +114,7 @@ We do not use advertising cookies.
 If you are in the European Union, the European Economic Area or the United Kingdom, we rely on the following legal bases under the GDPR and UK GDPR:
 
 - **Inquiries, form submissions, call bookings and messages:** our legitimate interest in responding to people who contact us, and taking steps at your request before entering into a contract.
+- **Live AI demos and the concierge:** our legitimate interest in providing the demo you asked to use and preventing its abuse; for a concierge request to contact you, taking steps at your request before entering into a contract.
 - **Analytics:** your consent, which you can withdraw at any time through the Cookie settings link.
 - **Strictly necessary storage and server logs:** our legitimate interest in running a secure, reliable website that remembers your basic settings.
 
@@ -114,7 +124,8 @@ We share personal data only with service providers that help us run the site and
 
 - **Vercel**, our hosting provider, which serves the site, runs the contact form function and keeps server logs.
 - **Resend**, our email delivery provider, which delivers form submissions to our inbox.
-- **Cloudflare**, if our forms use its Turnstile spam check.
+- **Cloudflare**, for its Turnstile spam check on our forms and live demos.
+- **Groq**, which runs the AI models behind the live demos and the concierge, and, when it is busy, **Cerebras**, **Google** (Gemini API) or **OpenRouter** and the model host it routes to.
 - **The spreadsheet or CRM service** we use to keep track of enquiries.
 - **Cal.com**, our scheduling provider, if you book a call.
 - **Google** and **Microsoft**, for analytics, only if you have given consent.
@@ -136,6 +147,7 @@ Where personal data is transferred out of the EU, EEA or UK, we rely on our prov
 - **Analytics data:** up to 13 months for Google Analytics 4 and up to 1 year for Microsoft Clarity.
 - **Browser storage:** until you clear it from your browser.
 - **Server logs:** for the period set by our hosting provider for security and reliability purposes.
+- **Live demo logs:** no more than 30 days.
 
 We delete or anonymize data when it is no longer needed.
 

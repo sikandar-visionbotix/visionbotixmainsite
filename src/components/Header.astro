@@ -39,6 +39,7 @@ const wa = site.contact.whatsapp;
         </li>
         {industriesLive && <li><a class="nav-item" href="/industries/" aria-current={isCurrent('/industries/') ? 'page' : undefined}>Industries</a></li>}
         <li><a class="nav-item" href="/work/" aria-current={isCurrent('/work/') ? 'page' : undefined}>Work</a></li>
+        <li><a class="nav-item" href="/demos/" aria-current={isCurrent('/demos/') ? 'page' : undefined}>Live demos</a></li>
         <li><a class="nav-item" href="/pricing/" aria-current={isCurrent('/pricing/') ? 'page' : undefined}>Pricing</a></li>
         <li>
           <button class="nav-item" popovertarget="mm-company" aria-controls="mm-company" aria-expanded="false">
@@ -89,6 +90,7 @@ const wa = site.contact.whatsapp;
     <aside class="mega-aside glass-subtle">
       <p class="eyebrow">Productised agents</p>
       <p class="mega-aside-title">Live in about two weeks, with guardrails, approvals and an audit log.</p>
+      <a class="link" href="/demos/">Try all 16 agents live <span aria-hidden="true">→</span></a>
       <a class="link" href="/ai-agents/">Browse all 16 agents <span aria-hidden="true">→</span></a>
       <a class="link" href="/services/ai-agent-development/">Custom agent development <span aria-hidden="true">→</span></a>
     </aside>
@@ -242,6 +244,7 @@ const wa = site.contact.whatsapp;
     </details>
     <ul role="list" class="sheet-links">
       <li><a href="/work/">Work</a></li>
+      <li><a href="/demos/">Live demos</a></li>
       <li><a href="/pricing/">Pricing</a></li>
       {
         companyLinks.map((c) => (

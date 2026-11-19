@@ -9,6 +9,7 @@ import { getServices } from '@/lib/services';
 import { getProducts } from '@/lib/products';
 import { getWork } from '@/lib/work';
 import { typicalProjects, estimate, rangeLabel } from '@/data/estimator';
+import { liveDemos } from '@/data/demos';
 
 const u = (p: string) => new URL(p, site.url).href;
 const f = site.facts;
@@ -42,6 +43,9 @@ export async function llmsTxt(full: boolean): Promise<string> {
     L.push(`- [${a.data.name}](${u(`/ai-agents/${a.id}/`)}): ${a.data.summary.replace(/\s+/g, ' ')} ${priceLabel(a.id) ?? ''}`.trim());
     if (full && a.data.faq.length) L.push(faq(a.data.faq));
   }
+  L.push('', '## Live AI agent demos (try them in the browser, no sign-up)', '');
+  for (const d of liveDemos) L.push(`- [${d.agentName} live demo](${u(`/demos/${d.id}/`)}): ${d.page.summary}`);
+  L.push(`- [All live demos](${u('/demos/')}): ${liveDemos.length} agents live on fictional businesses, with every tool call, guardrail and approval shown. A site concierge on every page answers questions about Visionbotix.`);
   L.push('', '## Services', '');
   for (const s of services) {
     L.push(`- [${s.data.name}](${u(`/services/${s.id}/`)}): ${s.data.summary.replace(/\s+/g, ' ')} ${serviceLabel(s.id) ?? ''}`.trim());

@@ -1,0 +1,284 @@
+---
+/**
+ * Live agent demo widget (S7, D19/D57): the shared UI kit for every live demo. One shell, four surfaces:
+ *   phone     browser voice call (speech recognition + speech synthesis, typing as the fallback)
+ *   chat      website chat with numbered sources
+ *   whatsapp  WhatsApp-style thread with product, order and checkout cards
+ *   sms       a sample web enquiry, then an SMS thread (speed to lead)
+ * plus side panels: the trace ("what the agent did and why": tool calls, guardrails, approval gates), calendar, CRM
+ * record, basket, actions and sources. Layout "full" (demo pages: conversation + side panel) or "compact" (agent page
+ * hero and the concierge: the trace folds under the conversation).
+ *
+ * Markup only; src/scripts/demo/client.ts brings it to life (loaded on the first interaction, see `autoload`). Without
+ * JS the widget explains that the demo needs JavaScript. The agent itself runs server-side (api/demo.js).
+ */
+import '@/styles/demo.css';
+import Icon from '@/components/Icon.astro';
+import Button from '@/components/Button.astro';
+import { site } from '@/data/site';
+import { priceLabel } from '@/data/pricing';
+import type { LiveDemoConfig, Panel } from '@/data/demos';
+import type { IconName } from '@/lib/icons';
+
+interface Props {
+  demo: LiveDemoConfig;
+  layout?: 'full' | 'compact';
+  /** Unique per page. */
+  uid?: string;
+  /** Start the script right away (demo pages) instead of on first interaction. */
+  autoload?: boolean;
+  /** Agent timeline line for the conversion card, e.g. "Live in about 2 weeks". */
+  timeline?: string | undefined;
+  /** Adds a close button (the concierge panel). */
+  closable?: boolean;
+  class?: string;
+}
+const { demo, layout = 'full', uid = `ld-${demo.id}`, autoload = false, timeline, closable = false, class: className } = Astro.props;
+const price = priceLabel(demo.agent);
+const panelLabel: Record<Panel, { label: string; icon: IconName }> = {
+  calendar: { label: 'Calendar', icon: 'calendar' },
+  calls: { label: 'Call log', icon: 'phone-call' },
+  actions: { label: 'Actions', icon: 'list-checks' },
+  basket: { label: 'Basket', icon: 'shopping-bag' },
+  crm: { label: 'CRM record', icon: 'database' },
+  sources: { label: 'Sources', icon: 'file-text' },
+  board: { label: demo.boardLabel ?? 'Status', icon: 'list-checks' },
+};
+// Icons the script clones into steps, cards and buttons (no icon code in the bundle).
+const icons: IconName[] = ['shield-check', 'wrench', 'user-check', 'circle-check', 'circle-x', 'ban', 'badge-check', 'calendar-check', 'shopping-bag', 'file-text', 'arrow-right', 'check-check', 'triangle-alert', 'sparkles', 'inbox', 'phone-call', 'list-checks', 'table', 'chart-column', 'database'];
+const projects = ['Kitchen remodel', 'Bathroom remodel', 'Basement finishing', 'Home addition', 'Something else'];
+const budgets = ['Under $15k', '$15k–$40k', '$40k–$80k', '$80k+', 'Not sure yet'];
+---
+
+<section
+  class:list={['ld', `ld-${layout}`, className]}
+  id={uid}
+  data-live-demo={demo.id}
+  data-surface={demo.surface}
+  data-layout={layout}
+  data-autoload={autoload ? '' : undefined}
+  data-turnstile={site.turnstile.siteKey ?? undefined}
+  data-booking={site.contact.bookingUrl}
+  data-agent={demo.agent}
+  data-agent-name={demo.agentName}
+  data-price={price ?? undefined}
+  data-timeline={timeline}
+  data-greeting={demo.greeting}
+  data-approver={demo.approver}
+  aria-label={`Live demo: ${demo.agentName} for ${demo.business} (fictional)`}
+>
+  <header class="ld-head">
+    <span class="ld-avatar" aria-hidden="true"><Icon name={demo.icon} size={18} /></span>
+    <div class="ld-id">
+      <p class="ld-name">{demo.business}</p>
+      <p class="ld-line mono"><span class="ld-dot" aria-hidden="true"></span><span data-status>{demo.businessLine}</span></p>
+    </div>
+    {
+      demo.roles && (
+        <div class="ld-role" role="group" aria-label={demo.roleLabel ?? 'Role'} data-role-label={demo.roleLabel ?? 'Role'}>
+          {demo.roles.map((r, i) => (
+            <button type="button" data-role={r.value} aria-pressed={i === 0 ? 'true' : 'false'}>
+              {r.label}
+            </button>
+          ))}
+        </div>
+      )
+    }
+    <span class="ld-badge mono" title="Live AI on fictional sample data">Live · sandbox</span>
+    <button type="button" class="ld-icon-btn" data-reset aria-label="Restart the conversation" title="Restart"><Icon name="rotate-ccw" size={16} /></button>
+    {closable && <button type="button" class="ld-icon-btn" data-close aria-label="Close" title="Close"><Icon name="x" size={18} /></button>}
+  </header>
+
+  <div class="ld-body">
+    <div class="ld-main">
+      {
+        demo.surface === 'phone' && (
+          <div class="ld-call" data-call="idle">
+            <div class="ld-call-id">
+              <p class="ld-call-name">{demo.business}</p>
+              <p class="ld-call-num mono" data-call-status>
+                +1 (555) 010-0142 · fictional
+              </p>
+            </div>
+            <div class="ld-wave" aria-hidden="true">
+              <i /><i /><i /><i /><i /><i /><i />
+            </div>
+            <div class="ld-call-btns">
+              <button type="button" class="ld-call-go" data-call-start>
+                <Icon name="phone-call" size={20} /> Call the clinic
+              </button>
+              <button type="button" class="ld-round" data-call-mic hidden aria-pressed="false" aria-label="Mute microphone">
+                <Icon name="mic" size={20} />
+              </button>
+              <button type="button" class="ld-round ld-end" data-call-end hidden aria-label="End call">
+                <Icon name="phone-off" size={20} />
+              </button>
+            </div>
+            <p class="ld-call-note small muted" data-call-note>
+              Uses your microphone (or type below). You hear the agent through your speakers.
+            </p>
+          </div>
+        )
+      }
+
+      {
+        demo.surface === 'sms' && (
+          <form class="ld-lead" data-lead-form>
+            <p class="ld-lead-title">
+              <Icon name="inbox" size={16} /> Website enquiry form <span class="mono subtle">· edit anything, use made-up details</span>
+            </p>
+            <div class="ld-lead-grid">
+              <label>
+                <span>First name</span>
+                <input name="name" value="Sam" maxlength="40" autocomplete="off" />
+              </label>
+              <label>
+                <span>Mobile</span>
+                <input name="phone" value="(512) 555-0147" maxlength="20" autocomplete="off" />
+              </label>
+              <label>
+                <span>Project</span>
+                <select name="project">{projects.map((p) => <option>{p}</option>)}</select>
+              </label>
+              <label>
+                <span>ZIP code</span>
+                <input name="zip" value="78704" inputmode="numeric" maxlength="5" autocomplete="off" />
+              </label>
+              <label>
+                <span>Budget</span>
+                <select name="budget">{budgets.map((b, i) => <option selected={i === 2}>{b}</option>)}</select>
+              </label>
+              <label class="ld-lead-wide">
+                <span>Message</span>
+                <textarea name="message" rows="2" maxlength="240">We'd like to redo our kitchen: new cabinets and an island.</textarea>
+              </label>
+            </div>
+            <Button type="submit" icon="send" class="ld-lead-send">Send enquiry</Button>
+          </form>
+        )
+      }
+
+      <ol class="ld-feed" data-feed aria-live="polite" aria-label="Conversation">
+        {
+          demo.greeting && (
+            <li class="m m-agent">
+              <p class="bubble">{demo.greeting}</p>
+            </li>
+          )
+        }
+      </ol>
+
+      <div class="ld-chips" data-chips>
+        {
+          demo.starters.map((s) => (
+            <button type="button" class="ld-chip" data-starter={s}>
+              {s}
+            </button>
+          ))
+        }
+      </div>
+
+      <form class="ld-composer" data-composer>
+        <label class="visually-hidden" for={`${uid}-input`}>Your message</label>
+        <textarea
+          id={`${uid}-input`}
+          rows="1"
+          maxlength="600"
+          data-input
+          placeholder={demo.surface === 'phone' ? 'Or type what you would say…' : demo.surface === 'sms' ? 'Send the enquiry first…' : 'Type a message…'}
+          disabled={demo.surface === 'sms'}></textarea>
+        <button type="submit" class="ld-send" aria-label="Send" data-send disabled={demo.surface === 'sms'}><Icon name="send-horizontal" size={18} /></button>
+      </form>
+      <p class="ld-foot mono" data-foot>
+        Live AI · fictional business · don't share real personal data · <a href="/privacy/#live-ai-demos">how demo chats are handled</a>
+      </p>
+      <noscript><p class="ld-foot">This live demo needs JavaScript. The scripted preview on the agent page works without it.</p></noscript>
+    </div>
+
+    <aside class="ld-side" aria-label="What the agent did">
+      <details class="ld-fold" open={layout === 'full'} data-fold>
+        <summary class="ld-tabs-sum mono"><Icon name="wrench" size={14} /> What the agent did and why <span class="ld-count" data-count>0</span></summary>
+        <div class="ld-tabs" role="tablist" aria-label="Demo panels">
+          <button type="button" role="tab" aria-selected="true" data-tab="trace" id={`${uid}-tab-trace`} aria-controls={`${uid}-pane-trace`}>Trace</button>
+          {
+            demo.panels.map((p) => (
+              <button type="button" role="tab" aria-selected="false" data-tab={p} id={`${uid}-tab-${p}`} aria-controls={`${uid}-pane-${p}`} tabindex="-1">
+                {panelLabel[p].label}
+              </button>
+            ))
+          }
+        </div>
+        <section class="ld-pane" role="tabpanel" data-pane="trace" id={`${uid}-pane-trace`} aria-labelledby={`${uid}-tab-trace`}>
+          <ol class="ld-trace" data-trace></ol>
+          <p class="ld-empty small muted" data-trace-empty>Every tool call, guardrail check and approval appears here, with the agent's reason.</p>
+          <ul role="list" class="ld-guards small">
+            {
+              demo.guardrails.map((g) => (
+                <li>
+                  <Icon name="shield-check" size={14} />
+                  {g}
+                </li>
+              ))
+            }
+          </ul>
+        </section>
+        {
+          demo.panels.map((p) => (
+            <section class="ld-pane" role="tabpanel" data-pane={p} id={`${uid}-pane-${p}`} aria-labelledby={`${uid}-tab-${p}`} hidden>
+              <div data-panel={p}>
+                <p class="ld-empty small muted">Loading the sandbox…</p>
+              </div>
+            </section>
+          ))
+        }
+      </details>
+    </aside>
+  </div>
+
+  <div class="ld-ts" data-ts></div>
+  {/* Buttons the script clones (Button styles are scoped, so they must come from the component). */}
+  <template data-tpl="a-primary"><Button href="#" size="sm" icon="arrow-right">x</Button></template>
+  <template data-tpl="a-glass"><Button href="#" size="sm" variant="glass">x</Button></template>
+  <template data-tpl="b-primary"><Button size="sm">x</Button></template>
+  <template data-tpl="b-glass"><Button size="sm" variant="glass">x</Button></template>
+  {
+    icons.map((n) => (
+      <template data-icon={n}>
+        <Icon name={n} size={15} />
+      </template>
+    ))
+  }
+</section>
+
+<script>
+  // Loads the demo client on demand: right away for data-autoload, otherwise on the first interaction (focus,
+  // pointer or keyboard inside the widget), so pages that only show a widget pay no JS until it is used.
+  // A click or submit that lands before the script is ready is held and replayed once it is.
+  document.querySelectorAll<HTMLElement>('[data-live-demo]:not([data-concierge] [data-live-demo])').forEach((root) => {
+    let ready = false;
+    let pending: HTMLElement | null = null;
+    const hold = (e: Event) => {
+      if (ready) return;
+      const t = e.type === 'submit' ? (e.target as HTMLFormElement).querySelector<HTMLElement>('[type="submit"]') : (e.target as HTMLElement).closest<HTMLElement>('button');
+      if (t) {
+        pending = t;
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    root.addEventListener('click', hold, true);
+    root.addEventListener('submit', hold, true);
+    let started = false;
+    const go = () => {
+      if (started) return;
+      started = true;
+      import('@/scripts/demo/client').then((m) => {
+        m.mount(root);
+        ready = true;
+        pending?.click();
+      });
+    };
+    if (root.hasAttribute('data-autoload')) return go();
+    ['pointerdown', 'focusin', 'keydown'].forEach((e) => root.addEventListener(e, go, { once: true, passive: true }));
+  });
+</script>
