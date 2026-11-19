@@ -8,6 +8,7 @@ import { getAgents } from '@/lib/agents';
 import { getServices } from '@/lib/services';
 import { getProducts } from '@/lib/products';
 import { getWork } from '@/lib/work';
+import { getIndustries, teamPricing } from '@/lib/industries';
 import { typicalProjects, estimate, rangeLabel } from '@/data/estimator';
 import { liveDemos } from '@/data/demos';
 
@@ -15,7 +16,7 @@ const u = (p: string) => new URL(p, site.url).href;
 const f = site.facts;
 
 export async function llmsTxt(full: boolean): Promise<string> {
-  const [agents, services, products, work] = await Promise.all([getAgents(), getServices(), getProducts(), getWork()]);
+  const [agents, services, products, work, industries] = await Promise.all([getAgents(), getServices(), getProducts(), getWork(), getIndustries()]);
   const minSetup = Math.min(...Object.values(agentPrices).filter((p) => p.monthly).map((p) => p.setup));
   const minMonthly = Math.min(...Object.values(agentPrices).filter((p) => p.monthly).map((p) => p.monthly!));
   const L: string[] = [];
@@ -51,6 +52,14 @@ export async function llmsTxt(full: boolean): Promise<string> {
     L.push(`- [${s.data.name}](${u(`/services/${s.id}/`)}): ${s.data.summary.replace(/\s+/g, ' ')} ${serviceLabel(s.id) ?? ''}`.trim());
     if (full && s.data.faq.length) L.push(faq(s.data.faq));
   }
+  L.push('', '## Industries', '');
+  for (const i of industries) {
+    const t = teamPricing(i.data);
+    L.push(
+      `- [AI agents for ${i.data.who}](${u(`/industries/${i.id}/`)}): ${i.data.summary.replace(/\s+/g, ' ')} Rules we design around: ${i.data.compliance.map((c) => `${c.name} (${c.region})`).join(', ')}. ${t.headline.name} ${t.headline.label.replace(/^From/, 'from')}.`,
+    );
+    if (full && i.data.faq.length) L.push(faq(i.data.faq));
+  }
   L.push('', '## Our own products', '');
   for (const p of products) {
     L.push(`- [${p.data.name}](${u(`/products/${p.id}/`)}): ${p.data.summary.replace(/\s+/g, ' ')}${p.data.externalUrl ? ` Live at ${p.data.externalUrl}` : ''}`);
@@ -63,6 +72,7 @@ export async function llmsTxt(full: boolean): Promise<string> {
   L.push(
     `- [About](${u('/about/')})`,
     `- [How we work](${u('/process/')})`,
+    `- [Industries](${u('/industries/')})`,
     `- [Pricing](${u('/pricing/')})`,
     `- [Project cost estimator](${u('/estimate/')})`,
     `- [Contact](${u('/contact/')})`,

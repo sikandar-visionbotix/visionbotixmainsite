@@ -26,6 +26,7 @@ highlights:
 stack: [Python, OpenCV, TensorFlow, WebRTC, Flask]
 outcomes: []
 services: [computer-vision, ai-automation, web-app-development]
+industries: [education]
 featured: false
 verified: true
 provenance: icasta

@@ -25,6 +25,7 @@ highlights:
 stack: [Computer vision, Face recognition, Thermal sensing, Embedded hardware]
 outcomes: []
 services: [computer-vision, iot-embedded]
+industries: [education]
 featured: false
 verified: true
 provenance: youtube

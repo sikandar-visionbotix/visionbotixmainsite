@@ -89,13 +89,14 @@ export const products = [
 export const securityProducts = products.filter((p) => p.group === 'security');
 
 /**
- * Industry pages arrive in S8. Until then industry names render as plain text (no links), so the launch has no
- * broken links. Flip to true when /industries/ and its 12 pages exist.
+ * Industry pages (S8): /industries/ and one page per entry below (content in src/content/industries/, read through
+ * getIndustries(), which fails the build if this list and the content drift). Set to false to render industry names
+ * as plain text again (D44).
  */
-export const industriesLive = false;
+export const industriesLive = true;
 
 export const industries = [
-  { slug: 'healthcare', name: 'Healthcare', icon: 'stethoscope' as IconName },
+  { slug: 'healthcare', name: 'Healthcare', icon: 'heart-pulse' as IconName },
   { slug: 'dental-clinics', name: 'Dental clinics', icon: 'stethoscope' as IconName },
   { slug: 'real-estate', name: 'Real estate', icon: 'house' as IconName },
   { slug: 'ecommerce', name: 'E-commerce', icon: 'shopping-cart' as IconName },

@@ -24,6 +24,7 @@ highlights:
 stack: [Python, scikit-learn, Pandas, PostgreSQL, React]
 outcomes: []
 services: [ai-automation, custom-software-development]
+industries: [ecommerce]
 featured: false
 verified: true
 provenance: icasta

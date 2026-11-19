@@ -1,0 +1,491 @@
+---
+/**
+ * /industries/ hub (S8): 12 sectors with their recommended AI team and starting price, sector bundles, the rules we
+ * design around per sector (a visible fact table for AI search), how a rollout runs, FAQ. Copy in
+ * `src/data/industries-hub.ts`; industries from getIndustries(); prices from pricing.ts via teamPricing().
+ */
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Button from '@/components/Button.astro';
+import Icon from '@/components/Icon.astro';
+import TextReveal from '@/components/TextReveal.astro';
+import Steps from '@/components/Steps.astro';
+import Accordion from '@/components/Accordion.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import { site } from '@/data/site';
+import { bundles, money } from '@/data/pricing';
+import { bundleCopy } from '@/data/agents-hub';
+import { industriesHero, industrySteps, hubFaqs } from '@/data/industries-hub';
+import { getIndustries, teamPricing, agentItem } from '@/lib/industries';
+import { itemList } from '@/lib/schema';
+
+const all = await getIndustries();
+const path = '/industries/';
+const cards = all.map((e) => ({ entry: e, pricing: teamPricing(e.data), team: e.data.agents.map((r) => agentItem(r.id)) }));
+const deskList = bundles.map((b) => ({
+  ...b,
+  copy: bundleCopy[b.slug]!,
+  sectors: all.filter((e) => e.data.bundle === b.slug),
+}));
+---
+
+<BaseLayout
+  seo={{
+    title: 'AI Agents and Software by Industry',
+    description: 'AI agents for 12 industries: healthcare, dental, real estate, e-commerce, legal, finance, logistics and more, with sector rules built in and public prices.',
+  }}
+  pageType="CollectionPage"
+  schema={[itemList({ path, name: 'Industries Visionbotix builds for', items: all.map((e) => ({ name: `AI agents for ${e.data.who}`, path: `/industries/${e.id}/` })) })]}
+>
+  <!-- ============ Hero ============ -->
+  <section class="container hub-hero" aria-labelledby="hub-title">
+    <div class="hub-copy">
+      <Breadcrumbs items={[{ name: 'Industries', href: path }]} />
+      <p class="eyebrow">Industries · {all.length} sectors</p>
+      <TextReveal id="hub-title" text={industriesHero.title} accent={industriesHero.accent} class="display hub-title" />
+      <p class="lead hub-lead">{industriesHero.lead}</p>
+      <div class="cluster">
+        <Button href={site.contact.bookingUrl} size="lg" icon="arrow-right" data-event="book_call" data-event-location="industries-hub-hero">Book a free strategy call</Button>
+        <Button href="#sectors" size="lg" variant="glass">Find your industry</Button>
+      </div>
+      <ul role="list" class="hub-points">
+        {
+          industriesHero.points.map((p) => (
+            <li>
+              <Icon name="check" size={16} />
+              {p}
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+
+    <aside class="roster glass-strong" aria-labelledby="roster-title">
+      <p class="roster-head">
+        <span id="roster-title" class="roster-title">Pick your sector</span>
+        <span class="mono subtle">{all.length} industries</span>
+      </p>
+      <ul role="list" class="roster-list">
+        {
+          all.map((e) => (
+            <li>
+              <a class="roster-item" href={`/industries/${e.id}/`}>
+                <Icon name={e.data.icon} size={14} />
+                {e.data.name}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="roster-foot small muted"><span class="live-dot" aria-hidden="true"></span> Every agent has a live demo you can try now</p>
+    </aside>
+  </section>
+
+  <!-- ============ Sectors ============ -->
+  <Section id="sectors" eyebrow="Industries" title="Choose your industry." lead="Each page shows the AI team we recommend, what it does in a normal day, the rules we design around and what it costs.">
+    <ul role="list" class="sectors" data-stagger>
+      {
+        cards.map(({ entry: e, pricing, team }) => (
+          <li class="sector glass-subtle spotlight lift">
+            <a class="card-cover" href={`/industries/${e.id}/`} aria-hidden="true" tabindex="-1" />
+            <div class="sector-top">
+              <span class="sector-icon" aria-hidden="true">
+                <Icon name={e.data.icon} size={20} />
+              </span>
+              {pricing.bundle && <span class="sector-badge mono">{pricing.bundle.name}</span>}
+            </div>
+            <h3 class="h4">
+              <a href={`/industries/${e.id}/`}>{e.data.name}</a>
+            </h3>
+            <p class="muted small">{e.data.tagline}</p>
+            <ul role="list" class="sector-team">
+              {team.map((a) => (
+                <li>{a.name.replace(/ Agent$/, '')}</li>
+              ))}
+            </ul>
+            <p class="sector-price mono small">
+              {pricing.headline.name}: {pricing.headline.label.replace(/^From /, 'from ')}
+            </p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <!-- ============ Bundles ============ -->
+  <Section id="bundles" band eyebrow="Sector bundles" title="Hire a whole desk, for less." lead="Agents that work best together, packaged for a sector. Each bundle costs less than buying the same agents separately.">
+    <ul role="list" class="desks" data-stagger>
+      {
+        deskList.map((b) => (
+          <li class="desk glass-subtle">
+            <span class="desk-icon" aria-hidden="true">
+              <Icon name={b.copy.icon} size={18} />
+            </span>
+            <h3 class="h4">{b.name}</h3>
+            <p class="small muted">{b.copy.blurb}</p>
+            <p class="desk-price">
+              From <strong>{money(b.setup)}</strong> + <strong>{money(b.monthly)}</strong>/mo
+            </p>
+            <p class="desk-for small">
+              {b.sectors.length > 0 ? (
+                <>
+                  <span class="mono subtle">For</span>
+                  {b.sectors.map((s) => (
+                    <a href={`/industries/${s.id}/`}>{s.data.name}</a>
+                  ))}
+                </>
+              ) : (
+                <>
+                  <span class="mono subtle">For</span> {b.copy.forWho}
+                </>
+              )}
+            </p>
+          </li>
+        ))
+      }
+    </ul>
+    <div class="sec-foot">
+      <Button href="/ai-agents/#bundles" variant="glass" icon="arrow-right">Compare the bundles</Button>
+    </div>
+  </Section>
+
+  <!-- ============ Rules at a glance ============ -->
+  <Section id="rules" eyebrow="Compliance by sector" title="The rules we design around, sector by sector." lead="Visible on every industry page in detail. Compliance stays your responsibility; we build the setup so your compliance lead can sign it off." width="narrow">
+    <div class="rules glass-subtle" data-reveal>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Industry</th>
+            <th scope="col">Rules we design around</th>
+            <th scope="col">Lead agent</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            cards.map(({ entry: e, team }) => (
+              <tr>
+                <th scope="row">
+                  <a href={`/industries/${e.id}/#compliance`}>{e.data.name}</a>
+                </th>
+                <td>{e.data.compliance.map((c) => `${c.name} (${c.region})`).join(' · ')}</td>
+                <td>{team[0]!.name}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </Section>
+
+  <!-- ============ How it works ============ -->
+  <Section id="how" eyebrow="How it works" title="From first call to your first live agent in about two weeks." align="center">
+    <Steps steps={industrySteps} note="You see every transcript in the first week, and nothing sensitive happens without a person's approval." />
+  </Section>
+
+  <!-- ============ FAQ ============ -->
+  <Section id="faq" eyebrow="FAQ" title="AI agents by industry, plainly explained." width="narrow" align="center">
+    <Accordion items={hubFaqs} schema name="industries-faq" />
+  </Section>
+
+  <CtaBand title="Not sure where AI pays off first in your business?" text="Tell us how your team spends its week. In 30 minutes we point you to the agent, bundle or build that pays off first, with a fixed quote within 24 hours." location="industries-hub-final" />
+</BaseLayout>
+
+<style>
+  /* ---------- hero ---------- */
+  .hub-hero {
+    display: grid;
+    align-items: center;
+    gap: clamp(2rem, 1.5rem + 3vw, 4rem);
+    padding-block: calc(var(--header-h) + clamp(1.25rem, 0.5rem + 3vw, 3rem)) clamp(2rem, 1rem + 3vw, 4rem);
+  }
+  @media (min-width: 64rem) {
+    .hub-hero {
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+      min-height: min(100svh, 50rem);
+    }
+  }
+  .hub-copy {
+    display: grid;
+    gap: var(--space-5);
+    justify-items: start;
+  }
+  .hub-lead {
+    max-width: 58ch;
+  }
+  @media (max-width: 40rem) {
+    .hub-lead {
+      font-size: var(--step-0);
+    }
+  }
+  .hub-points {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    font-size: var(--step--1);
+    color: var(--fg-muted);
+  }
+  .hub-points li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .hub-points :global(.icon) {
+    color: var(--accent);
+  }
+
+  .roster {
+    --glass-radius: var(--radius-xl);
+    display: grid;
+    gap: var(--space-4);
+    padding: clamp(1.25rem, 1rem + 1vw, 1.75rem);
+    inline-size: 100%;
+    max-inline-size: 30rem;
+    justify-self: center;
+  }
+  @media (min-width: 64rem) {
+    .roster {
+      justify-self: end;
+    }
+  }
+  .roster > * {
+    position: relative;
+    z-index: 2;
+  }
+  .roster-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-2);
+    padding-block-end: var(--space-3);
+    border-block-end: 1px solid var(--border);
+  }
+  .roster-title {
+    font-weight: 640;
+  }
+  .roster-head .mono {
+    font-size: 0.6875rem;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+  }
+  .roster-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+  .roster-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-block-size: 2.5rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: var(--radius-md);
+    font-size: var(--step--1);
+    font-weight: 540;
+    text-decoration: none;
+    background: color-mix(in srgb, var(--fg) 5%, transparent);
+  }
+  .roster-item:hover {
+    background: color-mix(in srgb, var(--fg) 10%, transparent);
+  }
+  .roster-item :global(.icon) {
+    flex: none;
+    color: var(--accent);
+  }
+  .roster-foot {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--border);
+  }
+  .live-dot {
+    flex: none;
+    inline-size: 0.45rem;
+    block-size: 0.45rem;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 0 3px rgb(34 197 94 / 0.22);
+  }
+
+  /* ---------- sectors ---------- */
+  #sectors {
+    scroll-margin-top: var(--header-h);
+  }
+  .sectors {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  }
+  @media (min-width: 64rem) {
+    .sectors {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 80rem) {
+    .sectors {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  .sector {
+    --glass-radius: var(--radius-lg);
+    position: relative;
+    display: grid;
+    grid-template-rows: auto auto 1fr auto auto;
+    gap: var(--space-2);
+    padding: var(--space-5);
+    cursor: pointer;
+  }
+  .sector > :not(.card-cover) {
+    position: relative;
+    z-index: 2;
+  }
+  .sector .card-cover {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    border-radius: inherit;
+  }
+  .sector h3 a {
+    text-decoration: none;
+  }
+  .sector:has(h3 a:focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+  }
+  .sector-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-2);
+    margin-block-end: var(--space-1);
+  }
+  .sector-icon {
+    display: grid;
+    place-items: center;
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
+    border-radius: 0.9rem;
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    color: var(--accent);
+  }
+  .sector-badge {
+    padding: 0.15rem 0.55rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.6875rem;
+    color: var(--fg-muted);
+    background: color-mix(in srgb, var(--fg) 8%, transparent);
+  }
+  .sector-team {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-block-start: var(--space-1);
+  }
+  .sector-team li {
+    padding: 0.1rem 0.5rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.75rem;
+    background: color-mix(in srgb, var(--fg) 7%, transparent);
+  }
+  .sector-price {
+    margin-block-start: var(--space-2);
+    font-size: 0.75rem;
+    color: var(--accent);
+  }
+
+  /* ---------- bundles ---------- */
+  .desks {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  }
+  .desk {
+    --glass-radius: var(--radius-lg);
+    display: grid;
+    grid-template-rows: auto auto 1fr auto auto;
+    gap: var(--space-2);
+    padding: var(--space-5);
+  }
+  .desk > * {
+    position: relative;
+    z-index: 2;
+  }
+  .desk-icon {
+    display: grid;
+    place-items: center;
+    inline-size: 2.25rem;
+    block-size: 2.25rem;
+    border-radius: 0.75rem;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .desk-price {
+    margin-block-start: var(--space-2);
+    font-size: var(--step--1);
+  }
+  .desk-price strong {
+    font-weight: 680;
+  }
+  .desk-for {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.6rem;
+    align-items: baseline;
+  }
+  .desk-for .mono {
+    font-size: 0.6875rem;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+  }
+  .sec-foot {
+    margin-block-start: var(--space-6);
+  }
+
+  /* ---------- rules table ---------- */
+  .rules {
+    --glass-radius: var(--radius-lg);
+    padding: clamp(0.75rem, 0.5rem + 1vw, 1.5rem);
+    overflow-x: auto;
+  }
+  .rules table {
+    position: relative;
+    z-index: 2;
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--step--1);
+  }
+  .rules th,
+  .rules td {
+    padding: 0.65rem 0.75rem;
+    text-align: start;
+    vertical-align: top;
+    border-block-end: 1px solid var(--border);
+  }
+  .rules thead th {
+    font-weight: 620;
+  }
+  .rules tbody th {
+    font-weight: 560;
+    white-space: nowrap;
+  }
+  .rules tbody th a {
+    text-decoration: none;
+  }
+  .rules tbody th a:hover {
+    text-decoration: underline;
+  }
+  .rules td {
+    color: var(--fg-muted);
+  }
+  .rules td:last-child {
+    white-space: nowrap;
+    color: var(--fg);
+  }
+  @media (max-width: 40rem) {
+    .rules table {
+      min-inline-size: 36rem;
+    }
+  }
+</style>

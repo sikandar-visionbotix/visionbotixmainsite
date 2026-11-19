@@ -25,6 +25,7 @@ highlights:
 stack: [Node.js, Firebase, Slack API, NLP]
 outcomes: []
 services: [ai-agent-development, ai-chatbot-development, saas-mvp-development]
+industries: [saas-startups]
 featured: false
 verified: true
 provenance: icasta

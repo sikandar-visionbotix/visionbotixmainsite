@@ -25,6 +25,7 @@ highlights:
 stack: [Dialogflow, Twilio, Node.js, React, MongoDB]
 outcomes: []
 services: [ai-chatbot-development, saas-mvp-development]
+industries: [saas-startups]
 featured: true
 verified: true
 provenance: icasta

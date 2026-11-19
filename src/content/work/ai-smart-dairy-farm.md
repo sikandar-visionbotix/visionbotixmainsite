@@ -26,6 +26,7 @@ highlights:
 stack: [Computer vision, IoT sensors, Web dashboard]
 outcomes: []
 services: [computer-vision, iot-embedded]
+industries: [agriculture]
 featured: false
 verified: true
 provenance: youtube

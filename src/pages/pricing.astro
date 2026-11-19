@@ -15,6 +15,8 @@ import { site } from '@/data/site';
 import { agentsByGroup, servicesByPillar, agents } from '@/data/catalogue';
 import { agentPrices, bundles, audit, servicePrices, teamRates, hourlyFrom, money, serviceLabel } from '@/data/pricing';
 import { bundleCopy } from '@/data/agents-hub';
+import { getIndustries } from '@/lib/industries';
+const sectorEntries = await getIndustries();
 import { abs, type FaqItem, type Thing } from '@/lib/schema';
 import { typicalProjects, estimate, rangeLabel, toQuery } from '@/data/estimator';
 
@@ -234,6 +236,19 @@ const catalog: Thing = {
             <p class="small subtle">
               Separately: {money(b.setupSep)} + {money(b.monthlySep)}/mo
             </p>
+            {sectorEntries.some((e) => e.data.bundle === b.slug) && (
+              <p class="pp-bundle-for small">
+                For{' '}
+                {sectorEntries
+                  .filter((e) => e.data.bundle === b.slug)
+                  .map((e, i, arr) => (
+                    <>
+                      <a href={`/industries/${e.id}/`}>{e.data.name}</a>
+                      {i < arr.length - 1 ? ', ' : ''}
+                    </>
+                  ))}
+              </p>
+            )}
             <a class="pk-more small" href={`/ai-agents/#${b.slug}`}>
               See the bundle <Icon name="arrow-right" size={14} />
             </a>

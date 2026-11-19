@@ -24,6 +24,7 @@ highlights:
 stack: [Node.js, Express, Socket.IO, Mapbox, MongoDB]
 outcomes: []
 services: [web-app-development, custom-software-development]
+industries: [logistics]
 featured: false
 verified: true
 provenance: icasta

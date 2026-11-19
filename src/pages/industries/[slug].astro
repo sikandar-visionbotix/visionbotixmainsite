@@ -1,0 +1,1156 @@
+---
+/**
+ * Industry page template (S8, PLAN §3/§10): hero with the sector's recommended AI team (panel) → problem → use cases
+ * (each tied to an agent) → a day with the team on shift → mid CTA → pricing (bundle or starter set) → live demos →
+ * compliance, controls and systems → custom builds → case studies → own products → optional Markdown body → FAQ →
+ * related industries → CTA. Copy in `src/content/industries/<slug>.md`; every price is computed by
+ * `src/lib/industries.ts` from `src/data/pricing.ts`; case studies only through getWork() (the launch gate).
+ */
+import { render } from 'astro:content';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Button from '@/components/Button.astro';
+import Icon from '@/components/Icon.astro';
+import Accordion from '@/components/Accordion.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import ServiceCard from '@/components/ServiceCard.astro';
+import CaseCard from '@/components/CaseCard.astro';
+import { site } from '@/data/site';
+import { industries as industryCatalogue, products } from '@/data/catalogue';
+import { audit, money, priceLabel } from '@/data/pricing';
+import { getServices } from '@/lib/services';
+import { getIndustries, teamPricing, teamTimeline, industryFaq, workForIndustry, agentItem, demoFor, type IndustryEntry } from '@/lib/industries';
+import { service } from '@/lib/schema';
+
+export async function getStaticPaths() {
+  const all = await getIndustries();
+  return all.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+interface Props {
+  entry: IndustryEntry;
+}
+const { entry } = Astro.props;
+const d = entry.data;
+const slug = entry.id;
+const path = `/industries/${slug}/`;
+const { Content } = await render(entry);
+const hasBody = !!entry.body?.trim();
+
+/** Each agent's job in this sector = the title of its first use case here (falls back to the generic catalogue line). */
+const roleOf = (slug: string) => d.useCases.find((u) => u.agent?.id === slug)?.title;
+const team = d.agents.map((r) => ({ ...agentItem(r.id), role: roleOf(r.id), price: priceLabel(r.id)!, demo: demoFor(r.id) }));
+const lead = team[0]!;
+const pricing = teamPricing(d);
+const timeline = await teamTimeline(d);
+const faqs = [...d.faq.slice(0, 1), industryFaq(d), ...d.faq.slice(1)];
+const allServices = await getServices();
+const relServices = d.services.map((r) => allServices.find((s) => s.id === r.id)!).filter(Boolean);
+const relProducts = d.products.map((s) => products.find((x) => x.slug === s)!).filter(Boolean);
+const relIndustries = d.relatedIndustries.map((s) => industryCatalogue.find((x) => x.slug === s)!).filter(Boolean);
+const work = await workForIndustry(slug);
+const nameOf = (s: string) => agentItem(s).name;
+const iconOf = (s: string) => agentItem(s).icon;
+const demos = team.filter((a) => a.demo);
+const updated = d.updated.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+const cols = (n: number) => (n === 4 ? 2 : 3);
+/** Agents outside the bundle are shown as add-ons. */
+const bundleHas = (s: string) => !pricing.bundle || pricing.bundle.agents.includes(s);
+---
+
+<BaseLayout
+  seo={{ title: d.seo.title, description: d.seo.description, modifiedTime: d.updated.toISOString() }}
+  schema={[service({ name: `AI agents for ${d.who}`, description: d.summary, path, serviceType: d.keywords.primary, offers: pricing.offers })]}
+>
+  <!-- ============ Hero ============ -->
+  <section class="container in-hero" aria-labelledby="in-title">
+    <div class="in-copy">
+      <Breadcrumbs items={[{ name: 'Industries', href: '/industries/' }, { name: d.name, href: path }]} />
+      <p class="in-eyebrow eyebrow">
+        <span class="in-eyebrow-icon" aria-hidden="true"><Icon name={d.icon} size={14} /></span>
+        AI agents for {d.who}
+      </p>
+      <h1 id="in-title" class="in-title">{d.h1}</h1>
+      <p class="lead in-lead">{d.summary}</p>
+      <ul role="list" class="in-facts">
+        <li><Icon name="wallet" size={16} /><span>{pricing.headline.name}: <strong>{pricing.headline.label}</strong></span></li>
+        <li><Icon name="timer" size={16} /><span>{timeline}</span></li>
+      </ul>
+      <div class="cluster in-ctas">
+        <Button href={site.contact.bookingUrl} size="lg" icon="arrow-right" data-event="book_call" data-event-location={`industry-hero-${slug}`}>Book a free strategy call</Button>
+        {
+          lead.demo ? (
+            <Button href={`/demos/${lead.demo.id}/`} size="lg" variant="glass" icon="circle-play" data-event="demo_cta" data-event-location={`industry-hero-${slug}`}>
+              Try the {lead.name} live
+            </Button>
+          ) : (
+            <Button href="#pricing" size="lg" variant="glass">See pricing</Button>
+          )
+        }
+      </div>
+    </div>
+
+    <aside class="team glass-strong" aria-labelledby="team-title">
+      <div class="team-head">
+        <span class="team-icon" aria-hidden="true"><Icon name={d.icon} size={20} /></span>
+        <div>
+          <p id="team-title" class="team-name">Your AI team for {d.who}</p>
+          <p class="mono subtle team-sub">{team.length} agents · recommended</p>
+        </div>
+      </div>
+      <ul role="list" class="team-list">
+        {
+          team.map((a) => (
+            <li class="team-row">
+              <span class="team-row-icon" aria-hidden="true">
+                <Icon name={a.icon} size={16} />
+              </span>
+              <span class="team-row-text">
+                <a href={`/ai-agents/${a.slug}/`}>{a.name}</a>
+                <span class="small muted">{a.role ?? a.line}</span>
+              </span>
+              <span class="team-row-price mono">{a.price.replace(/^From /, '')}</span>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="team-foot small">
+        {
+          pricing.bundle ? (
+            <>
+              <span class="live-dot" aria-hidden="true" />
+              <span>
+                <strong>{pricing.bundle.name}</strong> bundle from {money(pricing.bundle.setup)} + {money(pricing.bundle.monthly)}/mo
+                <span class="muted"> (separately {money(pricing.bundle.separateSetup)} + {money(pricing.bundle.separateMonthly)}/mo)</span>
+              </span>
+            </>
+          ) : (
+            <>
+              <span class="live-dot" aria-hidden="true" />
+              <span class="muted">Start with one agent and add the others when it pays off.</span>
+            </>
+          )
+        }
+      </p>
+    </aside>
+  </section>
+
+  <!-- ============ Problem ============ -->
+  <Section id="problem" eyebrow="Sound familiar?" title={`Where ${d.who} lose time and customers.`} space="tight">
+    <ul role="list" class="problems" data-stagger>
+      {
+        d.problem.map((p) => (
+          <li class="problem glass-subtle">
+            <span class="p-icon" aria-hidden="true">
+              <Icon name="circle-x" size={18} />
+            </span>
+            <p>{p}</p>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="best-for small">
+      <span class="mono subtle">Built for</span>
+      {d.bestFor.map((b) => <span class="bf-chip">{b}</span>)}
+    </p>
+  </Section>
+
+  <!-- ============ Use cases ============ -->
+  <Section id="use-cases" eyebrow="Use cases" title="What the agents take off your plate.">
+    <ul role="list" class="uses" data-cols={cols(d.useCases.length)} data-stagger>
+      {
+        d.useCases.map((u) => (
+          <li class="use glass-subtle spotlight">
+            <h3 class="h4">{u.title}</h3>
+            <p class="muted small">{u.body}</p>
+            {u.agent && (
+              <a class="use-agent small" href={`/ai-agents/${u.agent.id}/`}>
+                <Icon name={iconOf(u.agent.id)} size={14} />
+                {nameOf(u.agent.id)}
+              </a>
+            )}
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <!-- ============ A day with the team ============ -->
+  <Section id="day" eyebrow="A day in the life" title="A day with your AI team on shift.">
+    <ol role="list" class="day glass-subtle" data-reveal>
+      {
+        d.dayInLife.map((s) => (
+          <li class="day-row">
+            <span class="day-time mono">{s.time}</span>
+            <span class="day-dot" aria-hidden="true" />
+            <div class="day-text">
+              <p>{s.step}</p>
+              {s.agent && <span class="day-agent mono">{nameOf(s.agent.id)}</span>}
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </Section>
+
+  <CtaBand
+    title="See what an AI team would change for you."
+    text="In a free 30-minute call we look at where your team loses the most time, recommend the agent that pays off first and send a fixed quote within 24 hours."
+    location={`industry-mid-${slug}`}
+  />
+
+  <!-- ============ Pricing ============ -->
+  <Section id="pricing" eyebrow="Pricing" title="Public prices. Start with one agent or the whole desk.">
+    <div class="price-grid">
+      <div class="price-card glass-strong" data-reveal="scale">
+        {
+          pricing.bundle ? (
+            <>
+              <p class="price-name">{pricing.bundle.name} bundle</p>
+              <p class="price-main">
+                <span class="price-from small muted">From</span>
+                <span class="price-num">{money(pricing.bundle.setup)}</span>
+                <span class="price-mo">+ {money(pricing.bundle.monthly)}/mo</span>
+              </p>
+              <p class="small muted">
+                Bought separately, the same agents cost {money(pricing.bundle.separateSetup)} + {money(pricing.bundle.separateMonthly)}/mo.
+              </p>
+            </>
+          ) : (
+            <>
+              <p class="price-name">Your recommended AI team</p>
+              <p class="price-main">
+                <span class="price-from small muted">From</span>
+                <span class="price-num">{lead.price.replace(/^From /, '').replace(/ \+ .*/, '')}</span>
+                {/\+/.test(lead.price) && <span class="price-mo">+ {lead.price.replace(/.* \+ /, '')}</span>}
+              </p>
+              <p class="small muted">To start with the {lead.name}. Add the other agents one at a time, each at its own public price.</p>
+            </>
+          )
+        }
+        <h3 class="price-inc-head mono">{pricing.bundle ? 'Agents in the bundle' : 'Agent prices'}</h3>
+        <ul role="list" class="price-agents">
+          {
+            team.map((a) => (
+              <li>
+                <a href={`/ai-agents/${a.slug}/`}>{a.name}</a>
+                <span class="mono small">{!bundleHas(a.slug) ? `Add-on · ${a.price.replace(/^From /, '')}` : a.price.replace(/^From /, '')}</span>
+              </li>
+            ))
+          }
+        </ul>
+        <ul role="list" class="checks">
+          <li><Icon name="check" size={15} strokeWidth={2.5} /> Setup, connection to your systems and training on your business</li>
+          <li><Icon name="check" size={15} strokeWidth={2.5} /> Monthly: hosting, monitoring, weekly tuning and a fair-use volume</li>
+          <li><Icon name="check" size={15} strokeWidth={2.5} /> Approval gates, an audit log and a monthly report on every agent</li>
+        </ul>
+        <div class="price-ctas">
+          <Button href={site.contact.bookingUrl} block icon="arrow-right" data-event="book_call" data-event-location={`industry-pricing-${slug}`}>Book a free strategy call</Button>
+          <Button href="/pricing/" block variant="glass">See full pricing</Button>
+        </div>
+      </div>
+
+      <div class="price-side">
+        <p class="eyebrow ways-head">Other ways to start</p>
+        <div class="way glass-subtle" data-reveal>
+          <span class="way-icon" aria-hidden="true"><Icon name="search-check" size={18} /></span>
+          <div>
+            <h3 class="h4 way-name">{audit.name}</h3>
+            <p class="small muted">A {audit.duration.replace(' ', '-')} review of where AI would save your team the most time, with a costed plan. {audit.note}.</p>
+            <p class="way-price mono">{money(audit.price)}</p>
+          </div>
+        </div>
+        <div class="way glass-subtle" data-reveal>
+          <span class="way-icon" aria-hidden="true"><Icon name="calculator" size={18} /></span>
+          <div>
+            <h3 class="h4 way-name">Estimate a custom build</h3>
+            <p class="small muted">Need a portal, an app or an agent built around your own process? Get an instant price range in about a minute.</p>
+            <p class="way-price mono"><a href="/estimate/">Open the cost estimator</a></p>
+          </div>
+        </div>
+        <ul role="list" class="promises small">
+          <li><Icon name="file-signature" size={15} /> NDA on request from the first call</li>
+          <li><Icon name="key-round" size={15} /> Your data and prompts stay yours</li>
+          <li><Icon name="life-buoy" size={15} /> Monthly plans, no long lock-in</li>
+        </ul>
+      </div>
+    </div>
+  </Section>
+
+  <!-- ============ Live demos ============ -->
+  {
+    demos.length > 0 && (
+      <Section id="demos" eyebrow="Try them live" title="Talk to these agents now, no sign-up." lead="Each demo runs on a fictional business with sample data. You see every tool call, guardrail and approval the agent makes." space="tight">
+        <ul role="list" class="demo-grid" data-stagger>
+          {demos.map((a) => (
+            <li class="demo glass-subtle spotlight lift">
+              <a class="card-cover" href={`/demos/${a.demo!.id}/`} aria-hidden="true" tabindex="-1" />
+              <span class="demo-icon" aria-hidden="true">
+                <Icon name={a.icon} size={18} />
+              </span>
+              <h3 class="h4">
+                <a href={`/demos/${a.demo!.id}/`} data-event="demo_cta" data-event-location={`industry-demos-${slug}`}>
+                  {a.name} demo
+                </a>
+              </h3>
+              <p class="small muted">{a.demo!.businessLine}</p>
+              <span class="demo-go small">
+                Try it live <Icon name="arrow-right" size={14} />
+              </span>
+            </li>
+          ))}
+        </ul>
+      </Section>
+    )
+  }
+
+  <!-- ============ Compliance · controls · systems ============ -->
+  <Section id="compliance" eyebrow="Compliance and control" title={`Built for the rules ${d.who} work under.`} lead="We design every agent around the regulations that apply to you. Your legal or compliance lead signs off the setup; the agent never acts outside the limits you approve.">
+    <ul role="list" class="regs" data-stagger>
+      {
+        d.compliance.map((c) => (
+          <li class="reg glass-subtle">
+            <div class="reg-top">
+              <h3 class="h4">{c.name}</h3>
+              <span class="reg-region mono">{c.region}</span>
+            </div>
+            <p class="small muted">{c.body}</p>
+          </li>
+        ))
+      }
+    </ul>
+    <div class="trust">
+      <div class="trust-col glass-subtle" data-reveal>
+        <h3 class="trust-head"><Icon name="user-check" size={18} /> Approvals and data controls</h3>
+        <ul role="list" class="checks">
+          {
+            d.controls.map((c) => (
+              <li>
+                <Icon name="check" size={15} strokeWidth={2.5} />
+                {c}
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div class="trust-col glass-subtle" data-reveal>
+        <h3 class="trust-head"><Icon name="plug" size={18} /> Systems we connect to</h3>
+        <ul role="list" class="int-tags">
+          {d.systems.map((t) => <li>{t}</li>)}
+        </ul>
+        <p class="small muted">Not on the list? If it has an API, a database or an inbox, the agents can usually work with it. We confirm on the first call.</p>
+      </div>
+    </div>
+  </Section>
+
+  <!-- ============ Custom builds ============ -->
+  <Section id="services" eyebrow="Custom builds" title="Need more than a packaged agent?" lead={`We also design and build software for ${d.who}: from a single integration to a full platform, at a fixed price per milestone.`} space="tight">
+    <ul role="list" class="rel-grid" data-stagger>
+      {relServices.map((s) => <ServiceCard slug={s.id} name={s.data.name} line={s.data.tagline} icon={s.data.icon} />)}
+    </ul>
+  </Section>
+
+  <!-- ============ Case studies (anonymous, via getWork) ============ -->
+  {
+    work.length > 0 && (
+      <Section id="work" eyebrow="Our work" title={`What we have built for ${d.who}.`} lead="Client names stay private by default. On a call we walk you through the details, under NDA." space="tight">
+        <ul role="list" class="work-grid" data-stagger>
+          {work.map((w) => (
+            <CaseCard entry={w} />
+          ))}
+        </ul>
+        <div class="sec-foot">
+          <Button href="/work/" variant="glass" icon="arrow-right">See all case studies</Button>
+        </div>
+      </Section>
+    )
+  }
+
+  <!-- ============ Own products ============ -->
+  {
+    relProducts.length > 0 && (
+      <Section id="products" eyebrow="Our own products" title="Built and shipped in-house." space="tight">
+        <ul role="list" class="prod-grid" data-stagger>
+          {relProducts.map((p) => (
+            <li class="prod glass-subtle spotlight lift">
+              <a class="card-cover" href={`/products/${p.slug}/`} aria-hidden="true" tabindex="-1" />
+              <span class="prod-icon" aria-hidden="true">
+                <Icon name={p.icon} size={20} />
+              </span>
+              <h3 class="h4">
+                <a href={`/products/${p.slug}/`}>{p.name}</a>
+              </h3>
+              <p class="muted small">{p.line}</p>
+            </li>
+          ))}
+        </ul>
+      </Section>
+    )
+  }
+
+  <!-- ============ Optional Markdown body (comparison) ============ -->
+  {
+    hasBody && (
+      <Section id="compare" width="narrow" space="tight">
+        <div class="prose in-body glass-subtle" data-reveal>
+          <Content />
+        </div>
+      </Section>
+    )
+  }
+
+  <!-- ============ FAQ ============ -->
+  <Section id="faq" eyebrow="FAQ" title={`AI agents for ${d.who}: common questions.`} width="narrow" align="center">
+    <Accordion items={faqs} schema name="industry-faq" />
+    <p class="faq-more small muted">
+      Something else? <a class="link" href={`mailto:${site.contact.email}`}>{site.contact.email}</a> or <a class="link" href={site.contact.bookingUrl}>book a call</a>.
+      <span class="updated mono">Updated {updated}</span>
+    </p>
+  </Section>
+
+  <!-- ============ Related industries ============ -->
+  <Section id="related" eyebrow="More industries" title="Other sectors we build for." space="tight">
+    <p class="rel-more">
+      {
+        relIndustries.map((s) => (
+          <a class="rel-chip glass-chip press" href={`/industries/${s.slug}/`}>
+            <Icon name={s.icon} size={14} />
+            {s.name}
+          </a>
+        ))
+      }
+      <a class="rel-chip glass-chip press" href="/industries/">
+        <Icon name="arrow-right" size={14} />
+        All {industryCatalogue.length} industries
+      </a>
+    </p>
+  </Section>
+
+  <CtaBand title="Tell us how your team works. Get a fixed quote within 24 hours." location={`industry-final-${slug}`} />
+</BaseLayout>
+
+<style>
+  /* ---------- hero ---------- */
+  .in-hero {
+    display: grid;
+    align-items: center;
+    gap: clamp(2rem, 1.5rem + 3vw, 4rem);
+    padding-block: calc(var(--header-h) + clamp(1.25rem, 0.5rem + 3vw, 3rem)) clamp(2rem, 1rem + 3vw, 4rem);
+  }
+  @media (min-width: 64rem) {
+    .in-hero {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      min-height: min(100svh, 52rem);
+    }
+  }
+  .in-copy {
+    display: grid;
+    gap: var(--space-5);
+    justify-items: start;
+  }
+  .in-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .in-eyebrow-icon {
+    display: grid;
+    place-items: center;
+    inline-size: 1.6rem;
+    block-size: 1.6rem;
+    border-radius: 0.5rem;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+  }
+  .in-title {
+    font-size: clamp(2.25rem, 1.5rem + 3.2vw, 4rem);
+    line-height: 1.04;
+    letter-spacing: -0.03em;
+    font-weight: 680;
+    max-width: 17ch;
+    text-wrap: balance;
+  }
+  .in-lead {
+    max-width: 58ch;
+  }
+  @media (max-width: 40rem) {
+    .in-lead {
+      font-size: var(--step-0);
+    }
+  }
+  .in-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    font-size: var(--step--1);
+  }
+  .in-facts li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .in-facts :global(.icon) {
+    flex: none;
+    color: var(--accent);
+  }
+  .in-facts strong {
+    font-weight: 620;
+  }
+
+  /* ---------- team panel ---------- */
+  .team {
+    --glass-radius: var(--radius-xl);
+    display: grid;
+    gap: var(--space-4);
+    padding: clamp(1.25rem, 1rem + 1vw, 1.75rem);
+    inline-size: 100%;
+    max-inline-size: 32rem;
+    justify-self: center;
+  }
+  @media (min-width: 64rem) {
+    .team {
+      justify-self: end;
+    }
+  }
+  .team > * {
+    position: relative;
+    z-index: 2;
+  }
+  .team-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding-block-end: var(--space-4);
+    border-block-end: 1px solid var(--border);
+  }
+  .team-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 2.75rem;
+    block-size: 2.75rem;
+    border-radius: 0.95rem;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+    box-shadow: var(--btn-primary-glow);
+  }
+  .team-name {
+    font-weight: 640;
+    font-size: var(--step-0);
+  }
+  .team-sub {
+    font-size: 0.6875rem;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+  }
+  .team-list {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .team-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: var(--space-3);
+    align-items: center;
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--fg) 5%, transparent);
+  }
+  .team-row:hover {
+    background: color-mix(in srgb, var(--fg) 9%, transparent);
+  }
+  .team-row-icon {
+    display: grid;
+    place-items: center;
+    inline-size: 2rem;
+    block-size: 2rem;
+    border-radius: 0.65rem;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+  .team-row-text {
+    display: grid;
+    gap: 0.1rem;
+    min-inline-size: 0;
+  }
+  .team-row-text a {
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .team-row-text a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+  .team-row-text a:focus-visible {
+    outline: none;
+  }
+  .team-row:has(a:focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .team-row-price {
+    font-size: 0.6875rem;
+    color: var(--fg-muted);
+    text-align: end;
+    max-inline-size: 7.5rem;
+  }
+  @media (max-width: 30rem) {
+    .team-row {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+    .team-row-price {
+      grid-column: 2;
+      text-align: start;
+    }
+  }
+  .team-foot {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--border);
+  }
+  .live-dot {
+    flex: none;
+    inline-size: 0.45rem;
+    block-size: 0.45rem;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 0 3px rgb(34 197 94 / 0.22);
+    transform: translateY(-0.1rem);
+  }
+
+  /* ---------- problem ---------- */
+  .problems {
+    display: grid;
+    gap: var(--space-3);
+  }
+  @media (min-width: 52rem) {
+    .problems {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .problem {
+    --glass-radius: var(--radius-md);
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    padding: var(--space-4) var(--space-5);
+  }
+  .problem > * {
+    position: relative;
+    z-index: 2;
+  }
+  .p-icon {
+    flex: none;
+    margin-block-start: 0.15rem;
+    color: var(--fg-subtle);
+  }
+  .best-for,
+  .rel-more {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .best-for {
+    margin-block-start: var(--space-5);
+  }
+  .best-for .mono {
+    margin-inline-end: var(--space-2);
+    font-size: 0.75rem;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+  }
+  .bf-chip {
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-pill);
+    color: var(--fg-muted);
+    background: color-mix(in srgb, var(--fg) 7%, transparent);
+  }
+
+  /* ---------- use cases ---------- */
+  .uses {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  }
+  @media (min-width: 64rem) {
+    .uses[data-cols='3'] {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .uses[data-cols='2'] {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .use {
+    --glass-radius: var(--radius-lg);
+    display: grid;
+    align-content: start;
+    gap: var(--space-2);
+    padding: var(--space-5);
+  }
+  .use > * {
+    position: relative;
+    z-index: 2;
+  }
+  .use-agent {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    justify-self: start;
+    margin-block-start: var(--space-2);
+    padding: 0.2rem 0.65rem;
+    border-radius: var(--radius-pill);
+    font-weight: 560;
+    text-decoration: none;
+    color: var(--fg);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .use-agent :global(.icon) {
+    color: var(--accent);
+  }
+  .use-agent:hover {
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+  }
+
+  /* ---------- day ---------- */
+  .day {
+    --glass-radius: var(--radius-xl);
+    display: grid;
+    padding: clamp(1rem, 0.6rem + 1.5vw, 2rem);
+  }
+  .day-row {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 5.5rem 1rem minmax(0, 1fr);
+    gap: var(--space-3);
+    align-items: start;
+    padding-block: var(--space-3);
+  }
+  .day-row + .day-row {
+    border-block-start: 1px solid var(--border);
+  }
+  .day-time {
+    font-size: 0.875rem;
+    color: var(--accent);
+    padding-block-start: 0.1rem;
+  }
+  .day-dot {
+    inline-size: 0.6rem;
+    block-size: 0.6rem;
+    margin-block-start: 0.45rem;
+    border-radius: 50%;
+    background: var(--grad-brand);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+  .day-text {
+    display: grid;
+    gap: 0.3rem;
+  }
+  .day-agent {
+    font-size: 0.6875rem;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--fg-subtle);
+  }
+  @media (max-width: 30rem) {
+    .day-row {
+      grid-template-columns: 4.25rem minmax(0, 1fr);
+    }
+    .day-dot {
+      display: none;
+    }
+  }
+
+  /* ---------- pricing ---------- */
+  #pricing {
+    scroll-margin-top: var(--header-h);
+  }
+  .price-grid {
+    display: grid;
+    gap: var(--space-5);
+    align-items: start;
+  }
+  @media (min-width: 56rem) {
+    .price-grid {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    }
+  }
+  .price-card {
+    --glass-radius: var(--radius-xl);
+    display: grid;
+    gap: var(--space-4);
+    padding: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+  }
+  .price-card > * {
+    position: relative;
+    z-index: 2;
+  }
+  .price-name {
+    font-weight: 620;
+  }
+  .price-main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+  .price-num {
+    font-size: clamp(2.25rem, 1.8rem + 2vw, 3.25rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  .price-mo {
+    font-size: var(--step-1);
+    font-weight: 620;
+    color: var(--fg-muted);
+  }
+  .price-inc-head {
+    margin-block-start: var(--space-2);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--fg-muted);
+  }
+  .price-agents {
+    display: grid;
+  }
+  .price-agents li {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.25rem var(--space-3);
+    padding-block: 0.55rem;
+    border-block-end: 1px solid var(--border);
+  }
+  .price-agents a {
+    font-weight: 560;
+    text-decoration: none;
+  }
+  .price-agents a:hover {
+    text-decoration: underline;
+  }
+  .price-agents .mono {
+    color: var(--fg-muted);
+  }
+  .checks {
+    display: grid;
+    gap: var(--space-3);
+    font-size: var(--step--1);
+  }
+  .checks li {
+    display: flex;
+    gap: 0.55rem;
+    align-items: flex-start;
+    line-height: 1.45;
+  }
+  .checks :global(.icon) {
+    flex: none;
+    margin-block-start: 0.2rem;
+    color: var(--accent);
+  }
+  .price-ctas {
+    display: grid;
+    gap: var(--space-3);
+    margin-block-start: var(--space-2);
+  }
+  @media (min-width: 30rem) {
+    .price-ctas {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .price-side {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .ways-head {
+    padding-inline: var(--space-2);
+  }
+  .way {
+    --glass-radius: var(--radius-lg);
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    padding: var(--space-4) var(--space-5);
+  }
+  .way > * {
+    position: relative;
+    z-index: 2;
+  }
+  .way-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 2.25rem;
+    block-size: 2.25rem;
+    border-radius: 0.75rem;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .way-name {
+    font-size: var(--step-0);
+  }
+  .way-price {
+    margin-block-start: var(--space-2);
+    font-size: 0.75rem;
+    color: var(--accent);
+  }
+  .way-price a {
+    color: inherit;
+  }
+  .promises {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-2) 0;
+    color: var(--fg-muted);
+  }
+  .promises li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .promises :global(.icon) {
+    color: var(--accent);
+  }
+
+  /* ---------- demos ---------- */
+  .demo-grid,
+  .prod-grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  }
+  .demo,
+  .prod {
+    --glass-radius: var(--radius-lg);
+    position: relative;
+    display: grid;
+    align-content: start;
+    gap: var(--space-2);
+    padding: var(--space-5);
+    cursor: pointer;
+  }
+  .demo > :not(.card-cover),
+  .prod > :not(.card-cover) {
+    position: relative;
+    z-index: 2;
+  }
+  .demo .card-cover,
+  .prod .card-cover {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    border-radius: inherit;
+  }
+  .demo h3 a,
+  .prod h3 a {
+    text-decoration: none;
+  }
+  .demo:has(h3 a:focus-visible),
+  .prod:has(h3 a:focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+  }
+  .demo-icon,
+  .prod-icon {
+    display: grid;
+    place-items: center;
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
+    margin-block-end: var(--space-1);
+    border-radius: 0.9rem;
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    color: var(--accent);
+  }
+  .demo-go {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-block-start: var(--space-2);
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  /* ---------- compliance ---------- */
+  .regs {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+    margin-block-end: var(--space-5);
+  }
+  .reg {
+    --glass-radius: var(--radius-lg);
+    display: grid;
+    align-content: start;
+    gap: var(--space-2);
+    padding: var(--space-5);
+  }
+  .reg > * {
+    position: relative;
+    z-index: 2;
+  }
+  .reg-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+  .reg-region {
+    padding: 0.1rem 0.5rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.6875rem;
+    color: var(--fg-muted);
+    background: color-mix(in srgb, var(--fg) 8%, transparent);
+  }
+  .trust {
+    display: grid;
+    gap: var(--space-4);
+  }
+  @media (min-width: 56rem) {
+    .trust {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .trust-col {
+    --glass-radius: var(--radius-lg);
+    display: grid;
+    align-content: start;
+    gap: var(--space-4);
+    padding: var(--space-5);
+  }
+  .trust-col > * {
+    position: relative;
+    z-index: 2;
+  }
+  .trust-head {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: var(--step-0);
+    font-weight: 620;
+  }
+  .trust-head :global(.icon) {
+    color: var(--accent);
+  }
+  .int-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+  .int-tags li {
+    padding: 0.25rem 0.7rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.8125rem;
+    font-weight: 520;
+    background: color-mix(in srgb, var(--fg) 8%, transparent);
+  }
+
+  /* ---------- card grids ---------- */
+  .rel-grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  }
+  @media (max-width: 40rem) {
+    .rel-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-3);
+    }
+  }
+  .work-grid {
+    display: grid;
+    gap: var(--space-5);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  }
+  .sec-foot {
+    margin-block-start: var(--space-6);
+  }
+
+  /* ---------- body ---------- */
+  .in-body {
+    --glass-radius: var(--radius-lg);
+    padding: clamp(1.25rem, 1rem + 1.5vw, 2rem);
+    overflow-x: auto;
+  }
+  .in-body > :global(*) {
+    position: relative;
+    z-index: 2;
+  }
+  .in-body :global(h2) {
+    font-size: var(--step-2);
+    margin-block-end: var(--space-4);
+  }
+  .in-body :global(p + p),
+  .in-body :global(* + table),
+  .in-body :global(table + p) {
+    margin-block-start: var(--space-4);
+  }
+  .in-body :global(table) {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--step--1);
+  }
+  .in-body :global(th),
+  .in-body :global(td) {
+    padding: 0.6rem 0.75rem;
+    text-align: start;
+    vertical-align: top;
+    border-block-end: 1px solid var(--border);
+  }
+  .in-body :global(thead th) {
+    font-weight: 620;
+    color: var(--fg);
+  }
+  .in-body :global(tbody td:first-child) {
+    color: var(--fg-muted);
+    font-weight: 520;
+  }
+  .in-body :global(th:last-child),
+  .in-body :global(td:last-child) {
+    color: var(--fg);
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+  }
+  @media (max-width: 40rem) {
+    .in-body :global(table) {
+      min-inline-size: 34rem;
+    }
+  }
+
+  /* ---------- faq ---------- */
+  .faq-more {
+    display: grid;
+    gap: var(--space-2);
+    margin-block-start: var(--space-5);
+    text-align: center;
+  }
+  .updated {
+    font-size: 0.75rem;
+    color: var(--fg-subtle);
+  }
+
+  /* ---------- related chips ---------- */
+  .rel-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 2.5rem;
+    padding: 0 0.95rem;
+    font-weight: 540;
+    text-decoration: none;
+  }
+  .rel-chip > :global(*) {
+    position: relative;
+    z-index: 2;
+  }
+  .rel-chip :global(.icon) {
+    color: var(--accent);
+  }
+</style>

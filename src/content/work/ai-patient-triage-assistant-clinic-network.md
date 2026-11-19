@@ -26,6 +26,7 @@ highlights:
 stack: [Next.js, OpenAI, LangChain, Tailwind CSS, MongoDB]
 outcomes: []
 services: [ai-agent-development, generative-ai-development, saas-mvp-development]
+industries: [healthcare]
 featured: true
 verified: true
 provenance: icasta

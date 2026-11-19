@@ -31,6 +31,7 @@ highlights:
 stack: [Swift, Apple TrueDepth / ARKit, iOS and iPadOS, REST API, Cloud database]
 outcomes: []
 services: [mobile-app-development, computer-vision, custom-software-development]
+industries: [healthcare]
 featured: true
 verified: true
 provenance: owner

@@ -30,6 +30,7 @@ highlights:
 stack: [Next.js, NestJS, MongoDB, React Native, PWA, TypeScript]
 outcomes: []
 services: [web-app-development, mobile-app-development, generative-ai-development]
+industries: [ecommerce]
 featured: true
 verified: true
 provenance: owner

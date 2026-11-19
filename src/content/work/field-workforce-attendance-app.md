@@ -24,6 +24,7 @@ highlights:
 stack: [Android, Background location services, Admin web dashboard]
 outcomes: []
 services: [mobile-app-development, custom-software-development]
+industries: [government-defense]
 featured: false
 verified: true
 provenance: youtube

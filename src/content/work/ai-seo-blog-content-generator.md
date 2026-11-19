@@ -23,6 +23,7 @@ highlights:
 stack: [Next.js, GPT-4, LangChain, Tailwind CSS, Supabase]
 outcomes: []
 services: [generative-ai-development, saas-mvp-development]
+industries: [saas-startups]
 featured: false
 verified: true
 provenance: icasta

@@ -14,6 +14,7 @@ import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 import { iconNames } from '@/lib/icons';
 import { services as serviceList, industries as industryList, products as productList, engagements } from '@/data/catalogue';
+import { bundles as bundleList } from '@/data/pricing';
 
 const md = (base: string) => glob({ base: `./src/content/${base}`, pattern: '**/[^_]*.md' });
 
@@ -172,20 +173,71 @@ const services = defineCollection({
     }),
 });
 
-/* ---------- industries (S8) ---------- */
+/* ---------- industries (S8) ----------
+ * Read through `getIndustries()` (src/lib/industries.ts), which keeps the collection and the menu catalogue in step.
+ * No prices here: the page prices its recommended agents and bundle from `src/data/pricing.ts` (D23, D27).
+ * Compliance entries name the rules a buyer in the sector must meet and what we put in place; they never claim a
+ * certification or that a client is "compliant" because of us. Case studies attach themselves through `work.industries`. */
+const bundleSlugs = bundleList.map((b) => b.slug) as [string, ...string[]];
+
 const industries = defineCollection({
   loader: md('industries'),
-  schema: base.extend({
-    name: z.string(),
-    tagline: z.string(),
-    icon: z.string(),
-    painPoints: z.array(z.string()).default([]),
-    useCases: z.array(titled).default([]),
-    compliance: z.array(z.string()).default([]),
-    bundle: z.string().optional(),
-    agents: z.array(reference('agents')).default([]),
-    services: z.array(reference('services')).default([]),
-  }),
+  schema: base
+    .extend({
+      seo: seo.extend({
+        /** ≤ 46 chars: " | Visionbotix" is appended (total ≤ 60). Must contain the primary keyword. */
+        title: z.string().max(46),
+      }),
+      /** Must equal the catalogue name (menus, chips). */
+      name: z.string(),
+      /** Plural noun phrase for generated copy: "AI agents for <who>" (e.g. "dental clinics", "law firms", "online stores"). */
+      who: z.string().min(4).max(40).regex(/^[a-z]/, 'Lower-case start: it is used mid-sentence.'),
+      /** Card line on the hub. */
+      tagline: z.string().min(30).max(90),
+      /** The H1, outcome-led, with the primary keyword or a close variant. */
+      h1: z.string().min(20).max(80),
+      icon,
+      /** Who in the sector it is for, as short chips ("Group practices"). */
+      bestFor: z.array(z.string().max(40)).min(3).max(6),
+      /** The pain: 3–4 plain sentences, no invented statistics. */
+      problem: z.array(z.string().min(30)).min(3).max(4),
+      /** Recommended AI team: 2–4 agents, lead agent first (its live demo is linked from the hero). */
+      agents: z.array(reference('agents')).min(2).max(4),
+      /** A bundle from pricing.ts whose agents are all in `agents`. */
+      bundle: z.enum(bundleSlugs).optional(),
+      /** 4–6 jobs the agents do in this sector; `agent` = which recommended agent handles it. */
+      useCases: z.array(titled.extend({ agent: reference('agents').optional() })).min(4).max(6),
+      /** A day (or week) with the AI team on shift: 4–7 moments; `agent` = who acted. */
+      dayInLife: z.array(z.object({ time: z.string().max(14), step: z.string().min(30).max(220), agent: reference('agents').optional() })).min(4).max(7),
+      /** Rules buyers in the sector work under, and what we put in place for each. No certification claims. */
+      compliance: z
+        .array(z.object({ name: z.string().max(36), region: z.string().max(24), body: z.string().min(40).max(280) }))
+        .min(2)
+        .max(5),
+      /** Sector-specific approvals and data controls (3–5). */
+      controls: z.array(z.string().min(20).max(200)).min(3).max(5),
+      /** Systems the agents connect to in this sector, as text (no logos, no partnership claims). */
+      systems: z.array(z.string()).min(4).max(14),
+      /** Custom builds for the sector (1–4 services). */
+      services: z.array(reference('services')).min(1).max(4),
+      /** Our own products relevant to the sector. */
+      products: z.array(z.enum(productSlugs)).max(3).default([]),
+      /** Neighbouring industries (catalogue slugs). */
+      relatedIndustries: z.array(z.enum(industrySlugs)).max(4).default([]),
+      faq: z.array(z.object({ q: z.string().min(8), a: z.string().min(20) })).min(5).max(8),
+    })
+    .refine((d) => d.seo.title.toLowerCase().includes(d.keywords.primary.toLowerCase()), {
+      message: 'seo.title must contain keywords.primary (the title is the strongest on-page signal).',
+      path: ['seo', 'title'],
+    })
+    .refine((d) => !d.bundle || bundleList.find((b) => b.slug === d.bundle)!.agents.every((a) => d.agents.some((r) => r.id === a)), {
+      message: 'Every agent in the bundle must be listed in `agents` (the page shows the bundle as the recommended team).',
+      path: ['bundle'],
+    })
+    .refine((d) => [...d.useCases, ...d.dayInLife].every((x) => !x.agent || d.agents.some((r) => r.id === x.agent!.id)), {
+      message: 'useCases[].agent and dayInLife[].agent must be one of the recommended `agents`.',
+      path: ['useCases'],
+    }),
 });
 
 /* ---------- locations (S9) ---------- */
@@ -246,6 +298,8 @@ const work = defineCollection({
         /** Illustration used when there is no screenshot (anonymous by design). */
         art: z.enum(['marketplace', 'mobile', 'vision', 'agent', 'dashboard', 'robot', 'health', 'kiosk', 'farm', 'security']).default('dashboard'),
         services: z.array(z.enum(serviceSlugs)).min(1),
+        /** Industry pages that show this case study (S8). */
+        industries: z.array(z.enum(industrySlugs)).max(3).default([]),
         featured: z.boolean().default(false),
         /** Owner has checked every fact on this page. false = pre-launch mock. */
         verified: z.boolean().default(false),

@@ -20,6 +20,7 @@ const logo = `data:image/png;base64,${readFileSync(join(root, 'public/images/bra
 const sections = {
   'ai-agents': 'AI Agents',
   services: 'Services',
+  industries: 'Industries',
   products: 'Products',
   work: 'Case study',
   pricing: 'Pricing',
