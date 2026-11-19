@@ -1,0 +1,355 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import WorkArt from '@/components/WorkArt.astro';
+import Icon from '@/components/Icon.astro';
+import GlassCard from '@/components/GlassCard.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import { render } from 'astro:content';
+import { getWork, kindLabel, serviceName, type WorkEntry } from '@/lib/work';
+
+export async function getStaticPaths() {
+  const work = await getWork();
+  return work.map((entry) => ({ params: { slug: entry.id }, props: { entry, others: work.filter((w) => w.id !== entry.id) } }));
+}
+interface Props {
+  entry: WorkEntry;
+  others: WorkEntry[];
+}
+const { entry, others } = Astro.props;
+const d = entry.data;
+const { Content } = await render(entry);
+const more = others.filter((o) => o.data.services.some((s) => d.services.includes(s))).concat(others).filter((v, i, a) => a.indexOf(v) === i).slice(0, 3);
+const facts = [
+  { label: 'Client', value: d.clientType },
+  { label: 'Sector', value: d.sector },
+  { label: 'Region', value: d.region },
+  ...(d.year ? [{ label: 'Year', value: String(d.year) }] : []),
+  { label: 'Platforms', value: d.kind.map(kindLabel).join(', ') },
+];
+---
+
+<BaseLayout seo={{ title: d.seo.title, description: d.seo.description, noindex: !d.verified }} pageType="Article">
+  <article>
+    <header class="container cs-head">
+      <Breadcrumbs items={[{ name: 'Work', href: '/work/' }, { name: d.title, href: `/work/${entry.id}/` }]} />
+      {import.meta.env.DEV && !d.verified && <p class="mock-flag small mono">Mock · needs owner check · {d.provenance}</p>}
+      <p class="eyebrow">{d.sector} · Case study</p>
+      <h1>{d.title}</h1>
+      <p class="lead">{d.summary}</p>
+    </header>
+
+    <div class="container cs-hero" data-reveal="scale">
+      <WorkArt art={d.art} size="hero" />
+    </div>
+
+    <div class="container cs-layout">
+      <aside class="cs-facts glass-subtle">
+        <dl>
+          {
+            facts.map((f) => (
+              <div>
+                <dt>{f.label}</dt>
+                <dd>{f.value}</dd>
+              </div>
+            ))
+          }
+          <div>
+            <dt>Services</dt>
+            <dd>
+              <ul role="list">
+                {d.services.map((s) => (
+                  <li>
+                    <a class="link" href={`/services/${s}/`}>
+                      {serviceName(s)}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </dd>
+          </div>
+        </dl>
+        {
+          d.links.length > 0 && (
+            <div class="cs-links">
+              {d.links.map((l) => (
+                <a class="link small" href={l.href} target="_blank" rel="noopener">
+                  {l.label} <Icon name="arrow-up-right" size={13} />
+                </a>
+              ))}
+            </div>
+          )
+        }
+      </aside>
+
+      <div class="cs-main">
+        <section data-reveal>
+          <h2 class="h3">The challenge</h2>
+          <p class="muted">{d.challenge}</p>
+        </section>
+        <section data-reveal>
+          <h2 class="h3">Our approach</h2>
+          <p class="muted">{d.approach}</p>
+        </section>
+        <section>
+          <h2 class="h3">What we built</h2>
+          <ul role="list" class="checks" data-stagger>
+            {
+              d.built.map((b) => (
+                <li>
+                  <span class="tick">
+                    <Icon name="check" size={14} strokeWidth={2.5} />
+                  </span>
+                  {b}
+                </li>
+              ))
+            }
+          </ul>
+        </section>
+        {
+          d.highlights.length > 0 && (
+            <section>
+              <h2 class="h3">Highlights</h2>
+              <ul role="list" class="highlights" data-stagger>
+                {d.highlights.map((h) => (
+                  <li class="glass-subtle">
+                    <Icon name="sparkles" size={18} />
+                    <span>{h}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )
+        }
+        {
+          d.outcomes.length > 0 && (
+            <section>
+              <h2 class="h3">Results</h2>
+              <ul role="list" class="outcomes">
+                {d.outcomes.map((o) => (
+                  <li class="glass-subtle">
+                    <span class="o-val">{o.value}</span>
+                    <span class="muted small">{o.label}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )
+        }
+        {
+          d.stack.length > 0 && (
+            <section>
+              <h2 class="h3">Technology</h2>
+              <ul role="list" class="stack-list">
+                {d.stack.map((t) => (
+                  <li>{t}</li>
+                ))}
+              </ul>
+            </section>
+          )
+        }
+        <div class="prose cs-body">
+          <Content />
+        </div>
+        <p class="small subtle nda">
+          Client details are kept confidential. On a call we can walk you through this project in more depth, under NDA.
+        </p>
+      </div>
+    </div>
+  </article>
+
+  <CtaBand title="Have a project like this in mind?" location="case-study" />
+
+  {
+    more.length > 0 && (
+      <section class="container more" aria-labelledby="more-title">
+        <h2 id="more-title" class="h3">More work</h2>
+        <ul role="list" class="more-grid">
+          {more.map((m) => (
+            <GlassCard as="li" href={`/work/${m.id}/`} pad="sm">
+              <WorkArt art={m.data.art} />
+              <p class="eyebrow">{m.data.sector}</p>
+              <h3 class="h4">
+                <a href={`/work/${m.id}/`}>{m.data.title}</a>
+              </h3>
+            </GlassCard>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+</BaseLayout>
+
+<style>
+  .cs-head {
+    display: grid;
+    gap: var(--space-4);
+    padding-block: calc(var(--header-h) + var(--space-7)) var(--space-6);
+    max-width: min(100% - 2 * var(--gutter), 60rem);
+    margin-inline: auto;
+  }
+  .cs-head .lead {
+    max-width: 68ch;
+  }
+  .mock-flag {
+    justify-self: start;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-pill);
+    background: #facc15;
+    color: #0b0d12;
+  }
+  .cs-hero {
+    margin-block-end: var(--space-8);
+  }
+  .cs-layout {
+    display: grid;
+    gap: var(--space-7);
+  }
+  @media (min-width: 60rem) {
+    .cs-layout {
+      grid-template-columns: 18rem minmax(0, 1fr);
+      align-items: start;
+    }
+    .cs-facts {
+      position: sticky;
+      top: calc(var(--header-h) + 1.5rem);
+    }
+  }
+  .cs-facts {
+    --glass-radius: var(--radius-lg);
+    padding: var(--space-5);
+    display: grid;
+    gap: var(--space-5);
+  }
+  dl {
+    display: grid;
+    gap: var(--space-4);
+    margin: 0;
+  }
+  dt {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--fg-subtle);
+  }
+  dd {
+    margin: 0.2rem 0 0;
+    font-weight: 520;
+  }
+  dd ul {
+    display: grid;
+    gap: 0.25rem;
+  }
+  .cs-links {
+    display: grid;
+    gap: var(--space-2);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border);
+  }
+  .cs-links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  .cs-main {
+    display: grid;
+    gap: var(--space-7);
+    max-width: 46rem;
+  }
+  .cs-main section {
+    display: grid;
+    gap: var(--space-4);
+  }
+  .checks {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .checks li {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+  }
+  .tick {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+    margin-top: 0.1rem;
+    border-radius: 50%;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+  }
+  .highlights {
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  }
+  .highlights li {
+    --glass-radius: var(--radius-md);
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    padding: var(--space-4);
+  }
+  .highlights :global(svg) {
+    color: var(--accent);
+    margin-top: 0.15rem;
+  }
+  .outcomes {
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  }
+  .outcomes li {
+    --glass-radius: var(--radius-md);
+    display: grid;
+    gap: var(--space-1);
+    padding: var(--space-4);
+  }
+  .o-val {
+    font-size: var(--step-3);
+    font-weight: 650;
+    background: var(--grad-text);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .stack-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .stack-list li {
+    padding: 0.35rem 0.8rem;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    background: color-mix(in srgb, var(--fg) 7%, transparent);
+    box-shadow: inset 0 0 0 1px var(--border);
+  }
+  .cs-body {
+    color: var(--fg-muted);
+  }
+  .cs-body :global(p + p) {
+    margin-top: var(--space-4);
+  }
+  .nda {
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--border);
+  }
+  .more {
+    padding-block-end: var(--space-8);
+    display: grid;
+    gap: var(--space-5);
+  }
+  .more-grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  }
+  .more-grid h3 a {
+    text-decoration: none;
+  }
+</style>

@@ -1,0 +1,78 @@
+---
+/**
+ * Every page renders inside this layout: <head> (fonts, SEO, JSON-LD), the animated backdrop, header, main, footer.
+ *
+ *   <BaseLayout seo={{ title, description }} schema={[service(...)]} backdrop="aurora">…</BaseLayout>
+ *
+ * The Organization + WebSite + WebPage graph is emitted on every page; pass extra nodes with `schema`.
+ */
+import '@/styles/global.css';
+import { Font } from 'astro:assets';
+import Seo, { type SeoProps } from '@/components/Seo.astro';
+import JsonLd from '@/components/JsonLd.astro';
+import Backdrop from '@/components/Backdrop.astro';
+import Header from '@/components/Header.astro';
+import Footer from '@/components/Footer.astro';
+import { site } from '@/data/site';
+import { graph, organization, website, webPage, abs, type Thing } from '@/lib/schema';
+
+interface Props {
+  seo: SeoProps;
+  schema?: Thing[];
+  backdrop?: 'orbs' | 'aurora';
+  /** Pages like the styleguide can opt out of header/footer chrome. */
+  chrome?: boolean;
+  pageType?: string;
+}
+const { seo, schema = [], backdrop = 'orbs', chrome = true, pageType } = Astro.props;
+const url = abs(Astro.url.pathname);
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- Theme before first paint: stored choice, else the system preference. Also marks JS as available. -->
+    <script is:inline>
+      (function () {
+        var d = document.documentElement;
+        var t = null;
+        try {
+          t = localStorage.getItem('vbx-theme');
+        } catch (e) {}
+        if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        d.dataset.theme = t;
+        d.classList.add('js');
+      })();
+    </script>
+    <meta name="theme-color" content="#0b0d12" />
+    <meta name="color-scheme" content="dark light" />
+    <Font cssVariable="--font-geist" preload />
+    <Font cssVariable="--font-geist-mono" />
+    <Seo {...seo} />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    {site.verification.google && <meta name="google-site-verification" content={site.verification.google} />}
+    {site.verification.bing && <meta name="msvalidate.01" content={site.verification.bing} />}
+    {site.verification.yandex && <meta name="yandex-verification" content={site.verification.yandex} />}
+    <meta name="generator" content={Astro.generator} />
+    <JsonLd data={graph(organization(), website(), webPage({ url, name: seo.title, description: seo.description, ...(pageType ? { type: pageType } : {}) }), ...schema)} />
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <Backdrop variant={backdrop} />
+    {chrome && <Header />}
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    {chrome && <Footer />}
+    <script>
+      import '@/scripts/runtime';
+    </script>
+  </body>
+</html>

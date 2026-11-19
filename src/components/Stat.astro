@@ -1,0 +1,57 @@
+---
+/**
+ * Stat with a count-up (runtime). The final number is in the HTML (SEO, no-JS, reduced motion).
+ * Only use REAL, owner-confirmed numbers (CLAUDE.md). Pass `value={null}` to render nothing.
+ */
+interface Props {
+  value: number | null;
+  prefix?: string;
+  suffix?: string;
+  label: string;
+  decimals?: number;
+}
+const { value, prefix = '', suffix = '', label, decimals = 0 } = Astro.props;
+const formatted =
+  value === null ? '' : new Intl.NumberFormat('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value);
+---
+
+{
+  value !== null && (
+    <div class="stat">
+      <p class="stat-value">
+        {prefix}
+        <span data-count={value.toFixed(decimals)}>{formatted}</span>
+        {suffix}
+      </p>
+      <p class="stat-label">{label}</p>
+    </div>
+  )
+}
+
+<style>
+  .stat {
+    display: grid;
+    gap: var(--space-1);
+  }
+  .stat-value {
+    font-size: var(--step-4);
+    font-weight: 650;
+    letter-spacing: var(--tracking-display);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    background: var(--grad-text);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .stat-label {
+    color: var(--fg-muted);
+    font-size: var(--step--1);
+  }
+  @media (forced-colors: active) {
+    .stat-value {
+      color: CanvasText;
+      background: none;
+    }
+  }
+</style>

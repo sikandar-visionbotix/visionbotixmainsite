@@ -1,0 +1,99 @@
+---
+/**
+ * FAQ / accordion on native <details> (no JS). `exclusive` gives one-open-at-a-time via the `name` attribute.
+ * `schema` emits FAQPage JSON-LD. Only use it for the page's main FAQ, and only with questions shown on the page.
+ * Answers may contain simple inline HTML (links, <strong>); JSON-LD gets a plain-text copy.
+ */
+import Icon from './Icon.astro';
+import JsonLd from './JsonLd.astro';
+import { faqPage, type FaqItem } from '@/lib/schema';
+
+interface Props {
+  items: FaqItem[];
+  name?: string;
+  exclusive?: boolean;
+  schema?: boolean;
+  openFirst?: boolean;
+}
+const { items, name = 'faq', exclusive = true, schema = false, openFirst = false } = Astro.props;
+---
+
+<div class="accordion" data-stagger>
+  {
+    items.map((item, i) => (
+      <details class="acc-item glass-subtle" name={exclusive ? name : undefined} open={openFirst && i === 0}>
+        <summary>
+          <span class="acc-q">{item.q}</span>
+          <span class="acc-icon" aria-hidden="true">
+            <Icon name="chevron-down" size={18} />
+          </span>
+        </summary>
+        <div class="acc-a prose">
+          <p set:html={item.a} />
+        </div>
+      </details>
+    ))
+  }
+</div>
+{schema && <JsonLd data={faqPage(items)} />}
+
+<style>
+  .accordion {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .acc-item {
+    --glass-radius: var(--radius-md);
+  }
+  summary {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: 1.125rem 1.25rem;
+    cursor: pointer;
+    list-style: none;
+    font-weight: 580;
+    font-size: var(--step-1);
+    line-height: 1.35;
+    border-radius: inherit;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  .acc-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 2rem;
+    block-size: 2rem;
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--fg) 7%, transparent);
+    transition: rotate var(--dur-3) var(--ease-out);
+  }
+  details[open] .acc-icon {
+    rotate: 180deg;
+  }
+  .acc-a {
+    position: relative;
+    z-index: 2;
+    padding: 0 1.25rem 1.25rem;
+    color: var(--fg-muted);
+    max-width: 68ch;
+  }
+  /* Smooth open/close where ::details-content is supported (Chromium 131+); instant elsewhere. */
+  @media (prefers-reduced-motion: no-preference) {
+    .acc-item::details-content {
+      block-size: 0;
+      overflow-y: clip;
+      transition:
+        block-size var(--dur-3) var(--ease-out),
+        content-visibility var(--dur-3) allow-discrete;
+    }
+    .acc-item[open]::details-content {
+      block-size: auto;
+    }
+  }
+</style>

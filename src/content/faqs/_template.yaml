@@ -1,0 +1,5 @@
+# Copy to <topic>.yaml. Shared Q&A sets reused across pages (pricing, process, security…).
+topic: Engagement
+items:
+  - q: Who owns the code?
+    a: You do. …

@@ -1,0 +1,78 @@
+---
+/** Page section: container, optional eyebrow + heading + lead, then the slot. */
+interface Props {
+  id?: string;
+  eyebrow?: string;
+  title?: string;
+  lead?: string;
+  align?: 'start' | 'center';
+  width?: 'default' | 'narrow' | 'full';
+  headingLevel?: 'h1' | 'h2' | 'h3';
+  space?: 'default' | 'tight' | 'none';
+  class?: string;
+  band?: boolean;
+}
+const {
+  id,
+  eyebrow,
+  title,
+  lead,
+  align = 'start',
+  width = 'default',
+  headingLevel: H = 'h2',
+  space = 'default',
+  class: className,
+  band = false,
+} = Astro.props;
+const headId = id && title ? `${id}-title` : undefined;
+---
+
+<section id={id} class:list={['section', `space-${space}`, { band }, className]} aria-labelledby={headId}>
+  <div class:list={[width === 'narrow' ? 'container-narrow' : width === 'full' ? '' : 'container']}>
+    {
+      (eyebrow || title || lead) && (
+        <header class:list={['section-head', `align-${align}`]} data-reveal>
+          {eyebrow && <p class="eyebrow">{eyebrow}</p>}
+          {title && (
+            <H id={headId} class="section-title">
+              <Fragment set:html={title} />
+            </H>
+          )}
+          {lead && <p class="lead">{lead}</p>}
+        </header>
+      )
+    }
+    <slot />
+  </div>
+</section>
+
+<style>
+  .section {
+    position: relative;
+    padding-block: var(--section-y);
+  }
+  .space-tight {
+    padding-block: calc(var(--section-y) * 0.55);
+  }
+  .space-none {
+    padding-block: 0;
+  }
+  .band {
+    background: rgb(var(--glass-tint) / 0.32);
+    border-block: 1px solid var(--border);
+  }
+  .section-head {
+    display: grid;
+    gap: var(--space-4);
+    margin-block-end: clamp(2rem, 1.5rem + 2vw, 3.5rem);
+    max-width: 46rem;
+  }
+  .align-center {
+    margin-inline: auto;
+    text-align: center;
+    justify-items: center;
+  }
+  .align-center .lead {
+    margin-inline: auto;
+  }
+</style>

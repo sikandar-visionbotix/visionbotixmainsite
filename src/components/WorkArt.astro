@@ -1,0 +1,295 @@
+---
+/**
+ * Anonymous case-study illustration (clients can't be shown, owner rule): a glass device mock-up over a brand
+ * gradient, shaped by the project type. Pure HTML/CSS + one icon, no images, so it is crisp and tiny.
+ */
+import Icon from './Icon.astro';
+import type { IconName } from '@/lib/icons';
+
+type Art = 'marketplace' | 'mobile' | 'vision' | 'agent' | 'dashboard' | 'robot' | 'health' | 'kiosk' | 'farm' | 'security';
+interface Props {
+  art: Art;
+  size?: 'card' | 'hero';
+}
+const { art, size = 'card' } = Astro.props;
+
+const config: Record<Art, { icon: IconName; device: 'phone' | 'window' | 'lens'; hue: string }> = {
+  marketplace: { icon: 'shopping-cart', device: 'window', hue: 'warm' },
+  mobile: { icon: 'smartphone', device: 'phone', hue: 'cool' },
+  vision: { icon: 'scan-eye', device: 'lens', hue: 'violet' },
+  agent: { icon: 'bot', device: 'window', hue: 'violet' },
+  dashboard: { icon: 'chart-line', device: 'window', hue: 'cool' },
+  robot: { icon: 'cpu', device: 'lens', hue: 'cool' },
+  health: { icon: 'stethoscope', device: 'phone', hue: 'warm' },
+  kiosk: { icon: 'monitor-smartphone', device: 'window', hue: 'violet' },
+  farm: { icon: 'sprout', device: 'lens', hue: 'green' },
+  security: { icon: 'shield-check', device: 'window', hue: 'cool' },
+};
+const c = config[art];
+---
+
+<div class:list={['work-art', `hue-${c.hue}`, `dev-${c.device}`, `size-${size}`]} aria-hidden="true">
+  <div class="wa-orb wa-orb-1"></div>
+  <div class="wa-orb wa-orb-2"></div>
+  {
+    c.device === 'window' && (
+      <div class="wa-window">
+        <div class="wa-bar">
+          <i />
+          <i />
+          <i />
+        </div>
+        <div class="wa-body">
+          <div class="wa-side">
+            <span />
+            <span />
+            <span />
+            <span />
+          </div>
+          <div class="wa-main">
+            <span class="wa-icon">
+              <Icon name={c.icon} size={size === 'hero' ? 34 : 24} />
+            </span>
+            <span class="wa-line w70" />
+            <span class="wa-line w45" />
+            <div class="wa-tiles">
+              <span />
+              <span />
+              <span />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+  {
+    c.device === 'phone' && (
+      <div class="wa-phone">
+        <span class="wa-notch" />
+        <span class="wa-icon">
+          <Icon name={c.icon} size={size === 'hero' ? 34 : 24} />
+        </span>
+        <span class="wa-line w70" />
+        <span class="wa-line w45" />
+        <span class="wa-row" />
+        <span class="wa-row" />
+        <span class="wa-row short" />
+      </div>
+    )
+  }
+  {
+    c.device === 'lens' && (
+      <div class="wa-lens">
+        <span class="wa-ring r1" />
+        <span class="wa-ring r2" />
+        <span class="wa-box" />
+        <span class="wa-icon">
+          <Icon name={c.icon} size={size === 'hero' ? 40 : 28} />
+        </span>
+      </div>
+    )
+  }
+</div>
+
+<style>
+  .work-art {
+    --c1: var(--brand-orange);
+    --c2: var(--brand-magenta);
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    aspect-ratio: 16 / 10;
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--bg) 70%, var(--c2) 8%);
+    display: grid;
+    place-items: center;
+  }
+  .size-hero {
+    aspect-ratio: 16 / 8;
+    border-radius: var(--radius-xl);
+  }
+  .hue-cool {
+    --c1: var(--brand-cyan);
+    --c2: var(--brand-violet);
+  }
+  .hue-violet {
+    --c1: var(--brand-violet);
+    --c2: var(--brand-magenta);
+  }
+  .hue-green {
+    --c1: #34d399;
+    --c2: var(--brand-cyan);
+  }
+  .wa-orb {
+    position: absolute;
+    z-index: -1;
+    width: 75%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+  }
+  .wa-orb-1 {
+    left: -20%;
+    top: -35%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--c1) 55%, transparent), transparent);
+  }
+  .wa-orb-2 {
+    right: -22%;
+    bottom: -45%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--c2) 55%, transparent), transparent);
+  }
+
+  /* shared glass + skeleton */
+  .wa-window,
+  .wa-phone,
+  .wa-lens {
+    background: rgb(var(--glass-tint) / 0.55);
+    box-shadow:
+      var(--glass-sheen),
+      inset 0 0 0 1px var(--border-strong),
+      var(--shadow-lg);
+  }
+  .wa-icon {
+    display: grid;
+    place-items: center;
+    inline-size: 2.75em;
+    block-size: 2.75em;
+    border-radius: 0.75em;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+  }
+  .wa-line,
+  .wa-row,
+  .wa-side span,
+  .wa-tiles span {
+    display: block;
+    border-radius: 99px;
+    background: color-mix(in srgb, var(--fg) 14%, transparent);
+  }
+  .wa-line {
+    height: 0.5em;
+  }
+  .w70 {
+    width: 70%;
+  }
+  .w45 {
+    width: 45%;
+    opacity: 0.7;
+  }
+
+  /* window */
+  .wa-window {
+    width: 74%;
+    height: 72%;
+    border-radius: 0.9em;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    overflow: hidden;
+    translate: 0 6%;
+  }
+  .wa-bar {
+    display: flex;
+    gap: 0.35em;
+    padding: 0.55em 0.7em;
+    border-bottom: 1px solid var(--border);
+  }
+  .wa-bar i {
+    width: 0.5em;
+    height: 0.5em;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--fg) 25%, transparent);
+  }
+  .wa-body {
+    display: grid;
+    grid-template-columns: 22% 1fr;
+    gap: 0.8em;
+    padding: 0.8em;
+  }
+  .wa-side {
+    display: grid;
+    align-content: start;
+    gap: 0.55em;
+  }
+  .wa-side span {
+    height: 0.45em;
+  }
+  .wa-main {
+    display: grid;
+    align-content: start;
+    gap: 0.6em;
+  }
+  .wa-tiles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5em;
+    margin-top: 0.3em;
+  }
+  .wa-tiles span {
+    height: 2.4em;
+    border-radius: 0.5em;
+  }
+
+  /* phone */
+  .wa-phone {
+    width: 30%;
+    height: 112%;
+    translate: 0 14%;
+    border-radius: 1.6em;
+    display: grid;
+    align-content: start;
+    gap: 0.6em;
+    padding: 1.6em 1em 1em;
+    position: relative;
+  }
+  .wa-notch {
+    position: absolute;
+    top: 0.55em;
+    left: 50%;
+    translate: -50% 0;
+    width: 32%;
+    height: 0.5em;
+    border-radius: 99px;
+    background: color-mix(in srgb, var(--fg) 22%, transparent);
+  }
+  .wa-row {
+    height: 1.6em;
+    border-radius: 0.5em;
+  }
+  .wa-row.short {
+    width: 60%;
+  }
+
+  /* lens / camera view */
+  .wa-lens {
+    position: relative;
+    width: 46%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+  }
+  .wa-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid color-mix(in srgb, var(--fg) 22%, transparent);
+  }
+  .r1 {
+    inset: 12%;
+  }
+  .r2 {
+    inset: 26%;
+    border-style: dashed;
+  }
+  .wa-box {
+    position: absolute;
+    inset: 30% 22% 26% 30%;
+    border: 2px solid var(--c1);
+    border-radius: 0.4em;
+    box-shadow: 0 0 18px color-mix(in srgb, var(--c1) 60%, transparent);
+  }
+  .size-card {
+    font-size: clamp(0.65rem, 0.5rem + 0.6vw, 0.85rem);
+  }
+  .size-hero {
+    font-size: clamp(0.8rem, 0.6rem + 0.9vw, 1.15rem);
+  }
+</style>

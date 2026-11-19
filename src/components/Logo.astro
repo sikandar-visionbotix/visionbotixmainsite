@@ -1,0 +1,38 @@
+---
+/** The ORIGINAL Visionbotix logo (never redesign; CLAUDE.md). Transparent PNG, coral wordmark, readable on both themes. */
+import { site } from '@/data/site';
+
+interface Props {
+  href?: string | null;
+  height?: number;
+  class?: string;
+  eager?: boolean;
+}
+const { href = '/', height = 32, class: className, eager = true } = Astro.props;
+const width = Math.round((site.logo.width / site.logo.height) * height);
+---
+
+{
+  href ? (
+    <a href={href} class:list={['logo', className]} aria-label={`${site.name} home`} style={`--h:${height}px`}>
+      <img src={site.logo.src} alt={site.name} width={width} height={height} loading={eager ? 'eager' : 'lazy'} decoding="async" />
+    </a>
+  ) : (
+    <span class:list={['logo', className]} style={`--h:${height}px`}>
+      <img src={site.logo.src} alt={site.name} width={width} height={height} loading={eager ? 'eager' : 'lazy'} decoding="async" />
+    </span>
+  )
+}
+
+<style>
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    border-radius: var(--radius-xs);
+  }
+  img {
+    /* Explicit size: the source is 3x (96px tall), so never fall back to its natural size. */
+    width: auto;
+    height: var(--h);
+  }
+</style>
