@@ -1,0 +1,49 @@
+---
+/** 404 (S5). Vercel serves dist/404.html for unknown paths. Not indexed, not in the sitemap. */
+import '@/styles/page-kit.css';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Button from '@/components/Button.astro';
+import Icon from '@/components/Icon.astro';
+import type { IconName } from '@/lib/icons';
+
+const links: { href: string; label: string; icon: IconName }[] = [
+  { href: '/ai-agents/', label: 'AI agents', icon: 'bot' },
+  { href: '/services/', label: 'Services', icon: 'layers' },
+  { href: '/products/', label: 'Products', icon: 'shield-check' },
+  { href: '/work/', label: 'Our work', icon: 'briefcase' },
+  { href: '/pricing/', label: 'Pricing', icon: 'wallet' },
+  { href: '/contact/', label: 'Contact', icon: 'mail' },
+];
+---
+
+<BaseLayout seo={{ title: 'Page not found', description: 'This page does not exist or has moved. Find AI agents, services, products and pricing from Visionbotix here.', noindex: true }}>
+  <section class="container pk-hero" data-center aria-labelledby="nf-title">
+    <div class="pk-copy">
+      <p class="eyebrow mono">Error 404</p>
+      <h1 id="nf-title" class="pk-title">This page has moved, or never existed.</h1>
+      <p class="lead pk-lead">Try one of these instead, or tell us what you were looking for.</p>
+      <ul role="list" class="nf-links">
+        {
+          links.map((l) => (
+            <li>
+              <a class="pk-rel-chip glass-chip press" href={l.href}>
+                <Icon name={l.icon} size={16} />
+                {l.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <Button href="/" icon="arrow-right">Go to the homepage</Button>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .nf-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-2);
+  }
+</style>

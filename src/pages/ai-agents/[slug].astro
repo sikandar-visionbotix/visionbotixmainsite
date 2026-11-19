@@ -1,0 +1,896 @@
+---
+/**
+ * Agent page template (S3, PLAN §5): hero with the scripted "See it work" preview → problem → what it does → a day in
+ * the life → use cases → integrations, controls and security → setup → pricing → comparison (Markdown body) → FAQ →
+ * related → CTA. Copy comes from `src/content/agents/<slug>.md`; prices only from `src/data/pricing.ts` (D23/D27).
+ * The demo sits in `[data-demo-slot]`, which the live demo replaces in S7/S7b (D19).
+ */
+import { render } from 'astro:content';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Button from '@/components/Button.astro';
+import Icon from '@/components/Icon.astro';
+import Steps from '@/components/Steps.astro';
+import Accordion from '@/components/Accordion.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import AgentDemo from '@/components/AgentDemo.astro';
+import AgentCard from '@/components/AgentCard.astro';
+import { site } from '@/data/site';
+import { agentGroups, agents as catalogue, services, industries, industriesLive } from '@/data/catalogue';
+const IndTag = industriesLive ? 'a' : 'span';
+import { audit, money } from '@/data/pricing';
+import { getAgents, agentPricing, bundlesWith, pricingFaq, type AgentEntry } from '@/lib/agents';
+import { service } from '@/lib/schema';
+
+export async function getStaticPaths() {
+  const all = await getAgents();
+  return all.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+interface Props {
+  entry: AgentEntry;
+}
+const { entry } = Astro.props;
+const d = entry.data;
+const slug = entry.id;
+const path = `/ai-agents/${slug}/`;
+const { Content } = await render(entry);
+const hasBody = !!entry.body?.trim();
+
+const price = agentPricing(slug, d.name);
+const myBundles = bundlesWith(slug);
+// The generated price answer goes second: high intent, and always in step with pricing.ts.
+const faqs = [...d.faq.slice(0, 1), pricingFaq(slug, d.name), ...d.faq.slice(1)];
+const group = agentGroups[d.group];
+
+const relatedAgents = d.related.agents.map((r) => catalogue.find((c) => c.slug === r.id)!).filter(Boolean);
+const relatedServices = d.related.services.map((s) => services.find((x) => x.slug === s.id)!).filter(Boolean);
+const relatedIndustries = d.related.industries.map((s) => industries.find((x) => x.slug === s)!).filter(Boolean);
+const agentName = (s: string) => catalogue.find((c) => c.slug === s)?.name ?? s;
+const updated = d.updated.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+const isProject = price.monthly === null;
+/** Columns that avoid a lonely last card: 4 → 2×2 or 4 across, 5 → 5 across (wide screens), otherwise 3. */
+const cols = (n: number, four: 2 | 4) => (n === 4 ? four : n === 5 ? 5 : 3);
+---
+
+<BaseLayout
+  seo={{ title: d.seo.title, description: d.seo.description, modifiedTime: d.updated.toISOString() }}
+  schema={[service({ name: d.name, description: d.summary, path, serviceType: d.keywords.primary, offers: price.offers })]}
+>
+  <!-- ============ Hero ============ -->
+  <section class="container ag-hero" aria-labelledby="ag-title">
+    <div class="ag-copy">
+      <Breadcrumbs items={[{ name: 'AI agents', href: '/ai-agents/' }, { name: d.name, href: path }]} />
+      <p class="ag-eyebrow eyebrow">
+        <span class="ag-eyebrow-icon" aria-hidden="true"><Icon name={d.icon} size={14} /></span>
+        {d.name} · {group.label}
+      </p>
+      <h1 id="ag-title" class="ag-title">{d.h1}</h1>
+      <p class="lead ag-lead">{d.summary}</p>
+      <ul role="list" class="ag-facts">
+        <li><Icon name="wallet" size={16} /><span><strong>{price.label}</strong>{price.note && <span class="muted"> · {price.note}</span>}</span></li>
+        <li><Icon name="timer" size={16} /><span>{d.timeline}</span></li>
+      </ul>
+      <div class="cluster ag-ctas">
+        <Button href={site.contact.bookingUrl} size="lg" icon="arrow-right" data-event="book_call" data-event-location={`agent-hero-${slug}`}>Book a free strategy call</Button>
+        <Button href="#pricing" size="lg" variant="glass">See what's included</Button>
+      </div>
+      <ul role="list" class="ag-verbs mono" aria-label="What it does">
+        {d.verbs.map((v) => <li>{v}</li>)}
+      </ul>
+    </div>
+
+    <div class="ag-visual" id="see-it-work" data-demo-slot={slug}>
+      <p class="demo-label mono"><span class="demo-dot" aria-hidden="true"></span>See it work</p>
+      <AgentDemo {...d.demo} icon={d.demo.icon ?? d.icon} id="agent-demo" />
+    </div>
+  </section>
+
+  <!-- ============ Problem ============ -->
+  <Section id="problem" eyebrow="The problem" title="The work it takes off your plate." space="tight">
+    <ul role="list" class="problems" data-stagger>
+      {
+        d.problem.map((p) => (
+          <li class="problem glass-subtle">
+            <span class="p-icon" aria-hidden="true">
+              <Icon name="circle-x" size={18} />
+            </span>
+            <p>{p}</p>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="best-for small">
+      <span class="mono subtle">Built for</span>
+      {d.bestFor.map((b) => <span class="bf-chip">{b}</span>)}
+    </p>
+  </Section>
+
+  <!-- ============ What it does ============ -->
+  <Section id="does" eyebrow="What it does" title={`What the ${d.name} does for you.`}>
+    <ol role="list" class="does" data-cols={cols(d.does.length, 2)} data-stagger>
+      {
+        d.does.map((c, i) => (
+          <li class="do glass-subtle spotlight">
+            <span class="do-n mono" aria-hidden="true">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <h3 class="h4">{c.title}</h3>
+            <p class="muted small">{c.body}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </Section>
+
+  <!-- ============ A day in the life ============ -->
+  <Section id="day" eyebrow={isProject ? 'How it runs' : 'A day in the life'} title={isProject ? 'From kickoff to handover.' : 'A day with the agent on shift.'}>
+    <ol role="list" class="day glass-subtle" data-reveal>
+      {
+        d.dayInLife.map((s) => (
+          <li class="day-row">
+            <span class="day-time mono">{s.time}</span>
+            <span class="day-dot" aria-hidden="true" />
+            <p>{s.step}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </Section>
+
+  <!-- ============ Use cases ============ -->
+  <Section id="use-cases" eyebrow="Use cases" title="Where it earns its keep.">
+    <ul role="list" class="uses" data-cols={cols(d.useCases.length, 4)} data-stagger>
+      {
+        d.useCases.map((u) => (
+          <li class="use glass-subtle spotlight">
+            <Icon name="circle-check" size={20} class="use-icon" />
+            <h3 class="h4">{u.title}</h3>
+            <p class="muted small">{u.body}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <CtaBand
+    title={`See the ${d.name} on your own ${isProject ? 'project' : 'business'}.`}
+    text="In a free 30-minute call we map your workflow, show you how the agent would handle it and give you a fixed quote within 24 hours."
+    location={`agent-mid-${slug}`}
+  />
+
+  <!-- ============ Integrations · controls · security ============ -->
+  <Section id="trust" eyebrow="Fits your stack, stays in your control" title="Connected to your tools, governed by your rules.">
+    <div class="trust">
+      <div class="trust-col glass-subtle" data-reveal>
+        <h3 class="trust-head"><Icon name="plug" size={18} /> Integrations</h3>
+        <ul role="list" class="int-tags">
+          {d.integrations.map((t) => <li>{t}</li>)}
+        </ul>
+        <p class="small muted">Not listed? If your system has an API, we can connect it.</p>
+      </div>
+      <div class="trust-col glass-subtle" data-reveal>
+        <h3 class="trust-head"><Icon name="user-check" size={18} /> Human in the loop</h3>
+        <ul role="list" class="checks">
+          {
+            d.controls.map((c) => (
+              <li>
+                <Icon name="check" size={15} strokeWidth={2.5} />
+                {c}
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div class="trust-col glass-subtle" data-reveal>
+        <h3 class="trust-head"><Icon name="lock" size={18} /> Security and data</h3>
+        <ul role="list" class="checks">
+          {
+            d.security.map((c) => (
+              <li>
+                <Icon name="check" size={15} strokeWidth={2.5} />
+                {c}
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+    <p class="trust-note small muted">
+      <Icon name="shield-check" size={16} />
+      Every agent ships with a baseline metric, an eval suite, guardrails and an audit log. Our team also builds encryption and network-defense products, so security is designed in, not bolted on.
+    </p>
+  </Section>
+
+  <!-- ============ Setup ============ -->
+  <Section id="setup" eyebrow="Setup" title={`${d.timeline}, in four steps.`} align="center">
+    <Steps steps={d.setup} note="You get a fixed quote before we start, an NDA on request, and you own the configuration, prompts and code." />
+  </Section>
+
+  <!-- ============ Pricing ============ -->
+  <Section id="pricing" eyebrow="Pricing" title={isProject ? 'A fixed price, agreed before we start.' : 'Transparent pricing, no long contract surprises.'}>
+    <div class="price-grid">
+      <div class="price-card glass-strong" data-reveal="scale">
+        <p class="price-name">{d.name}</p>
+        <p class="price-main">
+          <span class="price-from small muted">From</span>
+          <span class="price-num">{money(price.setup)}</span>
+          <span class="price-unit muted">{isProject ? 'fixed price' : 'one-off setup'}</span>
+        </p>
+        {
+          price.monthly && (
+            <p class="price-main price-monthly">
+              <span class="price-from small muted">+</span>
+              <span class="price-num">{money(price.monthly)}</span>
+              <span class="price-unit muted">per month, managed</span>
+            </p>
+          )
+        }
+        {price.note && <p class="small muted">{price.note}</p>}
+        <h3 class="price-inc-head mono">What's included</h3>
+        <ul role="list" class="checks">
+          {
+            d.includes.map((c) => (
+              <li>
+                <Icon name="check" size={15} strokeWidth={2.5} />
+                {c}
+              </li>
+            ))
+          }
+        </ul>
+        {
+          !isProject && (
+            <p class="small subtle price-fine">
+              Monthly fees cover a fair-use volume. Model, messaging and call usage above it is passed through at cost, with no markup.
+            </p>
+          )
+        }
+        <div class="price-ctas">
+          <Button href={site.contact.bookingUrl} block icon="arrow-right" data-event="book_call" data-event-location={`agent-pricing-${slug}`}>Book a free strategy call</Button>
+          <Button href="/contact/#quote" block variant="glass" data-event="quote_click" data-event-location={`agent-pricing-${slug}`}>Get a quote in 24h</Button>
+        </div>
+      </div>
+
+      <div class="price-side">
+        {
+          myBundles.map((b) => (
+            <div class="bundle glass-subtle" data-reveal>
+              <p class="eyebrow">Save with a bundle</p>
+              <h3 class="h4">{b.name}</h3>
+              <p class="small muted">{b.agents.map(agentName).join(' + ')}</p>
+              <p class="bundle-price mono">
+                From {money(b.setup)} + {money(b.monthly)}/mo
+                <span class="subtle">
+                  {' '}
+                  · separately {money(b.separateSetup)} + {money(b.separateMonthly)}/mo
+                </span>
+              </p>
+              <a class="link small" href={`/ai-agents/#${b.slug}`}>
+                See the bundle <Icon name="arrow-right" size={13} />
+              </a>
+            </div>
+          ))
+        }
+        <div class="bundle glass-subtle" data-reveal>
+          <p class="eyebrow">Not sure yet?</p>
+          <h3 class="h4">{audit.name}: {money(audit.price)}</h3>
+          <p class="small muted">
+            In {audit.duration} we map where agents would save you the most time and what they would connect to. {audit.note}.
+          </p>
+          <a class="link small" href={site.contact.bookingUrl}>
+            Ask about the audit <Icon name="arrow-right" size={13} />
+          </a>
+        </div>
+        <ul role="list" class="promises small">
+          <li><Icon name="file-signature" size={15} /> NDA on request from the first call</li>
+          <li><Icon name="key-round" size={15} /> You own the configuration, prompts and code</li>
+          <li><Icon name="life-buoy" size={15} /> 30 days of post-launch support</li>
+        </ul>
+      </div>
+    </div>
+  </Section>
+
+  <!-- ============ Comparison (optional Markdown body) ============ -->
+  {
+    hasBody && (
+      <Section id="compare" width="narrow" space="tight">
+        <div class="prose ag-body glass-subtle" data-reveal>
+          <Content />
+        </div>
+      </Section>
+    )
+  }
+
+  <!-- ============ FAQ ============ -->
+  <Section id="faq" eyebrow="FAQ" title={`${d.name}: common questions.`} width="narrow" align="center">
+    <Accordion items={faqs} schema name="agent-faq" />
+    <p class="faq-more small muted">
+      Something else? <a class="link" href={`mailto:${site.contact.email}`}>{site.contact.email}</a> or <a class="link" href={site.contact.bookingUrl}>book a call</a>.
+      <span class="updated mono">Updated {updated}</span>
+    </p>
+  </Section>
+
+  <!-- ============ Related ============ -->
+  {
+    relatedAgents.length > 0 && (
+      <Section id="related" eyebrow="Pairs well with" title="Agents that work well alongside it." space="tight">
+        <ul role="list" class="rel-agents" data-stagger>
+          {relatedAgents.map((a) => (
+            <AgentCard {...a} />
+          ))}
+        </ul>
+        {(relatedServices.length > 0 || relatedIndustries.length > 0) && (
+          <div class="rel-more">
+            {relatedServices.length > 0 && (
+              <p class="small">
+                <span class="mono subtle">Related services</span>
+                {relatedServices.map((s) => (
+                  <a class="rel-chip glass-chip press" href={`/services/${s.slug}/`}>
+                    <Icon name={s.icon} size={14} />
+                    {s.name}
+                  </a>
+                ))}
+              </p>
+            )}
+            {relatedIndustries.length > 0 && (
+              <p class="small">
+                <span class="mono subtle">Industries</span>
+                {relatedIndustries.map((s) => (
+                  <IndTag class="rel-chip glass-chip press" href={industriesLive ? `/industries/${s.slug}/` : undefined}>
+                    <Icon name={s.icon} size={14} />
+                    {s.name}
+                  </IndTag>
+                ))}
+              </p>
+            )}
+          </div>
+        )}
+        <div class="rel-foot">
+          <Button href="/ai-agents/" variant="glass" icon="arrow-right">See all {catalogue.length} agents</Button>
+        </div>
+      </Section>
+    )
+  }
+
+  <CtaBand title={`Put the ${d.name} to work.`} location={`agent-final-${slug}`} />
+</BaseLayout>
+
+<style>
+  /* ---------- hero ---------- */
+  .ag-hero {
+    display: grid;
+    align-items: center;
+    gap: clamp(2rem, 1.5rem + 3vw, 4rem);
+    padding-block: calc(var(--header-h) + clamp(1.25rem, 0.5rem + 3vw, 3rem)) clamp(2rem, 1rem + 3vw, 4rem);
+  }
+  @media (min-width: 64rem) {
+    .ag-hero {
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+      min-height: min(100svh, 56rem);
+    }
+  }
+  .ag-copy {
+    display: grid;
+    gap: var(--space-5);
+    justify-items: start;
+  }
+  .ag-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .ag-eyebrow-icon {
+    display: grid;
+    place-items: center;
+    inline-size: 1.6rem;
+    block-size: 1.6rem;
+    border-radius: 0.5rem;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+  }
+  .ag-title {
+    font-size: clamp(2.25rem, 1.5rem + 3.2vw, 4rem);
+    line-height: 1.04;
+    letter-spacing: -0.03em;
+    font-weight: 680;
+    max-width: 16ch;
+    text-wrap: balance;
+  }
+  .ag-lead {
+    max-width: 58ch;
+  }
+  @media (max-width: 40rem) {
+    .ag-lead {
+      font-size: var(--step-0);
+    }
+  }
+  .ag-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    font-size: var(--step--1);
+  }
+  .ag-facts li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .ag-facts :global(.icon) {
+    flex: none;
+    color: var(--accent);
+  }
+  .ag-facts strong {
+    font-weight: 620;
+  }
+  .ag-verbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    color: var(--fg-muted);
+  }
+  .ag-verbs li {
+    padding: 0.2rem 0.65rem;
+    border-radius: var(--radius-pill);
+    box-shadow: inset 0 0 0 1px var(--border-strong);
+  }
+  .ag-visual {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-3);
+    scroll-margin-top: calc(var(--header-h) + 1rem);
+  }
+  @media (min-width: 64rem) {
+    .ag-visual {
+      justify-items: end;
+    }
+    .demo-label {
+      inline-size: 100%;
+      max-inline-size: 31rem;
+    }
+  }
+  .demo-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.75rem;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--fg-muted);
+  }
+  .demo-dot {
+    inline-size: 0.45rem;
+    block-size: 0.45rem;
+    border-radius: 50%;
+    background: var(--grad-brand);
+  }
+
+  /* ---------- problem ---------- */
+  .problems {
+    display: grid;
+    gap: var(--space-3);
+  }
+  @media (min-width: 52rem) {
+    .problems {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .problem {
+    --glass-radius: var(--radius-md);
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    padding: var(--space-4) var(--space-5);
+  }
+  .problem > * {
+    position: relative;
+    z-index: 2;
+  }
+  .p-icon {
+    flex: none;
+    margin-block-start: 0.15rem;
+    color: var(--fg-subtle);
+  }
+  .best-for {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin-block-start: var(--space-5);
+  }
+  .best-for .mono,
+  .rel-more .mono {
+    margin-inline-end: var(--space-2);
+    font-size: 0.75rem;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+  }
+  .bf-chip {
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-pill);
+    color: var(--fg-muted);
+    background: color-mix(in srgb, var(--fg) 7%, transparent);
+  }
+
+  /* ---------- does / use cases: columns chosen from the item count (no lonely last card) ---------- */
+  .does,
+  .uses {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  }
+  @media (min-width: 64rem) {
+    [data-cols] {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    [data-cols='2'] {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    [data-cols='4'] {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 72rem) {
+    [data-cols='5'] {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+  .do {
+    --glass-radius: var(--radius-lg);
+    display: grid;
+    align-content: start;
+    gap: var(--space-2);
+    padding: var(--space-5);
+  }
+  .do > * {
+    position: relative;
+    z-index: 2;
+  }
+  .do-n {
+    font-size: 0.75rem;
+    color: var(--accent);
+  }
+
+  /* ---------- day in the life ---------- */
+  .day {
+    --glass-radius: var(--radius-xl);
+    display: grid;
+    padding: clamp(1rem, 0.6rem + 1.5vw, 2rem);
+  }
+  .day-row {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 4.5rem 1rem minmax(0, 1fr);
+    gap: var(--space-3);
+    align-items: start;
+    padding-block: var(--space-3);
+  }
+  .day-row + .day-row {
+    border-block-start: 1px solid var(--border);
+  }
+  .day-time {
+    font-size: 0.875rem;
+    color: var(--accent);
+    padding-block-start: 0.1rem;
+  }
+  .day-dot {
+    inline-size: 0.6rem;
+    block-size: 0.6rem;
+    margin-block-start: 0.45rem;
+    border-radius: 50%;
+    background: var(--grad-brand);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+  @media (max-width: 30rem) {
+    .day-row {
+      grid-template-columns: 3.75rem minmax(0, 1fr);
+    }
+    .day-dot {
+      display: none;
+    }
+  }
+
+  /* ---------- use cases ---------- */
+  .use {
+    --glass-radius: var(--radius-lg);
+    display: grid;
+    align-content: start;
+    gap: var(--space-2);
+    padding: var(--space-5);
+  }
+  .use > :global(*) {
+    position: relative;
+    z-index: 2;
+  }
+  .use :global(.use-icon) {
+    color: var(--accent);
+    margin-block-end: var(--space-1);
+  }
+
+  /* ---------- trust ---------- */
+  .trust {
+    display: grid;
+    gap: var(--space-4);
+  }
+  @media (min-width: 60rem) {
+    .trust {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .trust-col {
+    --glass-radius: var(--radius-lg);
+    display: grid;
+    align-content: start;
+    gap: var(--space-4);
+    padding: var(--space-5);
+  }
+  .trust-col > * {
+    position: relative;
+    z-index: 2;
+  }
+  .trust-head {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: var(--step-0);
+    font-weight: 620;
+  }
+  .trust-head :global(.icon) {
+    color: var(--accent);
+  }
+  .int-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+  .int-tags li {
+    padding: 0.25rem 0.7rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.8125rem;
+    font-weight: 520;
+    background: color-mix(in srgb, var(--fg) 8%, transparent);
+  }
+  .checks {
+    display: grid;
+    gap: var(--space-3);
+    font-size: var(--step--1);
+  }
+  .checks li {
+    display: flex;
+    gap: 0.55rem;
+    align-items: flex-start;
+    line-height: 1.45;
+  }
+  .checks :global(.icon) {
+    flex: none;
+    margin-block-start: 0.2rem;
+    color: var(--accent);
+  }
+  .trust-note {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    max-width: 70ch;
+    margin-block-start: var(--space-5);
+  }
+  .trust-note :global(.icon) {
+    flex: none;
+    margin-block-start: 0.15rem;
+    color: var(--accent);
+  }
+
+  /* ---------- pricing ---------- */
+  #pricing {
+    scroll-margin-top: var(--header-h);
+  }
+  .price-grid {
+    display: grid;
+    gap: var(--space-5);
+    align-items: start;
+  }
+  @media (min-width: 56rem) {
+    .price-grid {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    }
+  }
+  .price-card {
+    --glass-radius: var(--radius-xl);
+    display: grid;
+    gap: var(--space-4);
+    padding: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+  }
+  .price-card > * {
+    position: relative;
+    z-index: 2;
+  }
+  .price-name {
+    font-weight: 620;
+  }
+  .price-main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+  .price-num {
+    font-size: clamp(2.25rem, 1.8rem + 2vw, 3.25rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  .price-monthly {
+    margin-block-start: calc(var(--space-3) * -1);
+  }
+  .price-monthly .price-num {
+    font-size: clamp(1.5rem, 1.3rem + 1vw, 2rem);
+  }
+  .price-inc-head {
+    margin-block-start: var(--space-2);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--fg-muted);
+  }
+  .price-fine {
+    max-width: 52ch;
+  }
+  .price-ctas {
+    display: grid;
+    gap: var(--space-3);
+    margin-block-start: var(--space-2);
+  }
+  @media (min-width: 30rem) {
+    .price-ctas {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .price-side {
+    display: grid;
+    gap: var(--space-4);
+  }
+  .bundle {
+    --glass-radius: var(--radius-lg);
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-5);
+  }
+  .bundle > * {
+    position: relative;
+    z-index: 2;
+  }
+  .bundle-price {
+    font-size: 0.8125rem;
+    color: var(--accent);
+  }
+  .bundle-price .subtle {
+    color: var(--fg-subtle);
+  }
+  .bundle .link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    justify-self: start;
+  }
+  .promises {
+    display: grid;
+    gap: var(--space-2);
+    padding-inline: var(--space-2);
+    color: var(--fg-muted);
+  }
+  .promises li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .promises :global(.icon) {
+    color: var(--accent);
+  }
+
+  /* ---------- comparison body ---------- */
+  .ag-body {
+    --glass-radius: var(--radius-lg);
+    padding: clamp(1.25rem, 1rem + 1.5vw, 2rem);
+    overflow-x: auto;
+  }
+  .ag-body > :global(*) {
+    position: relative;
+    z-index: 2;
+  }
+  .ag-body :global(h2) {
+    font-size: var(--step-2);
+    margin-block-end: var(--space-4);
+  }
+  .ag-body :global(p + p),
+  .ag-body :global(* + table),
+  .ag-body :global(table + p) {
+    margin-block-start: var(--space-4);
+  }
+  .ag-body :global(table) {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--step--1);
+  }
+  .ag-body :global(th),
+  .ag-body :global(td) {
+    padding: 0.6rem 0.75rem;
+    text-align: start;
+    vertical-align: top;
+    border-block-end: 1px solid var(--border);
+  }
+  .ag-body :global(thead th) {
+    font-weight: 620;
+    color: var(--fg);
+  }
+  .ag-body :global(tbody th),
+  .ag-body :global(tbody td:first-child) {
+    color: var(--fg-muted);
+    font-weight: 520;
+  }
+  .ag-body :global(th:last-child),
+  .ag-body :global(td:last-child) {
+    color: var(--fg);
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+  }
+  @media (max-width: 40rem) {
+    .ag-body :global(table) {
+      min-inline-size: 34rem;
+    }
+  }
+
+  /* ---------- faq ---------- */
+  .faq-more {
+    display: grid;
+    gap: var(--space-2);
+    margin-block-start: var(--space-5);
+    text-align: center;
+  }
+  .updated {
+    font-size: 0.75rem;
+    color: var(--fg-subtle);
+  }
+
+  /* ---------- related ---------- */
+  .rel-agents {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  }
+  @media (max-width: 40rem) {
+    .rel-agents {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-3);
+    }
+  }
+  .rel-more {
+    display: grid;
+    gap: var(--space-3);
+    margin-block-start: var(--space-6);
+  }
+  .rel-more p {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .rel-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 2.5rem;
+    padding: 0 0.95rem;
+    font-weight: 540;
+    text-decoration: none;
+  }
+  .rel-chip > :global(*) {
+    position: relative;
+    z-index: 2;
+  }
+  .rel-chip :global(.icon) {
+    color: var(--accent);
+  }
+  .rel-foot {
+    margin-block-start: var(--space-6);
+  }
+</style>

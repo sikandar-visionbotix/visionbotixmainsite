@@ -19,12 +19,21 @@ const UI = [
   'handshake', 'file-signature', 'key-round', 'badge-check', 'calendar-clock', 'wallet', 'presentation', 'life-buoy',
   'eye-off', 'server-cog', 'timer', 'phone-missed', 'inbox', 'list-checks', 'user-check', 'gauge', 'hand', 'file-lock',
   'fingerprint', 'network', 'radar', 'scroll-text', 'circle-x', 'repeat', 'clipboard-check', 'languages',
+  // S3 agent pages and demo scripts
+  'phone-call', 'phone-incoming', 'mic', 'send', 'reply', 'receipt', 'file-check', 'table', 'chart-column', 'trending-up',
+  'trending-down', 'circle-pause', 'shield-alert', 'terminal', 'bug', 'list-todo', 'refresh-cw', 'pen-line', 'image',
+  'mail-check', 'user-plus', 'link', 'search-check', 'message-square-text', 'bell', 'clipboard-list',
+  // S5 products, company pages, prompt-first hero
+  'cable', 'satellite', 'activity', 'swords', 'gavel', 'hard-drive', 'wifi-off', 'microchip', 'send-horizontal', 'wand-sparkles',
+  'arrow-left', 'map', 'heart', 'flask-conical', 'download', 'corner-down-left', 'building', 'scan-search',
 ] as const;
 
 // Brand names are prefixed where they would clash with a UI icon ('x' = close, 'brand-x' = X/Twitter).
 const BRAND = ['facebook', 'instagram', 'youtube', 'brand-x', 'github', 'whatsapp', 'apple', 'appstore'] as const;
 
 export type UiIcon = (typeof UI)[number];
+/** Every valid icon name, for validating content files (src/content.config.ts). */
+export const iconNames = [...UI, ...BRAND, 'linkedin'] as const;
 export type BrandIcon = (typeof BRAND)[number] | 'linkedin';
 export type IconName = UiIcon | BrandIcon;
 

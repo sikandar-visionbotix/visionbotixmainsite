@@ -88,6 +88,16 @@ export const site = {
     bing: null as string | null,
     yandex: null as string | null,
   },
+  /**
+   * Analytics (S5). Both load ONLY after the visitor accepts the consent banner (privacy policy). While both are null,
+   * no banner, no script and no "Cookie settings" link render at all. TODO(owner): paste the IDs.
+   * GA4: Admin → Data streams → Measurement ID ("G-XXXXXXX"). Keep Google Signals off; set data retention to 14 months.
+   * Clarity: clarity.microsoft.com → Settings → Project ID.
+   */
+  analytics: {
+    ga4: null as string | null,
+    clarity: null as string | null,
+  },
   /** IndexNow key (Bing, Yandex, Seznam, Naver). The matching key file is public/<key>.txt. */
   indexNowKey: '53935372858f2b1b18f76e0002961315',
 } as const;

@@ -1,0 +1,168 @@
+---
+/**
+ * /process/ "How we work" (S5). Two tracks: packaged agents (home.ts steps) and custom projects (services-hub.ts
+ * projectSteps), plus communication, quality, handover and the confirmed guarantees (D22). HowTo-free on purpose:
+ * Google no longer shows HowTo rich results; visible steps + FAQ carry the GEO value.
+ */
+import '@/styles/page-kit.css';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Button from '@/components/Button.astro';
+import Icon from '@/components/Icon.astro';
+import Steps from '@/components/Steps.astro';
+import Accordion from '@/components/Accordion.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import { site } from '@/data/site';
+import { steps as agentSteps, guarantees, securityPractices } from '@/data/home';
+import { projectSteps } from '@/data/services-hub';
+import { audit, money } from '@/data/pricing';
+import type { FaqItem } from '@/lib/schema';
+import type { IconName } from '@/lib/icons';
+
+const rhythm: { icon: IconName; title: string; text: string }[] = [
+  { icon: 'user-check', title: 'One named lead', text: 'A senior engineer owns your project from the first call to launch, and is the person you talk to.' },
+  { icon: 'message-circle', title: 'A shared channel', text: 'Slack, Microsoft Teams or WhatsApp, whichever your team already uses. Questions get answered the same day.' },
+  { icon: 'presentation', title: 'Weekly demo', text: 'Thirty minutes of working software every week, with the plan for the next one. No status-report theatre.' },
+  { icon: 'clock', title: 'Overlap hours', text: 'Agreed live hours with your time zone in the US, UK, Europe, the Gulf or Australia.' },
+];
+
+const quality = [
+  'Code review on every change, and automated tests on the parts that matter',
+  'CI/CD from week one, with preview builds you can click',
+  'Threat modeling before we build, a security review before we launch',
+  'Evaluation sets and red-teaming for every AI feature',
+  'Accessibility and performance budgets for web and mobile',
+];
+
+const handover = [
+  'The full source repository, in your organization',
+  'Infrastructure as code and every credential, transferred to you',
+  'Architecture notes, a runbook and an admin guide',
+  'A recorded walkthrough for your team',
+  '30 days of support after launch, then an optional monthly plan',
+];
+
+const faqs: FaqItem[] = [
+  { q: 'How does a project with Visionbotix start?', a: 'With a free 30-minute call. We ask what you need, who it is for and what it must connect to, then send a fixed quote within 24 hours. An NDA can be signed before the call.' },
+  { q: 'How long does it take?', a: 'Packaged AI agents usually go live in about two weeks. An AI MVP takes 6 to 8 weeks. Larger apps and platforms are planned in milestones, and the timeline is agreed before we start.' },
+  { q: 'How do payments work?', a: 'Fixed-price projects are paid by milestone, after you have seen the work at a demo. Managed agents and dedicated teams are billed monthly.' },
+  { q: 'What if requirements change mid-project?', a: 'They usually do. Small changes fit into the weekly plan. Bigger ones get a short written change note with the cost and timeline impact, and nothing changes until you approve it.' },
+  { q: 'Can we start small?', a: `Yes. Many clients start with one packaged agent or the ${audit.name} (${money(audit.price)}, credited in full against a build), then grow from there.` },
+];
+---
+
+<BaseLayout
+  seo={{
+    title: 'How We Work: From First Call to Launch',
+    description: 'How Visionbotix runs projects: a free call, a fixed quote in 24 hours, weekly demos, milestone payments, full code handover and 30 days of support.',
+  }}
+>
+  <section class="container pk-hero" data-compact aria-labelledby="pc-title">
+    <div class="pk-copy">
+      <Breadcrumbs items={[{ name: 'How we work', href: '/process/' }]} />
+      <p class="eyebrow">How we work</p>
+      <h1 id="pc-title" class="pk-title">A clear process, working software every week.</h1>
+      <p class="lead pk-lead">
+        Every engagement starts with a free call and a fixed quote within 24 hours. From there you see working software at a weekly demo, pay by milestone, and own all of the code at the end.
+      </p>
+    </div>
+  </section>
+
+  <Section id="agents" eyebrow="Packaged AI agents" title="Live in about two weeks." align="center" space="tight">
+    <Steps steps={agentSteps} />
+  </Section>
+
+  <Section id="projects" eyebrow="Custom software and AI" title="From idea to launch, in milestones." align="center">
+    <Steps steps={projectSteps} note="You approve designs before code is written, see working software every week and pay only for milestones you have seen working." />
+  </Section>
+
+  <Section id="rhythm" eyebrow="Day to day" title="How we keep you in the loop." space="tight">
+    <ul role="list" class="pk-cards" data-cols="4" data-stagger>
+      {
+        rhythm.map((r) => (
+          <li class="pk-card glass-subtle">
+            <span class="pk-icon" aria-hidden="true">
+              <Icon name={r.icon} size={20} />
+            </span>
+            <h3 class="h4">{r.title}</h3>
+            <p class="muted small">{r.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section id="quality" eyebrow="Built properly" title="Quality, security and a clean handover.">
+    <div class="pk-cols" style="--n:3">
+      <div class="pk-col glass-subtle" data-reveal>
+        <h3 class="pk-col-head"><Icon name="clipboard-check" size={18} /> Quality</h3>
+        <ul role="list" class="pk-checks">
+          {
+            quality.map((q) => (
+              <li>
+                <Icon name="check" size={15} strokeWidth={2.5} />
+                {q}
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div class="pk-col glass-subtle" data-reveal>
+        <h3 class="pk-col-head"><Icon name="shield-check" size={18} /> AI safety</h3>
+        <ul role="list" class="pk-checks">
+          {
+            securityPractices.map((s) => (
+              <li>
+                <Icon name="check" size={15} strokeWidth={2.5} />
+                <span>
+                  <strong>{s.title}.</strong> {s.text}
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div class="pk-col glass-subtle" data-reveal>
+        <h3 class="pk-col-head"><Icon name="key-round" size={18} /> What you get at handover</h3>
+        <ul role="list" class="pk-checks">
+          {
+            handover.map((h) => (
+              <li>
+                <Icon name="check" size={15} strokeWidth={2.5} />
+                {h}
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </Section>
+
+  <Section id="promises" eyebrow="Our promises" title="Written into every contract." space="tight">
+    <ul role="list" class="pk-cards" data-cols="3" data-stagger>
+      {
+        guarantees.map((g) => (
+          <li class="pk-card glass-subtle">
+            <span class="pk-icon" aria-hidden="true">
+              <Icon name={g.icon} size={20} />
+            </span>
+            <h3 class="h4">{g.title}</h3>
+            <p class="muted small">{g.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+    <div class="pk-foot cluster">
+      <Button href="/pricing/" variant="glass" icon="arrow-right">See pricing</Button>
+      <Button href="/about/" variant="ghost">About us</Button>
+    </div>
+  </Section>
+
+  <Section id="faq" eyebrow="FAQ" title="Questions about working with us." width="narrow" align="center">
+    <Accordion items={faqs} schema name="process-faq" />
+    <p class="pk-faq-more small muted">Something else? <a class="link" href={`mailto:${site.contact.email}`}>{site.contact.email}</a></p>
+  </Section>
+
+  <CtaBand title="Start with a free call." location="process-final" />
+</BaseLayout>

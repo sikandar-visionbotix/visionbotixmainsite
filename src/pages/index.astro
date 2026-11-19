@@ -16,11 +16,13 @@ import Accordion from '@/components/Accordion.astro';
 import CtaBand from '@/components/CtaBand.astro';
 import WorkArt from '@/components/WorkArt.astro';
 import AgentConsole from '@/components/home/AgentConsole.astro';
+import PromptHero from '@/components/home/PromptHero.astro';
+import AgentCard from '@/components/AgentCard.astro';
 import { site } from '@/data/site';
-import { agents, agentGroups, pillars, servicesByPillar, industries, products, type Pillar } from '@/data/catalogue';
+import { agents, pillars, servicesByPillar, industries, securityProducts as products, industriesLive, type Pillar } from '@/data/catalogue';
+const IndTag = industriesLive ? 'a' : 'span';
 import { hero, reach, proof, featuredAgents, pillarCopy, steps, beforeAfter, securityPractices, stack, guarantees, faqs } from '@/data/home';
 import { getWork } from '@/lib/work';
-import { priceLabel } from '@/data/pricing';
 
 const topAgents = featuredAgents.map((slug) => agents.find((a) => a.slug === slug)!).filter(Boolean);
 const work = await getWork();
@@ -48,10 +50,7 @@ const isExternal = (href: string) => /^https?:\/\//.test(href);
       <p class="eyebrow hero-eyebrow"><span class="eb-pulse" aria-hidden="true"></span>{hero.eyebrow}</p>
       <TextReveal id="hero-title" text={hero.title} accent={hero.accent} class="display hero-title" />
       <p class="lead hero-lead">{hero.lead}</p>
-      <div class="cluster hero-ctas">
-        <Button href={site.contact.bookingUrl} size="lg" icon="arrow-right" data-event="book_call" data-event-location="hero">Book a free strategy call</Button>
-        <Button href="/pricing/" size="lg" variant="glass" data-event="pricing_click" data-event-location="hero">See pricing</Button>
-      </div>
+      <PromptHero />
       <ul role="list" class="hero-points">
         {
           hero.points.map((p) => (
@@ -148,22 +147,7 @@ const isExternal = (href: string) => /^https?:\/\//.test(href);
   <Section id="agents" eyebrow="AI agents" title="Hire agents that already know the job." lead="Packaged agents for the work that eats your week. Each one is scoped, measured and guarded, and you can combine them into a full desk.">
     <ul role="list" class="agents" data-stagger>
       {
-        topAgents.map((a) => (
-          <li class="agent glass-subtle spotlight lift">
-            <a class="card-cover" href={`/ai-agents/${a.slug}/`} aria-hidden="true" tabindex="-1" />
-            <div class="agent-top">
-              <span class="agent-icon" aria-hidden="true">
-                <Icon name={a.icon} size={20} />
-              </span>
-              <span class="agent-group mono">{agentGroups[a.group].label}</span>
-            </div>
-            <h3 class="h4">
-              <a href={`/ai-agents/${a.slug}/`}>{a.name}</a>
-            </h3>
-            <p class="muted small">{a.line}</p>
-            {priceLabel(a.slug) && <p class="agent-price mono">{priceLabel(a.slug)}</p>}
-          </li>
-        ))
+        topAgents.map((a) => <AgentCard {...a} />)
       }
     </ul>
     <div class="section-foot">
@@ -274,10 +258,10 @@ const isExternal = (href: string) => /^https?:\/\//.test(href);
       {
         industries.map((i) => (
           <li>
-            <a class="ind glass-chip press" href={`/industries/${i.slug}/`}>
+            <IndTag class="ind glass-chip press" href={industriesLive ? `/industries/${i.slug}/` : undefined}>
               <Icon name={i.icon} size={16} />
               {i.name}
-            </a>
+            </IndTag>
           </li>
         ))
       }
@@ -419,9 +403,6 @@ const isExternal = (href: string) => /^https?:\/\//.test(href);
   }
   .hero-lead {
     max-width: 54ch;
-  }
-  .hero-ctas {
-    margin-block-start: var(--space-2);
   }
   .hero-points {
     display: flex;
@@ -628,7 +609,6 @@ const isExternal = (href: string) => /^https?:\/\//.test(href);
     align-items: center;
   }
   .pillar-icon,
-  .agent-icon,
   .g-icon {
     display: grid;
     place-items: center;
@@ -646,60 +626,11 @@ const isExternal = (href: string) => /^https?:\/\//.test(href);
     gap: var(--space-4);
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
   }
-  .agent {
-    --glass-radius: var(--radius-lg);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-    padding: var(--space-5);
-  }
-  .agent > :not(.card-cover) {
-    position: relative;
-    z-index: 2;
-  }
-  .agent-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .agent-icon {
-    inline-size: 2.5rem;
-    block-size: 2.5rem;
-    background: color-mix(in srgb, var(--accent) 14%, transparent);
-    color: var(--accent);
-    box-shadow: none;
-  }
   @media (max-width: 40rem) {
     .agents {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: var(--space-3);
     }
-    .agent {
-      padding: var(--space-4);
-      gap: var(--space-2);
-    }
-    .agent h3 {
-      font-size: var(--step-0);
-    }
-    .agent-icon {
-      inline-size: 2.125rem;
-      block-size: 2.125rem;
-    }
-  }
-  .agent-price {
-    margin-block-start: auto;
-    padding-block-start: var(--space-2);
-    font-size: 0.75rem;
-    color: var(--accent);
-  }
-  .agent-group {
-    padding: 0.15rem 0.55rem;
-    border-radius: var(--radius-pill);
-    font-size: 0.6875rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--fg-muted);
-    box-shadow: inset 0 0 0 1px var(--border-strong);
   }
 
   /* ---------- before / after ---------- */

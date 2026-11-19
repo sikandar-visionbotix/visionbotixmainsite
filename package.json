@@ -4,11 +4,11 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=22.23.4"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro check && astro build",
+    "build": "astro check && astro build && node scripts/og.mjs",
     "preview": "astro preview",
     "check": "astro check",
     "astro": "astro",
@@ -23,7 +23,10 @@
     "typescript": "^6.0.3"
   },
   "devDependencies": {
+    "@fontsource/geist": "^5.3.0",
     "lucide-static": "^1.76.0",
+    "satori": "^0.63.2",
+    "sharp": "^0.35.5",
     "simple-icons": "^16.38.0"
   }
 }

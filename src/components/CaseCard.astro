@@ -1,0 +1,72 @@
+---
+/**
+ * Case-study card (service pages). Anonymous by design (D18): sector, descriptive title, summary and a generated
+ * illustration, never a client name. Pass entries only from getWork() (the launch gate).
+ */
+import WorkArt from '@/components/WorkArt.astro';
+import Icon from '@/components/Icon.astro';
+import type { WorkEntry } from '@/lib/work';
+
+interface Props {
+  entry: WorkEntry;
+  heading?: 'h2' | 'h3';
+}
+const { entry, heading: H = 'h3' } = Astro.props;
+const href = `/work/${entry.id}/`;
+---
+
+<li class="case-card glass-subtle spotlight lift">
+  <a class="card-cover" href={href} aria-hidden="true" tabindex="-1"></a>
+  <WorkArt art={entry.data.art} />
+  <div class="cc-body">
+    <p class="eyebrow">{entry.data.sector}</p>
+    <H class="h4"><a href={href}>{entry.data.title}</a></H>
+    <p class="muted small cc-sum">{entry.data.summary}</p>
+    <span class="cc-more small">Read the case study <Icon name="arrow-right" size={14} /></span>
+  </div>
+</li>
+
+<style>
+  .case-card {
+    --glass-radius: var(--radius-lg);
+    position: relative;
+    display: grid;
+    align-content: start;
+    gap: var(--space-4);
+    padding: var(--space-3);
+    cursor: pointer;
+  }
+  .card-cover {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    border-radius: inherit;
+  }
+  .case-card:has(h3 a:focus-visible, h2 a:focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+  }
+  .cc-body {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3) var(--space-3);
+  }
+  .cc-body a {
+    text-decoration: none;
+  }
+  .cc-sum {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .cc-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--accent);
+    font-weight: 560;
+  }
+</style>

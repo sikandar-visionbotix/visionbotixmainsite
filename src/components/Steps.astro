@@ -3,7 +3,7 @@
 interface Step {
   title: string;
   body: string;
-  meta?: string;
+  meta?: string | undefined;
 }
 interface Props {
   steps: Step[];

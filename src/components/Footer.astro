@@ -3,7 +3,7 @@
 import Logo from './Logo.astro';
 import Icon from './Icon.astro';
 import { site } from '@/data/site';
-import { agents, services, products, company } from '@/data/catalogue';
+import { agents, services, products, company, industriesLive } from '@/data/catalogue';
 import type { IconName } from '@/lib/icons';
 
 const year = new Date().getFullYear();
@@ -71,7 +71,7 @@ const topServices = services.filter((s) => ['ai-agent-development', 'generative-
         <h2 id="f-company" class="footer-title">Company</h2>
         <ul role="list">
           {company.map((c) => <li><a href={c.href}>{c.name}</a></li>)}
-          <li><a href="/industries/">Industries</a></li>
+          {industriesLive && <li><a href="/industries/">Industries</a></li>}
           <li><a href="/pricing/">Pricing</a></li>
         </ul>
       </nav>
@@ -83,12 +83,24 @@ const topServices = services.filter((s) => ['ai-agent-development', 'generative-
         <li><a href="/privacy/">Privacy</a></li>
         <li><a href="/terms/">Terms</a></li>
         <li><a href="/sitemap-index.xml">Sitemap</a></li>
+        {(site.analytics.ga4 || site.analytics.clarity) && <li><button type="button" class="footer-btn" data-consent-open>Cookie settings</button></li>}
       </ul>
     </div>
   </div>
 </footer>
 
 <style>
+  .footer-btn {
+    padding: 0;
+    border: 0;
+    font: inherit;
+    color: inherit;
+    background: none;
+    cursor: pointer;
+  }
+  .footer-btn:hover {
+    text-decoration: underline;
+  }
   .site-footer {
     padding-block: var(--space-8) var(--space-6);
   }

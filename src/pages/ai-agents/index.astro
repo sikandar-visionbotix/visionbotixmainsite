@@ -1,0 +1,520 @@
+---
+/**
+ * /ai-agents/ hub (S3): all 16 agents grouped by job (Answer · Sell · Market · Operate · Secure and Build), the four
+ * bundles, what every agent ships with, how it works, custom options, FAQ. Copy in `src/data/agents-hub.ts`.
+ */
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Button from '@/components/Button.astro';
+import Icon from '@/components/Icon.astro';
+import TextReveal from '@/components/TextReveal.astro';
+import Steps from '@/components/Steps.astro';
+import Accordion from '@/components/Accordion.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import AgentCard from '@/components/AgentCard.astro';
+import { site } from '@/data/site';
+import { agents as catalogue } from '@/data/catalogue';
+import { audit, money, projects } from '@/data/pricing';
+import { steps } from '@/data/home';
+import { hubHero, bundleCopy, shipsWith, hubFaqs } from '@/data/agents-hub';
+import { getAgents, byGroup, bundlesWith } from '@/lib/agents';
+import { itemList } from '@/lib/schema';
+
+const all = await getAgents();
+const groups = byGroup(all);
+const allBundles = bundlesWith();
+const agentName = (s: string) => catalogue.find((c) => c.slug === s)?.name ?? s;
+const customFrom = projects[0]!;
+const path = '/ai-agents/';
+---
+
+<BaseLayout
+  seo={{
+    title: 'AI Agents for Business: 16 Ready-Made Agents',
+    description: '16 packaged AI agents for calls, chat, leads, marketing and back-office work, with public prices, guardrails and human approval. Live in about 2 weeks.',
+  }}
+  pageType="CollectionPage"
+  schema={[itemList({ path, name: 'Visionbotix AI agents', items: all.map((a) => ({ name: a.data.name, path: `/ai-agents/${a.id}/` })) })]}
+>
+  <!-- ============ Hero ============ -->
+  <section class="container hub-hero" aria-labelledby="hub-title">
+    <div class="hub-copy">
+    <Breadcrumbs items={[{ name: 'AI agents', href: path }]} />
+    <p class="eyebrow">AI agents · {all.length} ready to hire</p>
+    <TextReveal id="hub-title" text={hubHero.title} accent={hubHero.accent} class="display hub-title" />
+    <p class="lead hub-lead">{hubHero.lead}</p>
+    <div class="cluster">
+      <Button href={site.contact.bookingUrl} size="lg" icon="arrow-right" data-event="book_call" data-event-location="agents-hub-hero">Book a free strategy call</Button>
+      <Button href="#bundles" size="lg" variant="glass">See the bundles</Button>
+    </div>
+    <ul role="list" class="hub-points">
+      {
+        hubHero.points.map((p) => (
+          <li>
+            <Icon name="check" size={16} />
+            {p}
+          </li>
+        ))
+      }
+    </ul>
+    </div>
+
+    <!-- Roster: the whole team at a glance (desktop; the jump nav covers phones) -->
+    <aside class="roster glass-strong" aria-label="All agents by group">
+      <p class="roster-head">
+        <span class="roster-title">Your AI team</span>
+        <span class="mono subtle">{all.length} agents · 5 jobs</span>
+      </p>
+      {
+        groups.map((g) => (
+          <div class="roster-row">
+            <a class="roster-group mono" href={`#${g.key}`}>
+              {g.label}
+            </a>
+            <ul role="list" class="roster-list">
+              {g.items.map((a) => (
+                <li>
+                  <a class="roster-agent" href={`/ai-agents/${a.id}/`}>
+                    <Icon name={a.data.icon} size={14} />
+                    {a.data.name.replace(/ Agent$/, '')}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+      <p class="roster-foot small muted"><span class="live-dot" aria-hidden="true"></span> Every agent: approval gates, audit log, weekly report</p>
+    </aside>
+  </section>
+
+  <!-- ============ Jump nav ============ -->
+  <nav class="container jump" aria-label="Agent groups">
+    <ul role="list" class="jump-list">
+      {
+        groups.map((g) => (
+          <li>
+            <a class="jump-chip glass-chip press" href={`#${g.key}`}>
+              {g.label} <span class="n mono">{g.items.length}</span>
+            </a>
+          </li>
+        ))
+      }
+      <li>
+        <a class="jump-chip glass-chip press" href="#bundles">Bundles <span class="n mono">{allBundles.length}</span></a>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- ============ Groups ============ -->
+  {
+    groups.map((g) => (
+      <Section id={g.key} eyebrow={`${g.items.length} agent${g.items.length === 1 ? '' : 's'}`} title={`${g.label}: ${g.blurb.charAt(0).toLowerCase()}${g.blurb.slice(1)}`} space="tight" class="group-sec">
+        <ul role="list" class="agent-grid" data-stagger>
+          {g.items.map((a) => (
+            <AgentCard slug={a.id} name={a.data.name} line={a.data.tagline} group={a.data.group} icon={a.data.icon} showGroup={false} tags={a.data.verbs.slice(0, 4)} />
+          ))}
+        </ul>
+      </Section>
+    ))
+  }
+
+  <!-- ============ Bundles ============ -->
+  <Section id="bundles" eyebrow="Bundles" title="Hire a whole desk, for less." lead="Agents that work best together, packaged for your sector. Each bundle costs less than buying the same agents separately.">
+    <ul role="list" class="bundles" data-stagger>
+      {
+        allBundles.map((b) => {
+          const c = bundleCopy[b.slug]!;
+          return (
+            <li class="bundle glass-subtle spotlight" id={b.slug}>
+              <div class="b-top">
+                <span class="b-icon" aria-hidden="true">
+                  <Icon name={c.icon} size={20} />
+                </span>
+                <span class="mono subtle small">{b.agents.length} agents</span>
+              </div>
+              <h3 class="h4">{b.name}</h3>
+              <p class="muted small">{c.blurb}</p>
+              <p class="b-for small">
+                <Icon name="users" size={14} />
+                {c.forWho}
+              </p>
+              <ul role="list" class="b-agents">
+                {b.agents.map((s) => (
+                  <li>
+                    <a href={`/ai-agents/${s}/`}>{agentName(s)}</a>
+                  </li>
+                ))}
+              </ul>
+              <div class="b-price">
+                <p class="b-now">
+                  From <strong>{money(b.setup)}</strong> + <strong>{money(b.monthly)}</strong>/mo
+                </p>
+                <p class="small subtle">
+                  Separately: {money(b.separateSetup)} + {money(b.separateMonthly)}/mo
+                </p>
+              </div>
+            </li>
+          );
+        })
+      }
+    </ul>
+  </Section>
+
+  <!-- ============ Ships with ============ -->
+  <Section id="ships-with" band eyebrow="Scoped, measured, safe" title="Every agent ships with the same safety kit." lead="Many AI projects stall because nobody can show what the agent did or whether it is working. Ours come with the controls built in.">
+    <ul role="list" class="ships" data-stagger>
+      {
+        shipsWith.map((s) => (
+          <li class="ship">
+            <span class="ship-icon" aria-hidden="true">
+              <Icon name={s.icon} size={18} />
+            </span>
+            <div>
+              <h3 class="ship-title">{s.title}</h3>
+              <p class="muted small">{s.text}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <!-- ============ How it works ============ -->
+  <Section id="how" eyebrow="How it works" title="From first call to a working agent in about two weeks." align="center">
+    <Steps steps={steps} note="Knowledge, document and data agents take two to four weeks, because we prepare and test your data first." />
+  </Section>
+
+  <!-- ============ Custom / audit ============ -->
+  <Section id="custom" eyebrow="Need something else?" title="Custom agents, or a clear plan first." space="tight">
+    <div class="custom">
+      <a class="custom-card glass-subtle spotlight lift" href="/services/ai-agent-development/">
+        <span class="b-icon" aria-hidden="true"><Icon name="bot" size={20} /></span>
+        <h3 class="h4">Custom AI agents</h3>
+        <p class="muted small">Multi-step agents and multi-agent systems built around your processes, with tool use, MCP and evals.</p>
+        <p class="mono custom-price">From {money(customFrom.from)} · fixed price after scoping</p>
+        <span class="more small">Custom agent development <Icon name="arrow-right" size={14} /></span>
+      </a>
+      <a class="custom-card glass-subtle spotlight lift" href={site.contact.bookingUrl}>
+        <span class="b-icon" aria-hidden="true"><Icon name="clipboard-check" size={20} /></span>
+        <h3 class="h4">{audit.name}</h3>
+        <p class="muted small">In {audit.duration} we map your calls, leads and paperwork and show which agents would pay off first. {audit.note}.</p>
+        <p class="mono custom-price">{money(audit.price)} · {audit.duration}</p>
+        <span class="more small">Ask about the audit <Icon name="arrow-right" size={14} /></span>
+      </a>
+    </div>
+  </Section>
+
+  <!-- ============ FAQ ============ -->
+  <Section id="faq" eyebrow="FAQ" title="AI agents, plainly explained." width="narrow" align="center">
+    <Accordion items={hubFaqs} schema name="agents-faq" />
+  </Section>
+
+  <CtaBand title="Not sure which agent to start with?" text="Tell us where your team loses the most time. In 30 minutes we will point you to the agent, or bundle, that pays off first." location="agents-hub-final" />
+</BaseLayout>
+
+<style>
+  .hub-hero {
+    display: grid;
+    align-items: center;
+    gap: clamp(2rem, 1rem + 3vw, 4rem);
+    padding-block: calc(var(--header-h) + clamp(1.25rem, 0.5rem + 3vw, 3rem)) var(--space-6);
+  }
+  .hub-copy {
+    display: grid;
+    gap: var(--space-5);
+    justify-items: start;
+  }
+  @media (min-width: 64rem) {
+    .hub-hero {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    }
+  }
+
+  /* ---------- roster ---------- */
+  .roster {
+    --glass-radius: var(--radius-xl);
+    display: none;
+    gap: var(--space-4);
+    padding: var(--space-5);
+  }
+  @media (min-width: 64rem) {
+    .roster {
+      display: grid;
+    }
+  }
+  .roster > * {
+    position: relative;
+    z-index: 2;
+  }
+  .roster-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-block-end: var(--space-3);
+    border-block-end: 1px solid var(--border);
+    font-size: 0.75rem;
+  }
+  .roster-title {
+    font-size: var(--step-0);
+    font-weight: 640;
+  }
+  .roster-row {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .roster-group {
+    justify-self: start;
+    font-size: 0.6875rem;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .roster-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+  .roster-agent {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.8125rem;
+    font-weight: 540;
+    text-decoration: none;
+    background: color-mix(in srgb, var(--fg) 8%, transparent);
+    transition: background-color var(--dur-2);
+  }
+  .roster-agent:hover {
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+  .roster-agent :global(.icon) {
+    color: var(--accent);
+  }
+  .roster-foot {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--border);
+  }
+  .live-dot {
+    inline-size: 0.45rem;
+    block-size: 0.45rem;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 0 3px rgb(34 197 94 / 0.22);
+  }
+  .hub-title {
+    font-size: clamp(2.5rem, 1.6rem + 4vw, 4.75rem);
+    max-width: 16ch;
+  }
+  .hub-lead {
+    max-width: 64ch;
+  }
+  .hub-points {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    color: var(--fg-muted);
+    font-size: var(--step--1);
+  }
+  .hub-points li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .hub-points :global(.icon) {
+    color: var(--accent);
+  }
+
+  /* ---------- jump nav ---------- */
+  .jump {
+    position: sticky;
+    inset-block-start: calc(var(--header-h) - 0.25rem);
+    z-index: 20;
+    padding-block: var(--space-2);
+  }
+  .jump-list {
+    display: flex;
+    gap: var(--space-2);
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-block: 0.25rem;
+  }
+  .jump-list::-webkit-scrollbar {
+    display: none;
+  }
+  .jump-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    padding: 0 1rem;
+    white-space: nowrap;
+    font-weight: 560;
+    font-size: 0.9375rem;
+    text-decoration: none;
+  }
+  .jump-chip > :global(*) {
+    position: relative;
+    z-index: 2;
+  }
+  .jump-chip .n {
+    font-size: 0.6875rem;
+    color: var(--fg-muted);
+  }
+  :global(.group-sec) {
+    scroll-margin-top: calc(var(--header-h) + 4rem);
+  }
+  #bundles {
+    scroll-margin-top: calc(var(--header-h) + 4rem);
+  }
+
+  /* ---------- grid ---------- */
+  .agent-grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16.5rem), 1fr));
+  }
+  @media (max-width: 40rem) {
+    .agent-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-3);
+    }
+  }
+
+  /* ---------- bundles ---------- */
+  .bundles {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  }
+  .bundle {
+    --glass-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-5);
+    scroll-margin-top: calc(var(--header-h) + 4rem);
+  }
+  .bundle > * {
+    position: relative;
+    z-index: 2;
+  }
+  .bundle:target {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+  .b-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .b-icon {
+    display: grid;
+    place-items: center;
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
+    border-radius: 0.9rem;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+    box-shadow: var(--btn-primary-glow);
+  }
+  .b-for {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--fg-muted);
+  }
+  .b-for :global(.icon) {
+    color: var(--accent);
+  }
+  .b-agents {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+  .b-agents a {
+    display: inline-block;
+    padding: 0.22rem 0.65rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.8125rem;
+    font-weight: 540;
+    text-decoration: none;
+    background: color-mix(in srgb, var(--fg) 8%, transparent);
+  }
+  .b-agents a:hover {
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+  }
+  .b-price {
+    margin-block-start: auto;
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--border);
+  }
+  .b-now strong {
+    font-weight: 680;
+  }
+
+  /* ---------- ships with ---------- */
+  .ships {
+    display: grid;
+    gap: var(--space-5) var(--space-6);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+  }
+  .ship {
+    display: flex;
+    gap: var(--space-3);
+  }
+  .ship-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 2.25rem;
+    block-size: 2.25rem;
+    border-radius: 0.75rem;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .ship-title {
+    font-size: var(--step-0);
+    font-weight: 620;
+  }
+
+  /* ---------- custom ---------- */
+  .custom {
+    display: grid;
+    gap: var(--space-4);
+  }
+  @media (min-width: 52rem) {
+    .custom {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .custom-card {
+    --glass-radius: var(--radius-lg);
+    display: grid;
+    align-content: start;
+    gap: var(--space-3);
+    padding: var(--space-5);
+    text-decoration: none;
+  }
+  .custom-card > * {
+    position: relative;
+    z-index: 2;
+  }
+  .custom-price {
+    font-size: 0.8125rem;
+    color: var(--accent);
+  }
+  .more {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--accent);
+    font-weight: 560;
+  }
+</style>

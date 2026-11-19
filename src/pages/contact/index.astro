@@ -1,0 +1,458 @@
+---
+/**
+ * /contact/ (S5): quote form (#quote) + booking + email/phone/WhatsApp + office. The form posts to the Vercel Function
+ * api/contact.js (email via Resend). Prefill: ?topic=<slug> selects the topic and ?brief= fills the message (from the
+ * homepage prompt and product CTAs). If sending fails or isn't configured yet, the visitor gets a pre-filled email.
+ * Booking link and WhatsApp number come from site.contact (TODO(owner)); their blocks adapt when they are set.
+ */
+import '@/styles/page-kit.css';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Button from '@/components/Button.astro';
+import Icon from '@/components/Icon.astro';
+import Accordion from '@/components/Accordion.astro';
+import { site } from '@/data/site';
+import { agents, services, products } from '@/data/catalogue';
+import { audit, money } from '@/data/pricing';
+import type { FaqItem } from '@/lib/schema';
+
+const bookingExternal = /^https?:\/\//.test(site.contact.bookingUrl);
+const wa = site.contact.whatsapp;
+const waHref = wa ? `https://wa.me/${wa}?text=${encodeURIComponent('Hi Visionbotix, I would like to talk about a project.')}` : null;
+
+const budgets = ['Under $5,000', '$5,000 to $15,000', '$15,000 to $50,000', 'Over $50,000', 'Monthly plan or team', 'Not sure yet'];
+const sources = ['Google or Bing', 'ChatGPT, Perplexity or another AI', 'LinkedIn', 'A referral', 'Clutch or a directory', 'Other'];
+
+const steps = [
+  { icon: 'mail-check', title: 'Reply within one business day', body: 'An engineer, not a sales script, reads your message and replies with questions or times for a call.' },
+  { icon: 'calendar-check', title: 'Free 30-minute call', body: 'We look at what you need, suggest the simplest way to build it and what to leave out.' },
+  { icon: 'file-signature', title: 'Fixed quote within 24 hours', body: 'Scope, timeline and a fixed price per milestone. NDA on request before you share details.' },
+] as const;
+
+const faqs: FaqItem[] = [
+  { q: 'How quickly will you reply?', a: 'Within one business day, usually the same day. After a scoping call, the fixed quote follows within 24 hours.' },
+  { q: 'Can we sign an NDA first?', a: 'Yes. We sign your NDA or send ours before you share anything confidential, from the first call.' },
+  { q: 'Which time zones do you work with?', a: `Our team is in ${site.address.countryName} (PKT, UTC+5). We agree overlap hours with each client, and work with teams in the US, UK, Europe, the Gulf and Australia.` },
+  { q: 'What if I am not sure what I need yet?', a: `Describe the problem, not the solution. Many clients start with the ${audit.name} (${money(audit.price)}, credited in full against a build), which ends in a ranked plan.` },
+];
+---
+
+<BaseLayout
+  seo={{
+    title: 'Contact Us: Get a Quote in 24 Hours',
+    description: 'Tell us what you want to build or automate. An engineer replies within one business day, and a fixed quote follows within 24 hours of a call.',
+  }}
+  pageType="ContactPage"
+>
+  <section class="container pk-hero" data-compact aria-labelledby="ct-title">
+    <div class="pk-copy">
+      <Breadcrumbs items={[{ name: 'Contact', href: '/contact/' }]} />
+      <p class="eyebrow">Contact</p>
+      <h1 id="ct-title" class="pk-title">Tell us what you need. Get a fixed quote in 24 hours.</h1>
+      <p class="lead pk-lead">Describe the job in your own words. An engineer replies within one business day, and after a short call you get a fixed quote within 24 hours. NDA on request from the first message.</p>
+    </div>
+  </section>
+
+  <section class="container ct-grid" aria-label="Contact options">
+    <!-- ============ Form ============ -->
+    <div id="quote" class="ct-form-wrap glass-strong">
+      <form class="ct-form" method="post" action="/api/contact/" data-contact data-email={site.contact.email} novalidate>
+        <h2 class="h3">Send us a brief</h2>
+        <div class="ct-two">
+          <div class="field">
+            <label for="f-name">Name</label>
+            <input id="f-name" name="name" autocomplete="name" required maxlength="120" />
+            <p class="field-err" id="e-name" hidden></p>
+          </div>
+          <div class="field">
+            <label for="f-email">Work email</label>
+            <input id="f-email" name="email" type="email" autocomplete="email" required maxlength="200" />
+            <p class="field-err" id="e-email" hidden></p>
+          </div>
+          <div class="field">
+            <label for="f-company">Company <span class="opt">optional</span></label>
+            <input id="f-company" name="company" autocomplete="organization" maxlength="160" />
+          </div>
+          <div class="field">
+            <label for="f-country">Country <span class="opt">optional</span></label>
+            <input id="f-country" name="country" autocomplete="country-name" maxlength="80" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="f-topic">What is it about?</label>
+          <select id="f-topic" name="topic">
+            <option value="">Choose one, or leave it to us</option>
+            <optgroup label="Packaged AI agents">
+              {agents.map((a) => <option value={a.slug}>{a.name}</option>)}
+            </optgroup>
+            <optgroup label="Services">
+              {services.map((s) => <option value={s.slug}>{s.name}</option>)}
+            </optgroup>
+            <optgroup label="Our products">
+              {products.map((p) => <option value={p.slug}>{p.name}</option>)}
+              <option value="security">Security products briefing</option>
+            </optgroup>
+            <optgroup label="Other">
+              <option value="ai-opportunity-audit">{audit.name}</option>
+              <option value="careers">Careers</option>
+              <option value="partnership">Partnership</option>
+              <option value="other">Something else</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-message">What do you need?</label>
+          <textarea id="f-message" name="message" rows="6" required maxlength="5000" placeholder="What should it do, who is it for, and what does it need to connect to? Rough deadlines help."></textarea>
+          <p class="field-err" id="e-message" hidden></p>
+        </div>
+        <div class="ct-two">
+          <div class="field">
+            <label for="f-budget">Budget <span class="opt">optional</span></label>
+            <select id="f-budget" name="budget">
+              <option value="">Choose a range</option>
+              {budgets.map((b) => <option>{b}</option>)}
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-source">How did you find us? <span class="opt">optional</span></label>
+            <select id="f-source" name="source">
+              <option value="">Choose one</option>
+              {sources.map((b) => <option>{b}</option>)}
+            </select>
+          </div>
+        </div>
+        <label class="ct-check">
+          <input type="checkbox" name="call" value="yes" />
+          <span>I would like a call. Send me times that suit my time zone.</span>
+        </label>
+        <!-- spam traps: hidden from people, filled by bots -->
+        <div class="ct-hp" aria-hidden="true">
+          <label for="f-website">Website</label>
+          <input id="f-website" name="website" tabindex="-1" autocomplete="off" />
+        </div>
+        <input type="hidden" name="started" value="" data-started />
+        <input type="hidden" name="timezone" value="" data-tz />
+        <div class="ct-submit">
+          <Button type="submit" size="lg" icon="send-horizontal" data-event="form_submit_click" data-event-location="contact">Send brief</Button>
+          <p class="small subtle">We use your details only to reply. <a class="link" href="/privacy/">Privacy policy</a></p>
+        </div>
+        <p class="ct-status" role="status" aria-live="polite" data-status></p>
+      </form>
+
+      <div class="ct-done" data-done hidden tabindex="-1">
+        <span class="pk-snap-icon" aria-hidden="true"><Icon name="mail-check" size={22} /></span>
+        <h2 class="h3">Thanks, your brief is in.</h2>
+        <p class="muted">An engineer will reply within one business day. If you asked for a call, the reply includes times in your time zone.</p>
+        <Button href="/work/" variant="glass" icon="arrow-right">Meanwhile, see our work</Button>
+      </div>
+    </div>
+
+    <!-- ============ Other ways ============ -->
+    <aside class="ct-side" aria-label="Other ways to reach us">
+      <div class="pk-col glass-subtle" id="book">
+        <h2 class="pk-col-head"><Icon name="calendar-check" size={18} /> Book a free strategy call</h2>
+        {
+          bookingExternal ? (
+            <>
+              <p class="small muted">30 minutes with an engineer. Pick a time that suits you; the calendar shows your own time zone.</p>
+              <Button href={site.contact.bookingUrl} icon="arrow-up-right" data-event="book_call" data-event-location="contact-side">
+                Pick a time
+              </Button>
+            </>
+          ) : (
+            <p class="small muted">30 minutes with an engineer. Tick "I would like a call" in the form and we reply with times in your time zone.</p>
+          )
+        }
+      </div>
+
+      <div class="pk-col glass-subtle">
+        <h2 class="pk-col-head"><Icon name="message-circle" size={18} /> Talk to us directly</h2>
+        <ul role="list" class="ct-lines">
+          <li>
+            <Icon name="mail" size={16} />
+            <a class="link" href={`mailto:${site.contact.email}`} data-event="email_click" data-event-location="contact">{site.contact.email}</a>
+          </li>
+          <li>
+            <Icon name="phone" size={16} />
+            <a class="link" href={site.contact.phoneHref} data-event="phone_click" data-event-location="contact">{site.contact.phone}</a>
+          </li>
+          {
+            waHref && (
+              <li>
+                <Icon name="whatsapp" size={16} />
+                <a class="link" href={waHref} target="_blank" rel="noopener" data-event="whatsapp_click" data-event-location="contact">
+                  Chat on WhatsApp
+                </a>
+              </li>
+            )
+          }
+        </ul>
+      </div>
+
+      <div class="pk-col glass-subtle">
+        <h2 class="pk-col-head"><Icon name="map-pin" size={18} /> Office</h2>
+        <address class="small muted ct-addr">
+          {site.legalName}<br />
+          {site.address.street}<br />
+          {site.address.locality}, {site.address.countryName}
+        </address>
+        <p class="small muted">PKT (UTC+5), with overlap hours agreed for each client in the US, UK, Europe, the Gulf and Australia.</p>
+      </div>
+    </aside>
+  </section>
+
+  <Section id="next" eyebrow="What happens next" title="Three steps, no sales maze." space="tight">
+    <ol role="list" class="pk-cards" data-cols="3" data-stagger>
+      {
+        steps.map((s, i) => (
+          <li class="pk-card glass-subtle">
+            <span class="pk-icon" aria-hidden="true">
+              <Icon name={s.icon} size={20} />
+            </span>
+            <span class="pk-num">0{i + 1}</span>
+            <h3 class="h4">{s.title}</h3>
+            <p class="muted small">{s.body}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </Section>
+
+  <Section id="faq" eyebrow="FAQ" title="Before you write." width="narrow" align="center">
+    <Accordion items={faqs} schema name="contact-faq" />
+  </Section>
+</BaseLayout>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>('[data-contact]');
+  if (form) {
+    const q = new URLSearchParams(location.search);
+    const topic = form.elements.namedItem('topic') as HTMLSelectElement;
+    const msg = form.elements.namedItem('message') as HTMLTextAreaElement;
+    const t = q.get('topic');
+    if (t && [...topic.options].some((o) => o.value === t)) topic.value = t;
+    const brief = q.get('brief');
+    if (brief && !msg.value) msg.value = brief.slice(0, 5000);
+    (form.querySelector('[data-started]') as HTMLInputElement).value = String(Date.now());
+    try {
+      (form.querySelector('[data-tz]') as HTMLInputElement).value = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {}
+
+    const status = form.querySelector<HTMLElement>('[data-status]')!;
+    const done = document.querySelector<HTMLElement>('[data-done]')!;
+    const btn = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    const email = form.dataset.email ?? 'hello@visionbotix.com';
+
+    const showErrors = (errors: Record<string, string>) => {
+      for (const f of ['name', 'email', 'message']) {
+        const p = document.getElementById(`e-${f}`)!;
+        const input = form.elements.namedItem(f) as HTMLInputElement;
+        p.textContent = errors[f] ?? '';
+        p.hidden = !errors[f];
+        input.toggleAttribute('aria-invalid', !!errors[f]);
+        if (errors[f]) input.setAttribute('aria-describedby', `e-${f}`);
+        else input.removeAttribute('aria-describedby');
+      }
+      const first = ['name', 'email', 'message'].find((f) => errors[f]);
+      if (first) (form.elements.namedItem(first) as HTMLElement).focus();
+    };
+    const validate = (d: Record<string, string>) => {
+      const e: Record<string, string> = {};
+      if ((d.name ?? '').trim().length < 2) e.name = 'Please enter your name.';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test((d.email ?? '').trim())) e.email = 'Please enter a valid email address.';
+      if ((d.message ?? '').trim().length < 10) e.message = 'Please tell us a little about what you need.';
+      return e;
+    };
+    const mailto = (d: Record<string, string>) => {
+      const body = Object.entries(d)
+        .filter(([k, v]) => v && !['website', 'started', 'message'].includes(k))
+        .map(([k, v]) => `${k}: ${v}`)
+        .join('\n');
+      return `mailto:${email}?subject=${encodeURIComponent(`Project enquiry from ${d.name ?? ''}`)}&body=${encodeURIComponent(`${d.message ?? ''}\n\n${body}`)}`;
+    };
+
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const d = Object.fromEntries([...new FormData(form)].map(([k, v]) => [k, String(v)]));
+      const errors = validate(d);
+      showErrors(errors);
+      if (Object.keys(errors).length) return;
+      btn.disabled = true;
+      status.textContent = 'Sending…';
+      try {
+        const r = await fetch(form.action, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) });
+        const j = await r.json().catch(() => ({}));
+        if (r.ok && j.ok) {
+          window.dispatchEvent(new CustomEvent('vbx:track', { detail: { event: 'form_submit', topic: d.topic || 'none' } }));
+          form.hidden = true;
+          done.hidden = false;
+          done.focus();
+          return;
+        }
+        if (r.status === 422 && j.errors) {
+          showErrors(j.errors);
+          status.textContent = '';
+          return;
+        }
+        throw new Error('fallback');
+      } catch {
+        status.innerHTML = '';
+        const a = document.createElement('a');
+        a.className = 'link';
+        a.href = mailto(d);
+        a.textContent = 'send it by email instead';
+        status.append('We could not send the form just now. Please ', a, ` (it opens your email app with your brief filled in), or write to ${email}.`);
+        window.dispatchEvent(new CustomEvent('vbx:track', { detail: { event: 'form_fallback' } }));
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  }
+</script>
+
+<style>
+  .ct-grid {
+    display: grid;
+    gap: var(--space-5);
+    align-items: start;
+    padding-block-end: var(--space-7);
+  }
+  @media (min-width: 60rem) {
+    .ct-grid {
+      grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    }
+  }
+  .ct-form-wrap {
+    --glass-radius: var(--radius-xl);
+    padding: clamp(1.25rem, 1rem + 2vw, 2.5rem);
+    scroll-margin-top: calc(var(--header-h) + 1rem);
+  }
+  .ct-form-wrap > * {
+    position: relative;
+    z-index: 2;
+  }
+  .ct-form {
+    display: grid;
+    gap: var(--space-4);
+  }
+  .ct-form[hidden] {
+    display: none;
+  }
+  .ct-two {
+    display: grid;
+    gap: var(--space-4);
+  }
+  @media (min-width: 36rem) {
+    .ct-two {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .field {
+    display: grid;
+    gap: 0.4rem;
+  }
+  .field label {
+    font-size: var(--step--1);
+    font-weight: 560;
+  }
+  .opt {
+    font-weight: 400;
+    color: var(--fg-subtle);
+  }
+  .field input,
+  .field select,
+  .field textarea {
+    inline-size: 100%;
+    min-block-size: 2.875rem;
+    padding: 0.6rem 0.85rem;
+    border: 1px solid var(--border-strong, var(--border));
+    border-radius: var(--radius-md);
+    font: inherit;
+    font-size: 1rem;
+    color: var(--fg);
+    background: color-mix(in srgb, var(--bg) 55%, transparent);
+  }
+  .field select option,
+  .field select optgroup {
+    color: #111;
+    background: #fff;
+  }
+  .field textarea {
+    resize: vertical;
+    line-height: 1.5;
+  }
+  .field :is(input, select, textarea):focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 1px;
+  }
+  .field [aria-invalid] {
+    border-color: #ef4444;
+  }
+  .field-err {
+    font-size: var(--step--1);
+    color: var(--danger, #f87171);
+  }
+  .ct-check {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    font-size: var(--step--1);
+    cursor: pointer;
+  }
+  .ct-check input {
+    inline-size: 1.15rem;
+    block-size: 1.15rem;
+    margin-block-start: 0.15rem;
+    accent-color: var(--accent);
+  }
+  .ct-hp {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .ct-submit {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3) var(--space-5);
+  }
+  .ct-status:empty {
+    display: none;
+  }
+  .ct-status {
+    font-size: var(--step--1);
+    color: var(--fg-muted);
+  }
+  .ct-done {
+    display: grid;
+    gap: var(--space-4);
+    justify-items: start;
+  }
+  .ct-done[hidden] {
+    display: none;
+  }
+  .ct-side {
+    display: grid;
+    gap: var(--space-4);
+  }
+  .ct-lines {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .ct-lines li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    overflow-wrap: anywhere;
+  }
+  .ct-lines :global(.icon) {
+    color: var(--accent);
+  }
+  .ct-addr {
+    font-style: normal;
+    line-height: 1.6;
+  }
+</style>

@@ -90,24 +90,43 @@ export interface ServiceInput {
   description: string;
   path: string;
   serviceType?: string;
-  /** Only once the owner has approved prices (TRACKER ⛔S3/S6). */
+  /** Single "from" price (services, S4). */
   priceFrom?: { amount: number; currency: string; unitText?: string } | undefined;
+  /** Several "from" prices, e.g. an agent's one-off setup and its monthly fee (src/data/pricing.ts). */
+  offers?: OfferInput[] | undefined;
   areaServed?: readonly string[];
+}
+export interface OfferInput {
+  name: string;
+  amount: number;
+  currency: string;
+  /** Recurring billing period as UN/CEFACT code, e.g. "MON" for monthly. Omit for one-off fees. */
+  billingUnit?: 'MON' | 'ANN';
+}
+
+function offer(path: string, o: OfferInput): Thing {
+  return {
+    '@type': 'Offer',
+    name: o.name,
+    url: abs(path),
+    priceCurrency: o.currency,
+    availability: 'https://schema.org/InStock',
+    seller: { '@id': ORG_ID },
+    priceSpecification: {
+      '@type': o.billingUnit ? 'UnitPriceSpecification' : 'PriceSpecification',
+      minPrice: o.amount,
+      priceCurrency: o.currency,
+      ...(o.billingUnit ? { unitCode: o.billingUnit, referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode: o.billingUnit } } : {}),
+    },
+  };
 }
 
 export function service(s: ServiceInput): Thing {
-  return {
-    '@type': 'Service',
-    '@id': `${abs(s.path)}#service`,
-    name: s.name,
-    description: s.description,
-    url: abs(s.path),
-    serviceType: s.serviceType ?? s.name,
-    provider: { '@id': ORG_ID },
-    areaServed: countries(s.areaServed ?? site.areaServed),
-    ...(s.priceFrom
-      ? {
-          offers: {
+  const offers = s.offers?.length
+    ? s.offers.map((o) => offer(s.path, o))
+    : s.priceFrom
+      ? [
+          {
             '@type': 'Offer',
             url: abs(s.path),
             priceCurrency: s.priceFrom.currency,
@@ -118,8 +137,56 @@ export function service(s: ServiceInput): Thing {
               ...(s.priceFrom.unitText ? { unitText: s.priceFrom.unitText } : {}),
             },
           },
-        }
-      : {}),
+        ]
+      : [];
+  return {
+    '@type': 'Service',
+    '@id': `${abs(s.path)}#service`,
+    name: s.name,
+    description: s.description,
+    url: abs(s.path),
+    serviceType: s.serviceType ?? s.name,
+    provider: { '@id': ORG_ID },
+    areaServed: countries(s.areaServed ?? site.areaServed),
+    ...(offers.length === 1 ? { offers: offers[0] } : offers.length > 1 ? { offers } : {}),
+  };
+}
+
+/**
+ * Our own products. Security products are `Product` (hardware/appliances, no public price: no `offers`, and never
+ * Review/AggregateRating). Software platforms such as Wakeel are `WebApplication`.
+ */
+export function product(p: {
+  name: string;
+  description: string;
+  path: string;
+  kind: 'Product' | 'WebApplication';
+  category: string;
+  image?: string | undefined;
+  externalUrl?: string | undefined;
+}): Thing {
+  return {
+    '@type': p.kind,
+    '@id': `${abs(p.path)}#product`,
+    name: p.name,
+    description: p.description,
+    url: abs(p.path),
+    ...(p.kind === 'Product'
+      ? { category: p.category, brand: { '@type': 'Brand', name: site.name }, manufacturer: { '@id': ORG_ID } }
+      : { applicationCategory: 'BusinessApplication', operatingSystem: 'Web', creator: { '@id': ORG_ID }, publisher: { '@id': ORG_ID } }),
+    ...(p.image ? { image: abs(p.image) } : {}),
+    ...(p.externalUrl ? { sameAs: [p.externalUrl] } : {}),
+  };
+}
+
+/** An ordered list of links (hub pages), e.g. every agent on /ai-agents/. */
+export function itemList(opts: { path: string; name: string; items: { name: string; path: string }[] }): Thing {
+  return {
+    '@type': 'ItemList',
+    '@id': `${abs(opts.path)}#list`,
+    name: opts.name,
+    numberOfItems: opts.items.length,
+    itemListElement: opts.items.map((it, i) => ({ '@type': 'ListItem', position: i + 1, name: it.name, url: abs(it.path) })),
   };
 }
 

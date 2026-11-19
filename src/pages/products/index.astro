@@ -1,0 +1,217 @@
+---
+/**
+ * /products/ hub (S5): our own products. AI platforms (Wakeel + the live sister sites) and the security line.
+ * Everything here is ours, so names and links are allowed. No prices, no usage numbers (none supplied).
+ */
+import '@/styles/page-kit.css';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Button from '@/components/Button.astro';
+import Icon from '@/components/Icon.astro';
+import Accordion from '@/components/Accordion.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import { site } from '@/data/site';
+import { getProducts, categoryLabel } from '@/lib/products';
+import { itemList, type FaqItem } from '@/lib/schema';
+import type { IconName } from '@/lib/icons';
+
+const all = await getProducts();
+const platforms = all.filter((p) => p.data.category === 'platform' || p.data.category === 'app');
+const security = all.filter((p) => !platforms.includes(p));
+
+/** Live sister sites (site.properties) with a line each. */
+const sister: { name: string; href: string; line: string; icon: IconName }[] = [
+  { name: 'Smart Livestock', href: 'https://livestock.visionbotix.com', line: 'AI cameras and IoT sensors that monitor each animal on a dairy farm: health, feed, milk and early alerts.', icon: 'sprout' },
+  { name: 'Vision AI cameras', href: 'https://cv.visionbotix.com', line: 'Cameras trained to recognize people, vehicles and objects, and alert in real time: counting, security and safety.', icon: 'scan-eye' },
+];
+
+const faqs: FaqItem[] = [
+  {
+    q: 'What products does Visionbotix make?',
+    a: `Visionbotix builds and runs its own products alongside client work: Wakeel, an AI legal matching platform for Pakistan; Smart Livestock for farms; Vision AI camera solutions; and three security products, the VX-1 IP Encryptor, ThreatIQ and Cyber Range.`,
+  },
+  {
+    q: 'Why does a software studio build its own products?',
+    a: 'Running our own products keeps us honest about what it takes to ship and operate software: uptime, support, security and real users. Clients get a team that has lived with the consequences of its own architecture decisions.',
+  },
+  {
+    q: 'How are the security products priced and sold?',
+    a: 'They are quoted per deployment, after a technical briefing under NDA. Sales of the security products may be subject to export-control and sanctions rules.',
+  },
+  {
+    q: 'Can you build a product like Wakeel for my business?',
+    a: 'Yes. We build prompt-first AI products, marketplaces and platforms for clients, from the AI layer to the web and mobile apps around it. You own all of the code and IP.',
+  },
+];
+---
+
+<BaseLayout
+  seo={{
+    title: 'Our Products: AI Platforms and Security',
+    description: 'Products Visionbotix builds and runs: Wakeel AI lawyer matching, Smart Livestock, Vision AI, the VX-1 IP Encryptor, ThreatIQ and Cyber Range.',
+  }}
+  pageType="CollectionPage"
+  schema={[itemList({ path: '/products/', name: 'Visionbotix products', items: all.map((p) => ({ name: p.data.name, path: `/products/${p.id}/` })) })]}
+>
+  <section class="container pk-hero" data-compact aria-labelledby="pr-title">
+    <div class="pk-copy">
+      <Breadcrumbs items={[{ name: 'Products', href: '/products/' }]} />
+      <p class="eyebrow">Our own products</p>
+      <h1 id="pr-title" class="pk-title">We ship our own products, not just yours.</h1>
+      <p class="lead pk-lead">
+        Visionbotix designs, builds and runs its own AI platforms and security products. They are the same skills we bring to client work: AI that
+        understands plain language, software that stays up, and security engineered down to the hardware.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ AI platforms ============ -->
+  <Section id="platforms" eyebrow="AI platforms" title="Live products people use." space="tight">
+    <div class="pr-platforms">
+      {
+        platforms.map((p) => (
+          <article class="pr-feature glass-strong spotlight" data-reveal>
+            <div class="pr-feature-head">
+              <span class="pk-snap-icon" aria-hidden="true">
+                <Icon name={p.data.icon} size={22} />
+              </span>
+              <div>
+                <h3 class="h3">
+                  <a href={`/products/${p.id}/`}>{p.data.name}</a>
+                </h3>
+                <p class="mono subtle small">{categoryLabel[p.data.category]}</p>
+              </div>
+            </div>
+            <p class="lead pr-feature-line">{p.data.tagline}</p>
+            <ul role="list" class="pk-checks">
+              {p.data.highlights.map((h) => (
+                <li>
+                  <Icon name="check" size={15} strokeWidth={2.5} />
+                  {h}
+                </li>
+              ))}
+            </ul>
+            <div class="cluster">
+              <Button href={`/products/${p.id}/`} icon="arrow-right">
+                How {p.data.name} works
+              </Button>
+              {p.data.externalUrl && (
+                <Button href={p.data.externalUrl} variant="glass" icon="arrow-up-right" data-event="product_visit" data-event-location="products-hub">
+                  Visit the site
+                </Button>
+              )}
+            </div>
+          </article>
+        ))
+      }
+      <ul role="list" class="pr-sister">
+        {
+          sister.map((s) => (
+            <li class="pk-card glass-subtle spotlight lift" data-link>
+              <a class="card-cover" href={s.href} target="_blank" rel="noopener" aria-hidden="true" tabindex="-1" />
+              <span class="pk-icon" aria-hidden="true">
+                <Icon name={s.icon} size={20} />
+              </span>
+              <h3 class="h4">
+                <a href={s.href} target="_blank" rel="noopener">
+                  {s.name}
+                  <span class="visually-hidden"> (opens in a new tab)</span>
+                </a>
+              </h3>
+              <p class="muted small">{s.line}</p>
+              <span class="pk-more small">
+                {new URL(s.href).host} <Icon name="arrow-up-right" size={14} />
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </Section>
+
+  <!-- ============ Security ============ -->
+  <Section id="security" eyebrow="Security products" title="Hardware-grade security, built in-house." lead="Encryption hardware, internal defense for isolated networks, and a range to train and test on. Built for defense, government and enterprise teams. Briefings under NDA.">
+    <ul role="list" class="pk-cards" data-cols="3" data-stagger>
+      {
+        security.map((p) => (
+          <li class="pk-card glass-subtle spotlight lift" data-link>
+            <a class="card-cover" href={`/products/${p.id}/`} aria-hidden="true" tabindex="-1" />
+            <span class="pk-icon" aria-hidden="true">
+              <Icon name={p.data.icon} size={20} />
+            </span>
+            <p class="mono subtle small">{categoryLabel[p.data.category]}</p>
+            <h3 class="h4">
+              <a href={`/products/${p.id}/`}>{p.data.name}</a>
+            </h3>
+            <p class="muted small">{p.data.tagline}</p>
+            <ul role="list" class="pk-checks pr-mini">
+              {p.data.highlights.slice(0, 3).map((h) => (
+                <li>
+                  <Icon name="check" size={14} strokeWidth={2.5} />
+                  {h}
+                </li>
+              ))}
+            </ul>
+            <span class="pk-more small">
+              Learn more <Icon name="arrow-right" size={14} />
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+    <div class="pk-foot cluster">
+      <Button href="/services/cybersecurity/" variant="glass" icon="arrow-right">Security services</Button>
+      <Button href="/contact/?topic=security#quote" variant="ghost">Request a briefing</Button>
+    </div>
+  </Section>
+
+  <Section id="faq" eyebrow="FAQ" title="About our products." width="narrow" align="center">
+    <Accordion items={faqs} schema name="products-faq" />
+    <p class="pk-faq-more small muted">Questions about a product? <a class="link" href={`mailto:${site.contact.email}`}>{site.contact.email}</a></p>
+  </Section>
+
+  <CtaBand title="Want a product of your own?" text="We take products from idea to launch: the AI, the apps and the security around them. Book a call and get a fixed quote within 24 hours." location="products-final" />
+</BaseLayout>
+
+<style>
+  .pr-platforms {
+    display: grid;
+    gap: var(--space-4);
+  }
+  @media (min-width: 60rem) {
+    .pr-platforms {
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr);
+    }
+  }
+  .pr-feature {
+    --glass-radius: var(--radius-xl);
+    display: grid;
+    align-content: start;
+    gap: var(--space-4);
+    padding: clamp(1.25rem, 1rem + 2vw, 2.25rem);
+  }
+  .pr-feature > * {
+    position: relative;
+    z-index: 2;
+  }
+  .pr-feature-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .pr-feature h3 a {
+    text-decoration: none;
+  }
+  .pr-feature-line {
+    max-width: 40ch;
+  }
+  .pr-sister {
+    display: grid;
+    gap: var(--space-4);
+  }
+  .pr-mini {
+    margin-block: var(--space-2);
+    gap: var(--space-2);
+  }
+</style>

@@ -1,0 +1,62 @@
+---
+/** Privacy and Terms pages: title, plain summary box, then the Markdown from src/content/legal/<id>.md. */
+import { getEntry, render } from 'astro:content';
+import '@/styles/page-kit.css';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Icon from '@/components/Icon.astro';
+
+interface Props {
+  id: 'privacy' | 'terms';
+}
+const entry = await getEntry('legal', Astro.props.id);
+if (!entry) throw new Error(`Missing src/content/legal/${Astro.props.id}.md`);
+const { Content } = await render(entry);
+const d = entry.data;
+const path = `/${Astro.props.id}/`;
+const updated = d.updated.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+---
+
+<BaseLayout seo={{ title: d.title, description: d.description, modifiedTime: d.updated.toISOString() }}>
+  <section class="container pk-hero lg-hero" data-compact aria-labelledby="lg-title">
+    <div class="pk-copy">
+      <Breadcrumbs items={[{ name: d.title, href: path }]} />
+      <h1 id="lg-title" class="pk-title">{d.title}</h1>
+      <p class="pk-updated">Last updated {updated}</p>
+    </div>
+  </section>
+  <div class="container lg-wrap">
+    <p class="lg-summary glass-subtle"><Icon name="info" size={18} /><span>{d.summary}</span></p>
+    <article class="pk-md glass-subtle lg-body">
+      <Content />
+    </article>
+  </div>
+</BaseLayout>
+
+<style>
+  .lg-wrap {
+    display: grid;
+    gap: var(--space-4);
+    max-inline-size: 52rem;
+    padding-block-end: var(--space-8);
+  }
+  .lg-summary {
+    --glass-radius: var(--radius-lg);
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    padding: var(--space-4) var(--space-5);
+  }
+  .lg-summary > :global(*) {
+    position: relative;
+    z-index: 2;
+  }
+  .lg-summary :global(.icon) {
+    flex: none;
+    margin-block-start: 0.2rem;
+    color: var(--accent);
+  }
+  .lg-body :global(table) {
+    margin-block: var(--space-3);
+  }
+</style>

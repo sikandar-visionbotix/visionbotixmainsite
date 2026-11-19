@@ -1,15 +1,15 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "astro",
-  "installCommand": "npm ci",
+  "installCommand": "npm install --no-audit --no-fund",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "trailingSlash": true,
   "redirects": [
-    { "source": "/ip-encryptor.html", "destination": "/products/vx-1-ip-encryptor/", "permanent": true },
-    { "source": "/threatiq.html", "destination": "/products/threatiq/", "permanent": true },
-    { "source": "/cyber-range.html", "destination": "/products/cyber-range/", "permanent": true },
-    { "source": "/index.html", "destination": "/", "permanent": true }
+    { "source": "/ip-encryptor.html", "destination": "/products/vx-1-ip-encryptor/", "statusCode": 301 },
+    { "source": "/threatiq.html", "destination": "/products/threatiq/", "statusCode": 301 },
+    { "source": "/cyber-range.html", "destination": "/products/cyber-range/", "statusCode": 301 },
+    { "source": "/index.html", "destination": "/", "statusCode": 301 }
   ],
   "headers": [
     {
@@ -22,7 +22,7 @@
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()" }
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(self), geolocation=(), interest-cohort=()" }
       ]
     }
   ]

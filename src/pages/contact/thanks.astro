@@ -1,0 +1,21 @@
+---
+/** Where the no-JS contact form lands after a successful send (api/contact.js redirects here). Not indexed. */
+import '@/styles/page-kit.css';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Button from '@/components/Button.astro';
+import { site } from '@/data/site';
+---
+
+<BaseLayout seo={{ title: 'Thanks, your brief is in', description: 'Thanks for your message. An engineer at Visionbotix will reply within one business day.', noindex: true }}>
+  <section class="container pk-hero" data-center data-compact aria-labelledby="th-title">
+    <div class="pk-copy">
+      <p class="eyebrow">Message sent</p>
+      <h1 id="th-title" class="pk-title">Thanks, your brief is in.</h1>
+      <p class="lead pk-lead">An engineer will reply within one business day. Anything to add? Write to <a class="link" href={`mailto:${site.contact.email}`}>{site.contact.email}</a>.</p>
+      <div class="cluster">
+        <Button href="/work/" icon="arrow-right">See our work</Button>
+        <Button href="/" variant="glass">Back to the homepage</Button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

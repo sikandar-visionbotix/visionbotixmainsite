@@ -15,7 +15,7 @@ export default defineConfig({
   integrations: [
     sitemap({
       // Internal or utility pages never go in the sitemap.
-      filter: (page) => !/\/(styleguide|404)\/?$/.test(page),
+      filter: (page) => !/\/(styleguide|404|contact\/thanks)\/?$/.test(page),
     }),
   ],
   // Decision D9: Geist (UI, body and display) + Geist Mono (labels, numbers, the agent console). Self-hosted.

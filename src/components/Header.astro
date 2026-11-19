@@ -8,7 +8,7 @@ import Icon from './Icon.astro';
 import Button from './Button.astro';
 import ThemeToggle from './ThemeToggle.astro';
 import { site } from '@/data/site';
-import { agentsByGroup, servicesByPillar, products, company, industries } from '@/data/catalogue';
+import { agentsByGroup, servicesByPillar, products, company, industries, industriesLive } from '@/data/catalogue';
 
 const path = Astro.url.pathname;
 const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
@@ -37,7 +37,7 @@ const wa = site.contact.whatsapp;
             Services <Icon name="chevron-down" size={15} class="chev" />
           </button>
         </li>
-        <li><a class="nav-item" href="/industries/" aria-current={isCurrent('/industries/') ? 'page' : undefined}>Industries</a></li>
+        {industriesLive && <li><a class="nav-item" href="/industries/" aria-current={isCurrent('/industries/') ? 'page' : undefined}>Industries</a></li>}
         <li><a class="nav-item" href="/work/" aria-current={isCurrent('/work/') ? 'page' : undefined}>Work</a></li>
         <li><a class="nav-item" href="/pricing/" aria-current={isCurrent('/pricing/') ? 'page' : undefined}>Pricing</a></li>
         <li>
@@ -215,7 +215,7 @@ const wa = site.contact.whatsapp;
         }
       </ul>
     </details>
-    <details class="sheet-group" name="sheet">
+    {industriesLive && <details class="sheet-group" name="sheet">
       <summary>Industries <Icon name="chevron-down" size={18} class="chev" /></summary>
       <ul role="list">
         <li><a href="/industries/"><strong>All industries</strong></a></li>
@@ -227,7 +227,7 @@ const wa = site.contact.whatsapp;
           ))
         }
       </ul>
-    </details>
+    </details>}
     <details class="sheet-group" name="sheet">
       <summary>Products <Icon name="chevron-down" size={18} class="chev" /></summary>
       <ul role="list">

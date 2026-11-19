@@ -1,0 +1,124 @@
+---
+/**
+ * /careers/ (S5). No open roles were supplied, so this is an open-application page: the roles we hire for when work
+ * needs them (from the dedicated-team roles), how we work, and how to apply. No invented perks or salary bands.
+ * TODO(owner): add real openings (title, type, location) to `openings` when there are any; they then render first.
+ */
+import '@/styles/page-kit.css';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Button from '@/components/Button.astro';
+import Icon from '@/components/Icon.astro';
+import { site } from '@/data/site';
+import type { IconName } from '@/lib/icons';
+
+const openings: { title: string; type: string; location: string }[] = [];
+
+const roles: { icon: IconName; title: string; text: string }[] = [
+  { icon: 'brain', title: 'AI and ML engineers', text: 'LLM apps, agents, RAG, evaluations, computer vision.' },
+  { icon: 'code', title: 'Full-stack engineers', text: 'TypeScript, React or Angular, Node.js or Python, PostgreSQL, cloud.' },
+  { icon: 'smartphone', title: 'Mobile engineers', text: 'React Native, Flutter, Swift and Kotlin, from build to store release.' },
+  { icon: 'palette', title: 'Product designers', text: 'UX research, interaction and visual design for web and mobile products.' },
+  { icon: 'clipboard-check', title: 'QA engineers', text: 'Test strategy, automation and evaluation of AI behavior.' },
+  { icon: 'cpu', title: 'Embedded and security engineers', text: 'FPGA, firmware, IoT and network security for our own products.' },
+];
+
+const why: { icon: IconName; title: string; text: string }[] = [
+  { icon: 'rocket', title: 'Real products, real users', text: 'Client projects in many countries, plus our own platforms and security products.' },
+  { icon: 'sparkles', title: 'AI is the day job', text: 'You build agents and AI features for production, with guardrails and evaluations, not demos.' },
+  { icon: 'users', title: 'Small teams, clear ownership', text: 'One named lead per project and direct contact with clients, so your work is seen.' },
+  { icon: 'globe', title: 'Modern stack', text: 'Current frameworks, cloud and AI tooling, chosen per project, never legacy by default.' },
+];
+const mailHref = `mailto:${site.contact.email}?subject=${encodeURIComponent('Careers: ')}`;
+---
+
+<BaseLayout
+  seo={{
+    title: 'Careers: AI and Software Engineering Jobs',
+    description: `Work on AI agents, apps and security products at Visionbotix in ${site.address.locality}, Pakistan. Send us your CV and links to work you are proud of.`,
+  }}
+>
+  <section class="container pk-hero" data-compact aria-labelledby="cr-title">
+    <div class="pk-copy">
+      <Breadcrumbs items={[{ name: 'Careers', href: '/careers/' }]} />
+      <p class="eyebrow">Careers</p>
+      <h1 id="cr-title" class="pk-title">Build AI that does real work.</h1>
+      <p class="lead pk-lead">
+        We are a team of {site.facts.teamSize} in {site.address.locality}, building AI agents, web and mobile products and security hardware for clients in {site.facts.countriesServed} countries. We are always glad to hear from people who ship.
+      </p>
+      <div class="cluster">
+        <Button href={mailHref} icon="mail" data-event="careers_apply" data-event-location="careers-hero">Send your CV</Button>
+        <Button href="/about/" variant="glass">About us</Button>
+      </div>
+    </div>
+  </section>
+
+  {
+    openings.length > 0 && (
+      <Section id="openings" eyebrow="Open roles" title="We are hiring." space="tight">
+        <ul role="list" class="pk-cards" data-stagger>
+          {openings.map((o) => (
+            <li class="pk-card glass-subtle">
+              <h3 class="h4">{o.title}</h3>
+              <p class="muted small">
+                {o.type} · {o.location}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </Section>
+    )
+  }
+
+  <Section id="roles" eyebrow="Who we hire" title="The roles we hire for as projects need them." lead="No role listed that fits you exactly? Write anyway. Strong engineers find a place here." space="tight">
+    <ul role="list" class="pk-cards" data-cols="3" data-stagger>
+      {
+        roles.map((r) => (
+          <li class="pk-card glass-subtle">
+            <span class="pk-icon" aria-hidden="true">
+              <Icon name={r.icon} size={20} />
+            </span>
+            <h3 class="h4">{r.title}</h3>
+            <p class="muted small">{r.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section id="why" eyebrow="Why Visionbotix" title="What the work is like.">
+    <ul role="list" class="pk-cards" data-cols="4" data-stagger>
+      {
+        why.map((w) => (
+          <li class="pk-card glass-subtle">
+            <span class="pk-icon" aria-hidden="true">
+              <Icon name={w.icon} size={20} />
+            </span>
+            <h3 class="h4">{w.title}</h3>
+            <p class="muted small">{w.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section id="apply" eyebrow="How to apply" title="Show us what you have built." space="tight">
+    <div class="pk-col glass-strong cr-apply" data-reveal>
+      <ol role="list" class="pk-checks">
+        <li><Icon name="mail" size={15} /> Email <a class="link" href={mailHref}>{site.contact.email}</a> with "Careers" and the role in the subject.</li>
+        <li><Icon name="link" size={15} /> Attach your CV and link to work you are proud of: a repository, an app, a product or a design file.</li>
+        <li><Icon name="message-square-text" size={15} /> Add two lines on what you want to work on next.</li>
+        <li><Icon name="calendar-check" size={15} /> If there is a fit, we invite you to a technical conversation about your own work.</li>
+      </ol>
+    </div>
+  </Section>
+</BaseLayout>
+
+<style>
+  .cr-apply {
+    --glass-radius: var(--radius-xl);
+    max-inline-size: 44rem;
+    padding: clamp(1.25rem, 1rem + 2vw, 2.25rem);
+  }
+</style>

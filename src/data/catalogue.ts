@@ -75,11 +75,24 @@ export const services: ServiceItem[] = [
   { slug: 'cybersecurity', name: 'Cybersecurity', pillar: 'deeptech', icon: 'shield-check' },
 ];
 
+/** Ways to work with us (service pages, /services/ hub, /pricing/). Copy in src/data/services-hub.ts. */
+export const engagements = ['fixed-scope', 'monthly-retainer', 'dedicated-team', 'audit'] as const;
+export type Engagement = (typeof engagements)[number];
+
+/** Own products with a page on this site (/products/<slug>/). `group` drives the /products/ hub sections. */
 export const products = [
-  { slug: 'vx-1-ip-encryptor', name: 'VX-1 IP Encryptor', line: 'FPGA-based, plug-and-play AES-256 IP encryptor.', icon: 'lock' as IconName },
-  { slug: 'threatiq', name: 'ThreatIQ', line: 'Internal defense layer for air-gapped networks.', icon: 'shield-check' as IconName },
-  { slug: 'cyber-range', name: 'Cyber Range', line: 'Red/blue team training and device testing.', icon: 'server' as IconName },
+  { slug: 'wakeel', name: 'Wakeel', line: 'AI lawyer matching for Pakistan, in Urdu, English or Roman Urdu.', icon: 'scale' as IconName, group: 'platform' as const },
+  { slug: 'vx-1-ip-encryptor', name: 'VX-1 IP Encryptor', line: 'FPGA-based, plug-and-play AES-256 IP encryptor.', icon: 'lock' as IconName, group: 'security' as const },
+  { slug: 'threatiq', name: 'ThreatIQ', line: 'Internal defense layer for air-gapped networks.', icon: 'shield-check' as IconName, group: 'security' as const },
+  { slug: 'cyber-range', name: 'Cyber Range', line: 'Red/blue team training and device testing.', icon: 'server' as IconName, group: 'security' as const },
 ];
+export const securityProducts = products.filter((p) => p.group === 'security');
+
+/**
+ * Industry pages arrive in S8. Until then industry names render as plain text (no links), so the launch has no
+ * broken links. Flip to true when /industries/ and its 12 pages exist.
+ */
+export const industriesLive = false;
 
 export const industries = [
   { slug: 'healthcare', name: 'Healthcare', icon: 'stethoscope' as IconName },

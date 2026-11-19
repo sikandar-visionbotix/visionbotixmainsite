@@ -22,11 +22,15 @@ export interface SeoProps {
 }
 type Props = SeoProps;
 
-const { title, description, titleAbsolute = false, canonical, image = site.ogDefault, imageAlt, type = 'website', noindex = false, publishedTime, modifiedTime } =
+const { title, description, titleAbsolute = false, canonical, image: imageProp, imageAlt, type = 'website', noindex = false, publishedTime, modifiedTime } =
   Astro.props;
 
 const fullTitle = titleAbsolute ? title : `${title} | ${site.name}`;
 const canonicalUrl = canonical ? abs(canonical) : abs(Astro.url.pathname);
+// Per-page OG image (scripts/og.mjs renders it after the build from this page's og:title/description).
+// noindex pages share the default card.
+const ogSlug = Astro.url.pathname.replace(/^\/|\/$/g, '') || 'home';
+const image = imageProp ?? (noindex ? site.ogDefault : `/og/${ogSlug}.png`);
 const imageUrl = abs(image);
 
 if (!noindex) {
@@ -38,7 +42,7 @@ if (!noindex) {
 
 <title>{fullTitle}</title>
 <meta name="description" content={description} />
-<link rel="canonical" href={canonicalUrl} />
+{!noindex && <link rel="canonical" href={canonicalUrl} />}
 <meta name="robots" content={noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large, max-snippet:-1'} />
 
 <meta property="og:site_name" content={site.name} />

@@ -20,6 +20,7 @@ export const hero = {
 
 /** Real, checkable proof only. Each item is our own product or our own published app. */
 export const proof: { icon: IconName; title: string; text: string; href?: string }[] = [
+  { icon: 'scale', title: 'Wakeel', text: 'Our prompt-first AI platform that matches people with verified lawyers, live', href: '/products/wakeel/' },
   { icon: 'shield-check', title: '3 security products', text: 'VX-1, ThreatIQ and Cyber Range, designed and built in-house', href: '/products/' },
   { icon: 'smartphone', title: 'Apps on the App Store and Google Play', text: 'iOS and Android apps built by our team, live on both stores' },
   { icon: 'sprout', title: 'Smart Livestock', text: 'Our AI platform for dairy and livestock farms, live', href: 'https://livestock.visionbotix.com' },

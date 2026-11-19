@@ -1,0 +1,378 @@
+---
+/**
+ * Product page template (S5): hero (with a photo, the Wakeel prompt illustration, or a spec snapshot) → the problem →
+ * features → how it works → specs and who it's for → use cases → CTA → comparison (Markdown body) → FAQ → related
+ * services, agents and other products → CTA. Copy from `src/content/products/<slug>.md` through getProducts().
+ * Our own products only, so they may be named and linked (D18 covers client work). No prices, no ratings.
+ */
+import { render } from 'astro:content';
+import { Image } from 'astro:assets';
+import '@/styles/page-kit.css';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Button from '@/components/Button.astro';
+import Icon from '@/components/Icon.astro';
+import Steps from '@/components/Steps.astro';
+import Accordion from '@/components/Accordion.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import AgentCard from '@/components/AgentCard.astro';
+import ServiceCard from '@/components/ServiceCard.astro';
+import PromptMatchArt from '@/components/PromptMatchArt.astro';
+import { site } from '@/data/site';
+import { agents as agentCatalogue } from '@/data/catalogue';
+import { getProducts, categoryLabel, type ProductEntry } from '@/lib/products';
+import { product } from '@/lib/schema';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const all = await getProducts();
+  return all.map((entry) => ({ params: { slug: entry.id }, props: { entry, all } }));
+}
+interface Props {
+  entry: ProductEntry;
+  all: ProductEntry[];
+}
+const { entry, all } = Astro.props;
+const d = entry.data;
+const slug = entry.id;
+const path = `/products/${slug}/`;
+const { Content } = await render(entry);
+const hasBody = !!entry.body?.trim();
+const isPlatform = d.category === 'platform' || d.category === 'app';
+const host = d.externalUrl ? new URL(d.externalUrl).host.replace(/^www\./, '') : null;
+
+const services = await getCollection('services');
+const relServices = d.related.services.map((r) => services.find((s) => s.id === r.id)!).filter(Boolean);
+const relAgents = d.related.agents.map((r) => agentCatalogue.find((a) => a.slug === r.id)!).filter(Boolean);
+const others = all.filter((p) => p.id !== slug);
+const quoteHref = `/contact/?topic=${slug}#quote`;
+const updated = d.updated.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+const featureCols = d.features.length % 4 === 0 ? 4 : d.features.length % 3 === 0 ? 3 : 2;
+---
+
+<BaseLayout
+  seo={{ title: d.seo.title, description: d.seo.description, modifiedTime: d.updated.toISOString() }}
+  schema={[
+    product({
+      name: d.name,
+      description: d.summary,
+      path,
+      kind: isPlatform ? 'WebApplication' : 'Product',
+      category: categoryLabel[d.category],
+      image: d.cover?.src,
+      externalUrl: d.externalUrl,
+    }),
+  ]}
+>
+  <!-- ============ Hero ============ -->
+  <section class="container pk-hero" data-split aria-labelledby="pd-title">
+    <div class="pk-copy">
+      <Breadcrumbs items={[{ name: 'Products', href: '/products/' }, { name: d.name, href: path }]} />
+      <p class="pk-eyebrow eyebrow">
+        <span class="pk-eyebrow-icon" aria-hidden="true"><Icon name={d.icon} size={14} /></span>
+        {d.name} · {categoryLabel[d.category]}
+      </p>
+      <h1 id="pd-title" class="pk-title">{d.h1}</h1>
+      <p class="lead pk-lead">{d.summary}</p>
+      <ul role="list" class="pk-checks pd-highlights">
+        {
+          d.highlights.map((h) => (
+            <li>
+              <Icon name="check" size={15} strokeWidth={2.5} />
+              {h}
+            </li>
+          ))
+        }
+      </ul>
+      <div class="cluster">
+        {
+          d.externalUrl ? (
+            <>
+              <Button href={d.externalUrl} size="lg" icon="arrow-up-right" data-event="product_visit" data-event-location={`product-hero-${slug}`}>
+                Visit {host}
+              </Button>
+              <Button href={quoteHref} size="lg" variant="glass" data-event="quote_click" data-event-location={`product-hero-${slug}`}>
+                {d.cta.label}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button href={quoteHref} size="lg" icon="arrow-right" data-event="quote_click" data-event-location={`product-hero-${slug}`}>
+                {d.cta.label}
+              </Button>
+              <Button href="#specs" size="lg" variant="glass">
+                See specifications
+              </Button>
+            </>
+          )
+        }
+      </div>
+    </div>
+
+    <div class="pd-visual">
+      {
+        slug === 'wakeel' ? (
+          <PromptMatchArt />
+        ) : d.cover ? (
+          <figure class="pd-photo glass-strong">
+            <Image src={d.cover} alt={d.coverAlt ?? d.name} widths={[480, 720, 960]} sizes="(min-width: 64rem) 40vw, 92vw" loading="eager" fetchpriority="high" />
+            <figcaption class="small muted">
+              <span class="pk-live-dot" aria-hidden="true" /> {d.name}, designed and built in-house
+            </figcaption>
+          </figure>
+        ) : (
+          <aside class="pk-snap glass-strong" aria-label={`${d.name} at a glance`}>
+            <div class="pk-snap-head">
+              <span class="pk-snap-icon" aria-hidden="true">
+                <Icon name={d.icon} size={20} />
+              </span>
+              <div>
+                <p class="pk-snap-name">{d.name}</p>
+                <p class="mono subtle pk-snap-sub">At a glance</p>
+              </div>
+            </div>
+            <dl class="pk-rows">
+              {d.specs.slice(0, 6).map((s) => (
+                <div class="pk-row">
+                  <dt>{s.label}</dt>
+                  <dd>{s.value}</dd>
+                </div>
+              ))}
+            </dl>
+            <p class="pk-snap-foot small muted">
+              <span class="pk-live-dot" aria-hidden="true" /> Designed and built by Visionbotix · Briefings under NDA
+            </p>
+          </aside>
+        )
+      }
+    </div>
+  </section>
+
+  <!-- ============ Problem ============ -->
+  <Section id="problem" eyebrow="Why it exists" title="The problem it solves." space="tight">
+    <ul role="list" class="pk-problems" data-n={d.problem.length} data-stagger>
+      {
+        d.problem.map((p) => (
+          <li class="pk-problem glass-subtle">
+            <Icon name="circle-x" size={18} />
+            <p>{p}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <!-- ============ Features ============ -->
+  <Section id="features" eyebrow="What it does" title={`Inside ${d.name}.`}>
+    <ul role="list" class="pk-cards" data-cols={featureCols} data-stagger>
+      {
+        d.features.map((f, i) => (
+          <li class="pk-card glass-subtle spotlight">
+            {f.icon ? (
+              <span class="pk-icon" aria-hidden="true">
+                <Icon name={f.icon} size={20} />
+              </span>
+            ) : (
+              <span class="pk-num" aria-hidden="true">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+            )}
+            <h3 class="h4">{f.title}</h3>
+            <p class="muted small">{f.body}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <!-- ============ How it works ============ -->
+  <Section id="how" eyebrow={isPlatform ? 'How it works' : 'How it is deployed'} title={isPlatform ? 'From a sentence to the right match.' : 'From first briefing to running in your network.'} align="center">
+    <Steps steps={d.steps} />
+  </Section>
+
+  <!-- ============ Specs + audience ============ -->
+  <Section id="specs" eyebrow="Specifications" title={isPlatform ? 'The facts.' : 'Technical overview.'}>
+    <div class="pd-specs-grid">
+      <dl class="pk-specs glass-subtle" data-reveal>
+        {
+          d.specs.map((s) => (
+            <div>
+              <dt>{s.label}</dt>
+              <dd>{s.value}</dd>
+            </div>
+          ))
+        }
+      </dl>
+      <div class="pd-side">
+        {
+          d.gallery.map((g) => (
+            <figure class="pd-gal glass-subtle" data-reveal>
+              <Image src={g.src} alt={g.alt} widths={[400, 640]} sizes="(min-width: 60rem) 30vw, 92vw" />
+            </figure>
+          ))
+        }
+        <div class="pk-col glass-subtle" data-reveal>
+          <h3 class="pk-col-head"><Icon name="users" size={18} /> Built for</h3>
+          <ul role="list" class="pk-tags">
+            {d.audience.map((a) => <li>{a}</li>)}
+          </ul>
+          {!isPlatform && <p class="small muted">Technical briefings, datasheets and pricing are shared under NDA. Availability may be subject to export-control rules.</p>}
+        </div>
+      </div>
+    </div>
+  </Section>
+
+  <!-- ============ Use cases ============ -->
+  <Section id="use-cases" eyebrow="Use cases" title="Where it earns its place." space="tight">
+    <ul role="list" class="pk-cards" data-cols={d.useCases.length === 4 ? 2 : 3} data-stagger>
+      {
+        d.useCases.map((u) => (
+          <li class="pk-card glass-subtle">
+            <h3 class="h4">{u.title}</h3>
+            <p class="muted small">{u.body}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <CtaBand
+    title={isPlatform ? 'Want a product that works like this?' : `See ${d.name} in a technical briefing.`}
+    text={d.cta.text}
+    primary={{ label: d.cta.label, href: quoteHref }}
+    secondary={{ label: 'Book a call', href: site.contact.bookingUrl }}
+    location={`product-mid-${slug}`}
+  />
+
+  <!-- ============ Comparison ============ -->
+  {
+    hasBody && (
+      <Section id="compare" width="narrow" space="tight">
+        <div class="pk-md glass-subtle" data-compare data-reveal>
+          <Content />
+        </div>
+      </Section>
+    )
+  }
+
+  <!-- ============ FAQ ============ -->
+  <Section id="faq" eyebrow="FAQ" title={`${d.name}: common questions.`} width="narrow" align="center">
+    <Accordion items={d.faq} schema name="product-faq" />
+    <p class="pk-faq-more small muted">
+      Something else? <a class="link" href={`mailto:${site.contact.email}`}>{site.contact.email}</a> or <a class="link" href={quoteHref}>send us a message</a>.
+      <span class="pk-updated">Updated {updated}</span>
+    </p>
+  </Section>
+
+  <!-- ============ Related ============ -->
+  {
+    relServices.length > 0 && (
+      <Section id="related" eyebrow="Related services" title={isPlatform ? 'We build products like this for clients.' : 'Related security services.'} space="tight">
+        <ul role="list" class="pk-cards" data-stagger>
+          {relServices.map((s) => (
+            <ServiceCard slug={s.id} name={s.data.name} line={s.data.tagline} icon={s.data.icon} />
+          ))}
+        </ul>
+      </Section>
+    )
+  }
+  {
+    relAgents.length > 0 && (
+      <Section id="agents" eyebrow="Packaged AI agents" title="Ready-made agents that pair with it." space="tight">
+        <ul role="list" class="pk-cards" data-stagger>
+          {relAgents.map((a) => (
+            <AgentCard {...a} />
+          ))}
+        </ul>
+      </Section>
+    )
+  }
+  <Section id="more-products" eyebrow="More of our products" title="Also built in-house." space="tight">
+    <ul role="list" class="pk-cards" data-stagger>
+      {
+        others.map((p) => (
+          <li class="pk-card glass-subtle spotlight lift" data-link>
+            <a class="card-cover" href={`/products/${p.id}/`} aria-hidden="true" tabindex="-1" />
+            <span class="pk-icon" aria-hidden="true">
+              <Icon name={p.data.icon} size={20} />
+            </span>
+            <h3 class="h4">
+              <a href={`/products/${p.id}/`}>{p.data.name}</a>
+            </h3>
+            <p class="muted small">{p.data.tagline}</p>
+          </li>
+        ))
+      }
+    </ul>
+    <div class="pk-foot">
+      <Button href="/products/" variant="glass" icon="arrow-right">All products</Button>
+    </div>
+  </Section>
+
+  <CtaBand location={`product-final-${slug}`} />
+</BaseLayout>
+
+<style>
+  .pd-highlights {
+    gap: var(--space-2);
+  }
+  .pd-visual {
+    display: grid;
+    justify-items: center;
+  }
+  @media (min-width: 64rem) {
+    .pd-visual {
+      justify-items: end;
+    }
+  }
+  .pd-photo {
+    --glass-radius: var(--radius-xl);
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: var(--space-3);
+    max-inline-size: 34rem;
+  }
+  .pd-photo > * {
+    position: relative;
+    z-index: 2;
+  }
+  .pd-photo :global(img) {
+    inline-size: 100%;
+    block-size: auto;
+    border-radius: calc(var(--radius-xl) - 0.5rem);
+  }
+  .pd-photo figcaption {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 var(--space-2) var(--space-1);
+  }
+  .pd-specs-grid {
+    display: grid;
+    gap: var(--space-4);
+    align-items: start;
+  }
+  @media (min-width: 60rem) {
+    .pd-specs-grid {
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+    }
+  }
+  .pd-side {
+    display: grid;
+    gap: var(--space-4);
+  }
+  .pd-gal {
+    --glass-radius: var(--radius-lg);
+    margin: 0;
+    padding: var(--space-2);
+  }
+  .pd-gal :global(img) {
+    position: relative;
+    z-index: 2;
+    inline-size: 100%;
+    block-size: auto;
+    border-radius: calc(var(--radius-lg) - 0.4rem);
+  }
+</style>

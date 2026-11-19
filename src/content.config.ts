@@ -4,7 +4,7 @@
  * documented `_template.*` to copy. Adding an agent, service, country… is just adding a file.
  *
  * Truth policy built into the schemas (CLAUDE.md):
- *  - prices are optional and null until the owner approves them (TRACKER ⛔S3/S6);
+ *  - prices never live in content files: `src/data/pricing.ts` is the single source (D23, D27, D32);
  *  - case studies are anonymous (no client names or links) and mocks can't reach production (see `work`);
  *  - every outcome needs a `source`;
  *  - there is deliberately no testimonial/rating/review field anywhere (decision D12).
@@ -12,6 +12,8 @@
 import { defineCollection, reference } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
+import { iconNames } from '@/lib/icons';
+import { services as serviceList, industries as industryList, products as productList, engagements } from '@/data/catalogue';
 
 const md = (base: string) => glob({ base: `./src/content/${base}`, pattern: '**/[^_]*.md' });
 
@@ -30,17 +32,12 @@ const keywords = z.object({
   secondary: z.array(z.string()).default([]),
 });
 
-const priceFrom = z
-  .object({
-    setup: z.number().positive().nullable().default(null),
-    monthly: z.number().positive().nullable().default(null),
-    currency: z.enum(['USD', 'GBP', 'EUR', 'AUD', 'CAD', 'AED', 'SAR', 'PKR']).default('USD'),
-    note: z.string().optional(),
-  })
-  .nullable()
-  .default(null);
-
 const titled = z.object({ title: z.string(), body: z.string() });
+
+/** Catalogue slugs (src/data/catalogue.ts) for links to pages built in later sprints. */
+const serviceSlugs = serviceList.map((x) => x.slug) as [string, ...string[]];
+const industrySlugs = industryList.map((x) => x.slug) as [string, ...string[]];
+const productSlugs = productList.map((x) => x.slug) as [string, ...string[]];
 
 const base = z.object({
   seo,
@@ -53,54 +50,126 @@ const base = z.object({
   faq,
 });
 
-/* ---------- agents (S3) ---------- */
+/* ---------- agents (S3) ----------
+ * Prices are NOT stored here: `src/data/pricing.ts` is the single price source (D23, D27), keyed by the file slug.
+ * Related services are collection references (S4). Related industries stay catalogue slugs until S8 fills that
+ * collection (D30), validated against `src/data/catalogue.ts`. */
+const icon = z.enum(iconNames);
+
+/** One line of the scripted "See it work" preview (D19). Kept short: it has to read at a glance. */
+const demoLine = z.discriminatedUnion('kind', [
+  /** A message from the customer / lead / user. `who` = channel and time, e.g. "WhatsApp · 21:47". */
+  z.object({ kind: z.literal('in'), who: z.string().max(40), text: z.string().max(140), wait: z.number().optional() }),
+  /** The agent's reply (shown with a typing state first). */
+  z.object({ kind: z.literal('out'), who: z.string().max(40).default('Agent'), text: z.string().max(160), wait: z.number().optional() }),
+  /** What the agent understood, e.g. label "intent", text "new booking · new patient". */
+  z.object({ kind: z.literal('sys'), icon: icon.default('sparkles'), label: z.string().max(24), text: z.string().max(90), wait: z.number().optional() }),
+  /** Tool calls, e.g. calendar.find_slots("Sat AM"), with an optional short result. */
+  z.object({ kind: z.literal('tool'), icon: icon.default('terminal'), calls: z.array(z.string().max(60)).min(1).max(2), result: z.string().max(40).optional(), wait: z.number().optional() }),
+  /** A human approval gate: the agent pauses until a person approves. */
+  z.object({ kind: z.literal('gate'), icon: icon.default('user-check'), text: z.string().max(110), wait: z.number().optional() }),
+  /** Closing summary line. */
+  z.object({ kind: z.literal('done'), icon: icon.default('badge-check'), text: z.string().max(110), wait: z.number().optional() }),
+]);
+
 const agents = defineCollection({
   loader: md('agents'),
   schema: base.extend({
     name: z.string(),
-    tagline: z.string(),
+    /** Card line (hub, related cards); mirrors `line` in catalogue.ts. */
+    tagline: z.string().max(90),
+    /** The H1. Must contain the primary keyword. */
+    h1: z.string().min(20).max(80),
     group: z.enum(['answer', 'sell', 'market', 'operate', 'secure-build']),
-    icon: z.string(),
+    icon,
     verbs: z.array(z.string()).min(3).max(6),
-    dayInLife: z.array(z.object({ time: z.string(), step: z.string() })).default([]),
-    useCases: z.array(titled).default([]),
-    integrations: z.array(z.string()).default([]),
-    controls: z.array(z.string()).default([]),
-    security: z.array(z.string()).default([]),
-    setup: z.array(titled).default([]),
+    /** Who it is for, as short chips ("Dental and medical clinics"). */
+    bestFor: z.array(z.string()).min(3).max(6),
+    /** The pain it removes: 3–4 plain sentences, no invented statistics. */
+    problem: z.array(z.string().min(30)).min(3).max(4),
+    /** What it does: 4–6 capability cards. */
+    does: z.array(titled).min(4).max(6),
+    dayInLife: z.array(z.object({ time: z.string(), step: z.string() })).min(4).max(7),
+    useCases: z.array(titled).min(3).max(6),
+    integrations: z.array(z.string()).min(4),
+    controls: z.array(z.string()).min(3),
+    security: z.array(z.string()).min(3),
+    setup: z.array(titled).length(4),
     timeline: z.string().default('Live in about 2 weeks'),
-    priceFrom,
+    /** What the price includes. */
+    includes: z.array(z.string()).min(4).max(8),
+    demo: z.object({
+      /** Console title, e.g. "Receptionist agent". */
+      title: z.string().max(32),
+      /** Status under the title, e.g. "Live · after hours". */
+      status: z.string().max(32),
+      icon: icon.optional(),
+      tools: z.array(z.object({ icon, label: z.string().max(14) })).min(1).max(3),
+      lines: z.array(demoLine).min(5).max(9),
+      /** Must say it is scripted and the business is fictional. */
+      caption: z.string().regex(/^Scripted demo · /, 'Caption must start with "Scripted demo · " (honest labelling, D19/D21).'),
+    }),
     related: z
       .object({
-        agents: z.array(reference('agents')).default([]),
-        services: z.array(reference('services')).default([]),
-        industries: z.array(reference('industries')).default([]),
+        agents: z.array(reference('agents')).max(3).default([]),
+        services: z.array(reference('services')).max(3).default([]),
+        industries: z.array(z.enum(industrySlugs)).max(4).default([]),
       })
       .default({ agents: [], services: [], industries: [] }),
   }),
 });
 
-/* ---------- services (S4) ---------- */
+/* ---------- services (S4) ----------
+ * Read through `getServices()` (src/lib/services.ts), which keeps the collection, the menu catalogue and the price list
+ * in step. Prices live only in `src/data/pricing.ts` → `servicePrices` (D27, D32). Related case studies are not listed
+ * here: the page picks them from each case study's own `services` field, through the `getWork()` launch gate. */
 const services = defineCollection({
   loader: md('services'),
-  schema: base.extend({
-    name: z.string(),
-    tagline: z.string(),
-    pillar: z.enum(['ai', 'software', 'deeptech']),
-    icon: z.string(),
-    offerings: z.array(titled).default([]),
-    process: z.array(titled).default([]),
-    stack: z.array(z.string()).default([]),
-    engagement: z.array(z.enum(['fixed-scope', 'monthly-retainer', 'dedicated-team', 'audit'])).default([]),
-    priceFrom,
-    related: z
-      .object({
-        agents: z.array(reference('agents')).default([]),
-        services: z.array(reference('services')).default([]),
-        work: z.array(reference('work')).default([]),
-      })
-      .default({ agents: [], services: [], work: [] }),
-  }),
+  schema: base
+    .extend({
+      seo: seo.extend({
+        /** ≤ 46 chars: " | Visionbotix" is appended (total ≤ 60). Must contain the primary keyword. */
+        title: z.string().max(46),
+      }),
+      /** Must equal the catalogue name (menus). */
+      name: z.string(),
+      /** Card line on the hub and in menus. */
+      tagline: z.string().min(30).max(90),
+      /** The H1, outcome-led. */
+      h1: z.string().min(20).max(80),
+      pillar: z.enum(['ai', 'software', 'deeptech']),
+      icon,
+      /** Who it is for, as short chips. */
+      bestFor: z.array(z.string().max(40)).min(3).max(6),
+      /** The pain it removes: 3–4 plain sentences, no invented statistics. */
+      problem: z.array(z.string().min(30)).min(3).max(4),
+      /** What we build: 4–8 offering cards. */
+      offerings: z.array(titled).min(4).max(8),
+      /** How an engagement runs: exactly 4 steps; `meta` = when, e.g. "Week 1". */
+      process: z.array(titled.extend({ meta: z.string().max(24).optional() })).length(4),
+      /** Typical timeline, e.g. "First release in 6–10 weeks". */
+      timeline: z.string().min(8).max(48),
+      /** Tools and tech, as text (no logos, no partnership claims). */
+      stack: z.array(z.string()).min(4).max(16),
+      /** Quality and security practices specific to this service. */
+      quality: z.array(z.string().min(20)).min(3).max(5),
+      engagement: z.array(z.enum(engagements)).min(1).max(4),
+      /** What the price includes. */
+      includes: z.array(z.string()).min(4).max(8),
+      faq: z.array(z.object({ q: z.string().min(8), a: z.string().min(20) })).min(5).max(8),
+      related: z.object({
+        /** Packaged agents to cross-sell (1–4). */
+        agents: z.array(reference('agents')).min(1).max(4),
+        services: z.array(reference('services')).max(3).default([]),
+        industries: z.array(z.enum(industrySlugs)).max(4).default([]),
+        /** Our own products (deep tech and security pages). */
+        products: z.array(z.enum(productSlugs)).max(3).default([]),
+      }),
+    })
+    .refine((d) => d.seo.title.toLowerCase().includes(d.keywords.primary.toLowerCase()), {
+      message: 'seo.title must contain keywords.primary (the title is the strongest on-page signal).',
+      path: ['seo', 'title'],
+    }),
 });
 
 /* ---------- industries (S8) ---------- */
@@ -146,11 +215,6 @@ const locations = defineCollection({
  * They render on previews with noindex, and a production build (VERCEL_ENV=production or SITE_LAUNCH=1) refuses
  * to ship any published entry that is still unverified. The owner flips `verified: true` after checking the facts. */
 const isProductionBuild = process.env.VERCEL_ENV === 'production' || process.env.SITE_LAUNCH === '1';
-const serviceSlugs = [
-  'ai-agent-development', 'generative-ai-development', 'ai-automation', 'ai-chatbot-development', 'ai-voice-agents', 'ai-consulting',
-  'custom-software-development', 'web-app-development', 'mobile-app-development', 'saas-mvp-development', 'ui-ux-design',
-  'cloud-devops', 'dedicated-teams', 'computer-vision', 'iot-embedded', 'cybersecurity',
-] as const;
 
 const work = defineCollection({
   loader: md('work'),
@@ -198,20 +262,48 @@ const work = defineCollection({
       }),
 });
 
-/* ---------- products (S5) ---------- */
+/* ---------- products (S5) ----------
+ * Our own products only (D18 does not apply: we may name and link them). Security products are sanitised per
+ * CLAUDE.md: generic sectors only ("defense, government, enterprise"), no named agencies, countries or programmes.
+ * No prices (quoted per deployment) and no customer counts, ratings or usage numbers unless the owner supplies them. */
 const products = defineCollection({
   loader: md('products'),
   schema: ({ image }) =>
     base.extend({
       name: z.string(),
-      tagline: z.string(),
+      /** ≤ 46 chars so " | Visionbotix" fits in 60. */
+      seo: seo.extend({ title: z.string().max(46) }),
+      /** H1: the product's job in plain words, with the primary keyword. */
+      h1: z.string().min(20).max(90),
+      tagline: z.string().max(90),
       category: z.enum(['security-hardware', 'security-software', 'training', 'platform', 'app']),
-      /** Old URL that must keep working, e.g. "/ip-encryptor.html". */
+      icon,
+      /** Old URL that must keep working, e.g. "/ip-encryptor.html" (the 301 lives in vercel.json). */
       legacyPath: z.string().startsWith('/').optional(),
+      /** Live product site, e.g. https://www.wakeel.com.pk (own products only). */
       externalUrl: z.url().optional(),
-      features: z.array(titled).default([]),
+      /** 3–4 short hero bullets. */
+      highlights: z.array(z.string().max(70)).min(3).max(4),
+      /** The problem it solves, 2–4 short paragraphs-as-bullets. */
+      problem: z.array(z.string()).min(2).max(4),
+      features: z.array(titled.extend({ icon: icon.optional() })).min(4).max(8),
+      /** How it works / how it is deployed: exactly 4 steps. */
+      steps: z.array(titled).length(4),
       specs: z.array(z.object({ label: z.string(), value: z.string() })).default([]),
+      useCases: z.array(titled).min(3).max(6),
+      /** Generic audiences only (no named organisations). */
+      audience: z.array(z.string()).min(2).max(8),
+      /** Primary CTA: what a buyer asks for (e.g. "Request a technical briefing"). */
+      cta: z.object({ label: z.string().max(40), text: z.string().max(200) }),
       cover: image().optional(),
+      coverAlt: z.string().optional(),
+      gallery: z.array(z.object({ src: image(), alt: z.string() })).max(4).default([]),
+      related: z
+        .object({
+          services: z.array(reference('services')).max(4).default([]),
+          agents: z.array(reference('agents')).max(3).default([]),
+        })
+        .default({ services: [], agents: [] }),
     }),
 });
 
@@ -244,4 +336,15 @@ const faqs = defineCollection({
   }),
 });
 
-export const collections = { agents, services, industries, locations, work, products, posts, faqs };
+/* ---------- legal pages (S5): /privacy/, /terms/ ---------- */
+const legal = defineCollection({
+  loader: md('legal'),
+  schema: z.object({
+    title: z.string(),
+    description: z.string().min(70).max(155),
+    updated: z.coerce.date(),
+    summary: z.string(),
+  }),
+});
+
+export const collections = { agents, services, industries, locations, work, products, posts, faqs, legal };
