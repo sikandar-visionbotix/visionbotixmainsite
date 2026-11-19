@@ -1,0 +1,957 @@
+---
+/**
+ * Homepage (Sprint 2). Copy lives in `src/data/home.ts`; offers come from `src/data/catalogue.ts`.
+ * Proof is real only: own products, own published apps, `site.facts` (hidden while null) and featured case studies
+ * read through getWork() (the launch gate). No testimonials (D12); case studies are anonymous (D18).
+ */
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Button from '@/components/Button.astro';
+import Icon from '@/components/Icon.astro';
+import TextReveal from '@/components/TextReveal.astro';
+import LensFilter from '@/components/LensFilter.astro';
+import Stat from '@/components/Stat.astro';
+import Steps from '@/components/Steps.astro';
+import Accordion from '@/components/Accordion.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import WorkArt from '@/components/WorkArt.astro';
+import AgentConsole from '@/components/home/AgentConsole.astro';
+import PromptHero from '@/components/home/PromptHero.astro';
+import AgentCard from '@/components/AgentCard.astro';
+import { site } from '@/data/site';
+import { agents, pillars, servicesByPillar, industries, securityProducts as products, industriesLive, type Pillar } from '@/data/catalogue';
+const IndTag = industriesLive ? 'a' : 'span';
+import { hero, reach, proof, featuredAgents, pillarCopy, steps, beforeAfter, securityPractices, stack, guarantees, faqs } from '@/data/home';
+import { getWork } from '@/lib/work';
+
+const topAgents = featuredAgents.map((slug) => agents.find((a) => a.slug === slug)!).filter(Boolean);
+const work = await getWork();
+const featuredWork = work.filter((w) => w.data.featured).slice(0, 3);
+const f = site.facts;
+const hasFacts = Object.values(f).some((v) => v !== null);
+const pillarKeys = Object.keys(pillars) as Pillar[];
+const isExternal = (href: string) => /^https?:\/\//.test(href);
+---
+
+<BaseLayout
+  seo={{
+    title: 'AI Agent Development Company & Software Studio | Visionbotix',
+    titleAbsolute: true,
+    description:
+      'Visionbotix builds AI agents that answer calls, follow up leads and run back-office work, plus the web and mobile apps they live in. Book a free call.',
+  }}
+  backdrop="aurora"
+>
+  <LensFilter />
+
+  <!-- ============ Hero ============ -->
+  <section class="hero container" aria-labelledby="hero-title">
+    <div class="hero-copy">
+      <p class="eyebrow hero-eyebrow"><span class="eb-pulse" aria-hidden="true"></span>{hero.eyebrow}</p>
+      <TextReveal id="hero-title" text={hero.title} accent={hero.accent} class="display hero-title" />
+      <p class="lead hero-lead">{hero.lead}</p>
+      <PromptHero />
+      <ul role="list" class="hero-points">
+        {
+          hero.points.map((p) => (
+            <li>
+              <Icon name="check" size={16} />
+              {p}
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+    <div class="hero-visual">
+      <AgentConsole />
+      <p class="float-chip glass-chip chip-a" aria-hidden="true"><Icon name="user-check" size={14} /> Approval gate on refunds</p>
+      <p class="float-chip glass-chip chip-b" aria-hidden="true"><Icon name="scroll-text" size={14} /> Every action in the audit log</p>
+    </div>
+  </section>
+
+  <!-- ============ Proof strip (real only) ============ -->
+  <section class="container proof" aria-labelledby="proof-title">
+    <h2 id="proof-title" class="visually-hidden">What we have already built</h2>
+    <ul role="list" class="proof-list glass-subtle" data-stagger>
+      {
+        proof.map((p) => (
+          <li class="proof-item">
+            <span class="proof-icon" aria-hidden="true">
+              <Icon name={p.icon} size={20} />
+            </span>
+            <div>
+              <p class="proof-title">
+                {p.href ? (
+                  <a href={p.href} {...(isExternal(p.href) ? { target: '_blank', rel: 'noopener' } : {})}>
+                    {p.title}
+                    {isExternal(p.href) && <span class="visually-hidden"> (opens in a new tab)</span>}
+                  </a>
+                ) : (
+                  p.title
+                )}
+              </p>
+              <p class="proof-text">{p.text}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="reach small muted"><Icon name="globe" size={16} />{reach}</p>
+    {
+      hasFacts && (
+        <div class="facts" data-stagger>
+          <Stat value={f.foundingYear ? new Date().getFullYear() - f.foundingYear : null} suffix="+" label={`years building software, since ${f.foundingYear}`} />
+          <Stat value={f.projectsDelivered} suffix="+" label="projects delivered by our team" />
+          <Stat value={f.countriesServed} label="countries served" />
+          <Stat value={f.teamSize} label="engineers, designers and specialists" />
+        </div>
+      )
+    }
+  </section>
+
+  <!-- ============ Three pillars ============ -->
+  <Section id="pillars" eyebrow="What we do" title="One team for agents, apps and the hard tech underneath." lead="Most studios do one of these. We do all three, which is why our agents ship inside real products and our products ship with security built in.">
+    <ul role="list" class="pillars" data-stagger>
+      {
+        pillarKeys.map((k, i) => {
+          const c = pillarCopy[k];
+          return (
+            <li class="pillar glass-subtle spotlight lift">
+              <a class="card-cover" href={c.href} aria-hidden="true" tabindex="-1" />
+              <div class="pillar-top">
+                <span class="pillar-icon" aria-hidden="true">
+                  <Icon name={c.icon} size={22} />
+                </span>
+                <span class="mono subtle small">0{i + 1}</span>
+              </div>
+              <h3>
+                <a href={c.href}>{pillars[k].label}</a>
+              </h3>
+              <p class="muted">{c.text}</p>
+              <ul role="list" class="tags">
+                {c.tags.map((t) => (
+                  <li>{t}</li>
+                ))}
+              </ul>
+              <span class="more small">
+                {c.cta} <Icon name="arrow-right" size={14} />
+              </span>
+            </li>
+          );
+        })
+      }
+    </ul>
+  </Section>
+
+  <!-- ============ Agent grid ============ -->
+  <Section id="agents" eyebrow="AI agents" title="Hire agents that already know the job." lead="Packaged agents for the work that eats your week. Each one is scoped, measured and guarded, and you can combine them into a full desk.">
+    <ul role="list" class="agents" data-stagger>
+      {
+        topAgents.map((a) => <AgentCard {...a} />)
+      }
+    </ul>
+    <div class="section-foot">
+      <Button href="/ai-agents/" variant="glass" icon="arrow-right">See all {agents.length} agents</Button>
+      <p class="small subtle">Also: SEO, ads, reviews, documents, data, MCP connectors and guardrail audits.</p>
+    </div>
+  </Section>
+
+  <!-- ============ How it works ============ -->
+  <Section id="how" eyebrow="How it works" title="From first call to a working agent in about two weeks." align="center">
+    <Steps steps={steps} note="Packaged agents go live in about two weeks. Custom systems and apps are planned in milestones." />
+  </Section>
+
+  <!-- ============ Before / after ============ -->
+  <Section id="before-after" eyebrow="Before and after" title="The same business, without the busywork." lead="Agents take the routine work, around the clock. Your team keeps the conversations that need a person.">
+    <div class="ba glass-subtle" data-reveal>
+      <div class="ba-head" aria-hidden="true">
+        <span></span>
+        <span class="ba-label mono"><Icon name="circle-x" size={14} /> Today</span>
+        <span class="ba-label ba-label-after mono"><Icon name="circle-check" size={14} /> With agents</span>
+      </div>
+      <ul role="list" class="ba-rows">
+        {
+          beforeAfter.map((r) => (
+            <li class="ba-row">
+              <p class="ba-area">
+                <Icon name={r.icon} size={18} />
+                {r.area}
+              </p>
+              <p class="ba-before">
+                <span class="ba-tag mono">Today</span>
+                {r.before}
+              </p>
+              <p class="ba-after">
+                <span class="ba-tag mono">With agents</span>
+                {r.after}
+              </p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </Section>
+
+  <CtaBand
+    title="See what an agent would take off your plate."
+    text="In 30 minutes we look at your calls, leads and paperwork and show you which agent to start with, and what it would connect to."
+    location="home-mid"
+  />
+
+  <!-- ============ Services grid ============ -->
+  <Section id="services" eyebrow="Services" title="Software, web and mobile, built by the same team." lead="Custom builds when a packaged agent isn't enough: from a first MVP to a platform with web, mobile and back-office apps.">
+    <div class="services">
+      {
+        servicesByPillar.map((p) => (
+          <div class="svc-col">
+            <h3 class="svc-head mono">{p.label}</h3>
+            <ul role="list" class="svc-list" data-stagger>
+              {p.items.map((s) => (
+                <li>
+                  <a class="svc glass-subtle spotlight" href={`/services/${s.slug}/`}>
+                    <span class="svc-icon" aria-hidden="true">
+                      <Icon name={s.icon} size={18} />
+                    </span>
+                    <span class="svc-name">{s.name}</span>
+                    <Icon name="arrow-up-right" size={16} class="svc-arrow" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </div>
+  </Section>
+
+  <!-- ============ Featured work (anonymous; read through getWork) ============ -->
+  {
+    featuredWork.length > 0 && (
+      <Section id="work" eyebrow="Our work" title="Shipped, in use, and under NDA." lead="A few projects we have designed and built. Client names stay private by default; on a call we walk you through the details.">
+        <ul role="list" class="work" data-stagger>
+          {featuredWork.map((w) => (
+            <li class="work-card glass-subtle spotlight lift">
+              <a class="card-cover" href={`/work/${w.id}/`} aria-hidden="true" tabindex="-1" />
+              <WorkArt art={w.data.art} />
+              <div class="wc-body">
+                <p class="eyebrow">{w.data.sector}</p>
+                <h3 class="h4">
+                  <a href={`/work/${w.id}/`}>{w.data.title}</a>
+                </h3>
+                <p class="muted small wc-sum">{w.data.summary}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div class="section-foot">
+          <Button href="/work/" variant="glass" icon="arrow-right">
+            See all {work.length} case studies
+          </Button>
+        </div>
+      </Section>
+    )
+  }
+
+  <!-- ============ Industries strip ============ -->
+  <Section id="industries" eyebrow="Industries" title="Built around how your sector works." space="tight">
+    <ul role="list" class="industries" data-stagger>
+      {
+        industries.map((i) => (
+          <li>
+            <IndTag class="ind glass-chip press" href={industriesLive ? `/industries/${i.slug}/` : undefined}>
+              <Icon name={i.icon} size={16} />
+              {i.name}
+            </IndTag>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <!-- ============ Security-first band ============ -->
+  <Section id="security" band class="security">
+    <div class="sec-grid">
+      <div class="sec-intro" data-reveal>
+        <p class="eyebrow">Security-first</p>
+        <h2 id="security-title">We build security products, so security isn't an add-on.</h2>
+        <p class="lead">
+          Our team designs encryption hardware and network-defense tools for defense, government and enterprise. The same discipline goes
+          into every agent and app we ship.
+        </p>
+        <ul role="list" class="products" data-stagger>
+          {
+            products.map((p) => (
+              <li>
+                <a class="product glass-subtle spotlight" href={`/products/${p.slug}/`}>
+                  <span class="product-icon" aria-hidden="true">
+                    <Icon name={p.icon} size={18} />
+                  </span>
+                  <span>
+                    <span class="product-name">{p.name}</span>
+                    <span class="product-line small muted">{p.line}</span>
+                  </span>
+                  <Icon name="arrow-right" size={16} class="svc-arrow" />
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div class="sec-practices">
+        <h3 class="h4 sec-sub">How every agent is built</h3>
+        <ul role="list" class="practices" data-stagger>
+          {
+            securityPractices.map((s) => (
+              <li class="practice">
+                <span class="practice-icon" aria-hidden="true">
+                  <Icon name={s.icon} size={18} />
+                </span>
+                <div>
+                  <p class="practice-title">{s.title}</p>
+                  <p class="muted small">{s.text}</p>
+                </div>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </Section>
+
+  <!-- ============ Tech stack ============ -->
+  <Section id="stack" eyebrow="Tech stack" title="Proven tools, picked for the job." lead="We are model-agnostic and stack-agnostic: we choose what fits your data, budget and team, and we document it so your people can run it.">
+    <div class="stack-grid" data-stagger>
+      {
+        stack.map((g) => (
+          <div class="stack-group glass-subtle">
+            <h3 class="stack-head mono">{g.group}</h3>
+            <ul role="list" class="tags">
+              {g.items.map((t) => (
+                <li>{t}</li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </div>
+  </Section>
+
+  <!-- ============ Guarantees / offshore trust ============ -->
+  <Section id="guarantees" eyebrow="Working with us" title="Offshore value, without the offshore risk." lead="The terms we put in writing, so you can start with confidence.">
+    <ul role="list" class="guarantees" data-stagger>
+      {
+        guarantees.map((g) => (
+          <li class="guarantee glass-subtle spotlight">
+            <span class="g-icon" aria-hidden="true">
+              <Icon name={g.icon} size={20} />
+            </span>
+            <h3 class="h4">{g.title}</h3>
+            <p class="muted small">{g.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <!-- ============ FAQ ============ -->
+  <Section id="faq" eyebrow="FAQ" title="Straight answers." width="narrow" align="center">
+    <Accordion items={faqs} schema name="home-faq" />
+    <p class="faq-more small muted">
+      Something else? <a class="link" href={`mailto:${site.contact.email}`}>{site.contact.email}</a> or <a class="link" href={site.contact.bookingUrl}>book a call</a>.
+    </p>
+  </Section>
+
+  <CtaBand title="Let's put your first agent to work." location="home-final" />
+</BaseLayout>
+
+<style>
+  /* ---------- hero ---------- */
+  .hero {
+    display: grid;
+    align-items: center;
+    gap: clamp(2.5rem, 1.5rem + 4vw, 4.5rem);
+    min-height: min(100svh, 62rem);
+    padding-block: calc(var(--header-h) + clamp(2rem, 1rem + 4vw, 4.5rem)) clamp(2rem, 1rem + 3vw, 3.5rem);
+  }
+  @media (min-width: 64rem) {
+    .hero {
+      grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+    }
+  }
+  .hero-copy {
+    display: grid;
+    gap: var(--space-5);
+    justify-items: start;
+  }
+  .hero-eyebrow {
+    padding: 0.35rem 0.8rem;
+    border-radius: var(--radius-pill);
+    background: rgb(var(--glass-tint) / var(--glass-alpha-chip));
+    box-shadow:
+      var(--glass-sheen),
+      inset 0 0 0 1px var(--border);
+  }
+  .eb-pulse {
+    inline-size: 0.45rem;
+    block-size: 0.45rem;
+    border-radius: 50%;
+    background: var(--grad-brand);
+  }
+  .hero-title {
+    font-size: clamp(2.75rem, 1.6rem + 4.6vw, 5.25rem);
+    max-width: 13ch;
+  }
+  .hero-lead {
+    max-width: 54ch;
+  }
+  .hero-points {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    color: var(--fg-muted);
+    font-size: var(--step--1);
+  }
+  .hero-points li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .hero-points :global(.icon) {
+    color: var(--accent);
+  }
+  .hero-visual {
+    position: relative;
+    display: grid;
+    justify-items: center;
+  }
+  @media (min-width: 64rem) {
+    .hero-visual {
+      justify-items: end;
+    }
+  }
+  .float-chip {
+    position: absolute;
+    z-index: 3;
+    display: none;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.8125rem;
+    font-weight: 540;
+    white-space: nowrap;
+  }
+  .float-chip :global(.icon) {
+    position: relative;
+    z-index: 2;
+    color: var(--accent);
+  }
+  @media (min-width: 64rem) {
+    .float-chip {
+      display: inline-flex;
+    }
+    /* straddle the panel's top and bottom edges, clear of the conversation */
+    .chip-a {
+      inset-block-start: -1.1rem;
+      inset-inline-end: 1.5rem;
+    }
+    .chip-b {
+      inset-block-end: -1.5rem;
+      inset-inline-start: -2rem;
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .float-chip {
+      animation: float 7s ease-in-out infinite alternate;
+    }
+    .chip-b {
+      animation-delay: -3.5s;
+    }
+  }
+  @keyframes float {
+    to {
+      translate: 0 -10px;
+    }
+  }
+
+  /* ---------- proof ---------- */
+  .proof {
+    padding-block-end: var(--space-6);
+  }
+  .proof-list {
+    --glass-radius: var(--radius-xl);
+    display: grid;
+    gap: var(--space-5);
+    padding: clamp(1.25rem, 1rem + 1.5vw, 2rem);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  }
+  .proof-item {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+  }
+  .proof-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
+    border-radius: 0.85rem;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .proof-title {
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .proof-title a {
+    text-decoration: none;
+  }
+  .proof-title a:hover {
+    text-decoration: underline;
+  }
+  .proof-text {
+    color: var(--fg-muted);
+    font-size: var(--step--1);
+    line-height: 1.45;
+  }
+  .reach {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    margin-block-start: var(--space-4);
+    text-align: center;
+  }
+  .reach :global(.icon) {
+    flex: none;
+    color: var(--accent);
+  }
+  .facts {
+    display: grid;
+    gap: var(--space-5);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+    margin-block-start: var(--space-6);
+    text-align: center;
+  }
+
+  /* ---------- shared card bits ---------- */
+  .card-cover {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    border-radius: inherit;
+  }
+  li:has(> .card-cover) {
+    cursor: pointer;
+  }
+  li:has(> .card-cover) h3 a {
+    text-decoration: none;
+  }
+  li:has(> .card-cover):has(h3 a:focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+  }
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+  .tags li {
+    padding: 0.22rem 0.65rem;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--fg-muted);
+    background: color-mix(in srgb, var(--fg) 7%, transparent);
+  }
+  .more {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-block-start: auto;
+    color: var(--accent);
+    font-weight: 560;
+  }
+  .section-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3) var(--space-5);
+    margin-block-start: var(--space-6);
+  }
+
+  /* ---------- pillars ---------- */
+  .pillars {
+    display: grid;
+    gap: var(--space-5);
+  }
+  @media (min-width: 56rem) {
+    .pillars {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .pillar {
+    --glass-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: clamp(1.5rem, 1.2rem + 1vw, 2.25rem);
+  }
+  .pillar > :not(.card-cover) {
+    position: relative;
+    z-index: 2;
+  }
+  .pillar-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .pillar-icon,
+  .g-icon {
+    display: grid;
+    place-items: center;
+    inline-size: 2.75rem;
+    block-size: 2.75rem;
+    border-radius: 0.9rem;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+    box-shadow: var(--btn-primary-glow);
+  }
+
+  /* ---------- agents ---------- */
+  .agents {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  }
+  @media (max-width: 40rem) {
+    .agents {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-3);
+    }
+  }
+
+  /* ---------- before / after ---------- */
+  .ba {
+    --glass-radius: var(--radius-xl);
+    padding: clamp(0.75rem, 0.5rem + 1vw, 1.5rem);
+  }
+  .ba > * {
+    position: relative;
+    z-index: 2;
+  }
+  .ba-head,
+  .ba-row {
+    display: grid;
+    gap: var(--space-3) var(--space-5);
+  }
+  .ba-head {
+    display: none;
+  }
+  .ba-row {
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+  }
+  .ba-row + .ba-row {
+    border-block-start: 1px solid var(--border);
+    border-radius: 0;
+  }
+  .ba-area {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+  }
+  .ba-area :global(.icon) {
+    color: var(--accent);
+  }
+  .ba-before {
+    color: var(--fg-muted);
+  }
+  .ba-after {
+    font-weight: 520;
+  }
+  .ba-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--fg-muted);
+  }
+  .ba-label-after {
+    color: var(--accent);
+  }
+  @media (min-width: 52rem) {
+    .ba-head,
+    .ba-row {
+      grid-template-columns: 9rem minmax(0, 1fr) minmax(0, 1fr);
+      align-items: center;
+    }
+    .ba-head {
+      display: grid;
+      padding: var(--space-3) var(--space-4) var(--space-2);
+    }
+    .ba-after {
+      padding: var(--space-3) var(--space-4);
+      margin: calc(var(--space-3) * -1) 0;
+      border-radius: var(--radius-sm);
+      background: color-mix(in srgb, var(--accent) 9%, transparent);
+    }
+  }
+  .ba-tag {
+    display: block;
+    margin-block-end: 0.15rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--fg-subtle);
+  }
+  .ba-after .ba-tag {
+    color: var(--accent);
+  }
+  @media (min-width: 52rem) {
+    /* the column headings carry the labels visually; keep the tags for screen readers */
+    .ba-tag {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+  }
+
+  /* ---------- services ---------- */
+  .services {
+    display: grid;
+    gap: var(--space-6) var(--space-5);
+  }
+  @media (min-width: 56rem) {
+    .services {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .svc-head {
+    margin-block-end: var(--space-3);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--fg-muted);
+  }
+  .svc-list {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .svc,
+  .product {
+    --glass-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 0.8rem 1rem;
+    text-decoration: none;
+    font-weight: 540;
+  }
+  .svc > *,
+  .product > * {
+    position: relative;
+    z-index: 2;
+  }
+  .svc-icon,
+  .product-icon,
+  .practice-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 2.125rem;
+    block-size: 2.125rem;
+    border-radius: 0.7rem;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .svc-name {
+    flex: 1;
+  }
+  .svc :global(.svc-arrow),
+  .product :global(.svc-arrow) {
+    color: var(--fg-subtle);
+    transition:
+      translate var(--dur-2) var(--ease-out),
+      color var(--dur-2);
+  }
+  .svc:hover :global(.svc-arrow),
+  .product:hover :global(.svc-arrow) {
+    color: var(--accent);
+    translate: 2px -2px;
+  }
+
+  /* ---------- work ---------- */
+  .work {
+    display: grid;
+    gap: var(--space-5);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+  }
+  .work-card {
+    --glass-radius: var(--radius-lg);
+    display: grid;
+    align-content: start;
+    gap: var(--space-4);
+    padding: var(--space-3);
+  }
+  .wc-body {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3) var(--space-3);
+  }
+  .wc-sum {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* ---------- industries ---------- */
+  .industries {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .ind {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 2.75rem;
+    padding: 0 1.1rem;
+    font-weight: 540;
+    font-size: 0.9375rem;
+    text-decoration: none;
+  }
+  .ind > :global(*) {
+    position: relative;
+    z-index: 2;
+  }
+  .ind :global(.icon) {
+    color: var(--accent);
+  }
+  .ind:hover {
+    background-color: rgb(var(--glass-tint) / var(--glass-alpha-strong));
+  }
+
+  /* ---------- security band ---------- */
+  .sec-grid {
+    display: grid;
+    gap: var(--space-7);
+  }
+  @media (min-width: 60rem) {
+    .sec-grid {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      align-items: start;
+    }
+  }
+  .sec-intro {
+    display: grid;
+    gap: var(--space-4);
+  }
+  .products {
+    display: grid;
+    gap: var(--space-2);
+    margin-block-start: var(--space-3);
+  }
+  .product > span:nth-child(2) {
+    display: grid;
+    flex: 1;
+  }
+  .product-name {
+    font-weight: 600;
+  }
+  .product-line {
+    font-weight: 400;
+  }
+  .sec-sub {
+    margin-block-end: var(--space-4);
+  }
+  .practices {
+    display: grid;
+    gap: var(--space-5);
+  }
+  .practice {
+    display: flex;
+    gap: var(--space-3);
+  }
+  .practice-title {
+    font-weight: 600;
+  }
+
+  /* ---------- stack ---------- */
+  .stack-grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr));
+  }
+  .stack-group {
+    --glass-radius: var(--radius-lg);
+    display: grid;
+    align-content: start;
+    gap: var(--space-3);
+    padding: var(--space-5);
+  }
+  .stack-group > * {
+    position: relative;
+    z-index: 2;
+  }
+  .stack-head {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  /* ---------- guarantees ---------- */
+  .guarantees {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+  }
+  .guarantee {
+    --glass-radius: var(--radius-lg);
+    display: grid;
+    align-content: start;
+    gap: var(--space-3);
+    padding: var(--space-5);
+  }
+  .guarantee > * {
+    position: relative;
+    z-index: 2;
+  }
+  .g-icon {
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
+  }
+  @media (max-width: 40rem) {
+    /* compact list on phones: icon left, text right */
+    .guarantee {
+      grid-template-columns: auto minmax(0, 1fr);
+      column-gap: var(--space-4);
+      row-gap: var(--space-1);
+      padding: var(--space-4);
+    }
+    .g-icon {
+      grid-row: span 2;
+    }
+  }
+
+  /* ---------- faq ---------- */
+  .faq-more {
+    margin-block-start: var(--space-5);
+    text-align: center;
+  }
+</style>

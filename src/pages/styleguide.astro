@@ -1,0 +1,420 @@
+---
+/**
+ * /styleguide/ (noindex, not in the sitemap). Every foundation and component in both themes.
+ * Sample copy here is illustrative UI text, not claims; numbers in the Stat demo are labelled as examples.
+ */
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Button from '@/components/Button.astro';
+import GlassCard from '@/components/GlassCard.astro';
+import Icon from '@/components/Icon.astro';
+import Steps from '@/components/Steps.astro';
+import Stat from '@/components/Stat.astro';
+import Accordion from '@/components/Accordion.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import ThemeToggle from '@/components/ThemeToggle.astro';
+import TextReveal from '@/components/TextReveal.astro';
+import LensFilter from '@/components/LensFilter.astro';
+import { agents, agentGroups } from '@/data/catalogue';
+
+const brand = [
+  { name: 'Orange', token: '--brand-orange', hex: '#FF7A1A' },
+  { name: 'Coral (logo)', token: '--brand-coral', hex: '#F1625B' },
+  { name: 'Magenta', token: '--brand-magenta', hex: '#E8336D' },
+  { name: 'Violet', token: '--brand-violet', hex: '#7C5CFF' },
+  { name: 'Cyan', token: '--brand-cyan', hex: '#22D3EE' },
+  { name: 'Amber', token: '--brand-amber', hex: '#FFB020' },
+];
+const semantic = ['--bg', '--bg-elevated', '--fg', '--fg-muted', '--fg-subtle', '--accent', '--accent-2', '--focus', '--border-strong'];
+const gradients = ['--grad-brand', '--grad-text', '--grad-cool'];
+
+const steps = [
+  { title: 'We plug in', body: 'A short discovery call, then read-only access to the tools the agent will use.', meta: 'Day 1–2' },
+  { title: 'We build its brain', body: 'Your docs, policies and tone of voice become the agent’s knowledge and rules.', meta: 'Day 3–6' },
+  { title: 'We test it with you', body: 'An eval suite of real scenarios, guardrails and human approval gates.', meta: 'Day 7–10' },
+  { title: 'It goes to work', body: 'Live on your channels with monitoring, an audit log and weekly reviews.', meta: 'Day 11–14' },
+];
+const faq = [
+  { q: 'How is an AI agent different from a chatbot?', a: 'A chatbot answers questions. An agent also <strong>takes actions</strong> in your tools, such as booking, updating the CRM or drafting a reply for approval, within rules you set.' },
+  { q: 'Who owns the code and the data?', a: 'You do. Your data stays in accounts you control, and the code and IP are assigned to you.' },
+  { q: 'Can we approve actions before they happen?', a: 'Yes. Any action can sit behind a human approval gate, and every step is written to an audit log.' },
+];
+const featured = agents.slice(0, 6);
+const typeScale = [
+  { cls: 'display', label: 'Display · step-5', text: 'AI agents that do the work.' },
+  { cls: 'h1', label: 'H1 · step-4', text: 'Your AI workforce, engineered.' },
+  { cls: 'h2', label: 'H2 · step-3', text: 'Agents answer. Agents book. Agents report.' },
+  { cls: 'h3', label: 'H3 · step-2', text: 'Live in about two weeks' },
+  { cls: 'h4', label: 'H4 · step-1', text: 'Guardrails, approvals and an audit log' },
+];
+---
+
+<BaseLayout seo={{ title: 'Styleguide', description: 'Internal design system reference for the Visionbotix liquid-glass UI: tokens, materials, components and motion in both themes.', noindex: true }} backdrop="aurora">
+  <LensFilter />
+
+  <Section space="tight" class="sg-hero">
+    <Breadcrumbs items={[{ name: 'Styleguide', href: '/styleguide/' }]} />
+    <div class="sg-intro">
+      <p class="eyebrow"><Icon name="sparkles" size={16} /> Design system · v1 · Sprint 1</p>
+      <TextReveal text="Liquid glass, in Visionbotix colours." accent="Visionbotix colours." class="display" />
+      <p class="lead">
+        Tokens, the four glass materials, the animated backdrop and every component in one page. Toggle the theme to check both; the
+        side-by-side panel below shows them together.
+      </p>
+      <div class="cluster">
+        <Button href="#components" icon="arrow-right">See components</Button>
+        <Button href="#themes" variant="glass">Both themes</Button>
+        <Button href="#motion" variant="ghost">Motion</Button>
+        <ThemeToggle />
+      </div>
+    </div>
+  </Section>
+
+  <!-- ===== Foundations ===== -->
+  <Section id="colour" eyebrow="Foundations" title="Colour" lead="Brand colours come from the original logo. Every text pair is AA-checked by scripts/check-contrast.mjs, including text over bare orbs and over glass.">
+    <div class="swatches" data-stagger>
+      {
+        brand.map((c) => (
+          <div class="swatch glass-subtle">
+            <span class="chip" style={`background:var(${c.token})`} />
+            <span class="sw-name">{c.name}</span>
+            <code class="subtle small">{c.hex}</code>
+          </div>
+        ))
+      }
+    </div>
+    <h3 class="h4 sg-sub">Semantic tokens (switch with the theme)</h3>
+    <div class="swatches" data-stagger>
+      {
+        semantic.map((t) => (
+          <div class="swatch glass-subtle">
+            <span class="chip bordered" style={`background:var(${t})`} />
+            <code class="small">{t}</code>
+          </div>
+        ))
+      }
+    </div>
+    <h3 class="h4 sg-sub">Gradients</h3>
+    <div class="grads" data-stagger>
+      {
+        gradients.map((g) => (
+          <div class="grad glass-subtle">
+            <span class="grad-bar" style={`background:var(${g})`} />
+            <code class="small">{g}</code>
+          </div>
+        ))
+      }
+    </div>
+  </Section>
+
+  <Section id="type" eyebrow="Foundations" title="Typography" lead="Geist for everything, tight tracking on display sizes; Geist Mono for labels, numbers and the agent console. Self-hosted, one variable file each.">
+    <div class="type-list">
+      {
+        typeScale.map((t) => (
+          <div class="type-row">
+            <span class="mono small subtle">{t.label}</span>
+            <p class={t.cls}>{t.text}</p>
+          </div>
+        ))
+      }
+      <div class="type-row">
+        <span class="mono small subtle">Lead · step-1</span>
+        <p class="lead">We build AI agents that run your operations, and the apps your customers love.</p>
+      </div>
+      <div class="type-row">
+        <span class="mono small subtle">Body · step-0</span>
+        <p>Body text is set at 16–17px with a 1.6 line height. Links look <a class="link" href="#type">like this</a>, and emphasis uses <strong>weight</strong>, not colour.</p>
+      </div>
+      <div class="type-row">
+        <span class="mono small subtle">Eyebrow · mono</span>
+        <p class="eyebrow">AI agents · Live in ~2 weeks</p>
+      </div>
+      <div class="type-row">
+        <span class="mono small subtle">Gradient text</span>
+        <p class="h2"><span class="text-gradient">Scoped, measured, safe.</span></p>
+      </div>
+    </div>
+  </Section>
+
+  <Section id="materials" eyebrow="Foundations" title="Glass materials" lead="Four materials from the reference design system. Blur is expensive, so grids use glass-subtle (no blur); glass and glass-strong are for few, important surfaces.">
+    <div class="materials">
+      <div class="mat glass"><p class="mono small">.glass</p><p class="muted small">Header, dock, capsules. Tint + blur + sheen + rim.</p></div>
+      <div class="mat glass-strong"><p class="mono small">.glass-strong</p><p class="muted small">Menus, dialogs, hero panel. More opaque.</p></div>
+      <div class="mat glass-subtle"><p class="mono small">.glass-subtle</p><p class="muted small">Cards, bands, footer. No blur.</p></div>
+      <div class="mat glass-chip"><p class="mono small">.glass-chip</p></div>
+    </div>
+    <div class="lens-demo glass-strong lens">
+      <p class="eyebrow">Hero only · Chromium</p>
+      <p class="h3">Lens refraction</p>
+      <p class="muted">An SVG displacement filter bends the backdrop at the edges. Safari and Firefox get the plain glass-strong look.</p>
+    </div>
+  </Section>
+
+  <!-- ===== Components ===== -->
+  <Section id="components" eyebrow="Components" title="Buttons" lead="One primary action per view. The primary button sweeps a shine on hover and scales down when pressed.">
+    <div class="stack" style="--stack-gap: var(--space-5)">
+      <div class="cluster">
+        <Button size="lg" icon="arrow-right">Book a free strategy call</Button>
+        <Button size="lg" variant="glass">Get a quote in 24h</Button>
+        <Button size="lg" variant="ghost" icon="arrow-right">See pricing</Button>
+      </div>
+      <div class="cluster">
+        <Button icon="arrow-right">Primary</Button>
+        <Button variant="glass" iconLeading="calendar-check">Glass</Button>
+        <Button variant="ghost">Ghost</Button>
+        <Button size="sm">Small</Button>
+        <Button size="sm" variant="glass">Small glass</Button>
+        <Button href="https://cv.visionbotix.com" variant="glass" size="sm" icon="arrow-up-right">External</Button>
+        <Button disabled variant="glass">Disabled</Button>
+      </div>
+    </div>
+  </Section>
+
+  <Section eyebrow="Components" title="Cards" lead="GlassCard with spotlight hover. With href, the whole card is one link and lifts on hover.">
+    <ul role="list" class="grid-auto" data-stagger>
+      {
+        featured.map((a) => (
+          <GlassCard as="li" href={`/ai-agents/${a.slug}/`}>
+            <span class="card-icon">
+              <Icon name={a.icon} size={22} />
+            </span>
+            <p class="eyebrow">{agentGroups[a.group].label}</p>
+            <h3 class="h4">{a.name}</h3>
+            <p class="muted">{a.line}</p>
+            <span class="card-more small">
+              Learn more <Icon name="arrow-right" size={14} />
+            </span>
+          </GlassCard>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section eyebrow="Components" title="Steps" lead="Numbered process. Used for “How it works” on the homepage and every agent page.">
+    <Steps steps={steps} note="Usually live within two weeks" />
+  </Section>
+
+  <Section eyebrow="Components" title="Stats" lead="Counts up once visible. Example values only: real numbers come from the owner (TRACKER, ⛔S2).">
+    <div class="stats glass-subtle">
+      <Stat value={16} label="Example: productised agents" />
+      <Stat value={14} suffix=" days" label="Example: typical go-live" />
+      <Stat value={99.9} decimals={1} suffix="%" label="Example: decimal counter" />
+      <Stat value={3} label="Example: service pillars" />
+    </div>
+  </Section>
+
+  <Section eyebrow="Components" title="Accordion / FAQ" lead="Native details/summary, one open at a time, animated where the browser supports it. Can emit FAQPage JSON-LD.">
+    <div class="container-narrow" style="width:100%">
+      <Accordion items={faq} openFirst />
+    </div>
+  </Section>
+
+  <Section eyebrow="Components" title="Breadcrumbs" lead="Visible trail plus BreadcrumbList JSON-LD.">
+    <Breadcrumbs items={[{ name: 'AI Agents', href: '/ai-agents/' }, { name: 'Receptionist Agent', href: '/ai-agents/ai-receptionist/' }]} />
+  </Section>
+
+  <!-- ===== Both themes ===== -->
+  <Section id="themes" eyebrow="Themes" title="Dark and light, side by side" lead="Tokens are scoped to [data-theme], so any container can switch theme. These two panels ignore the page toggle.">
+    <div class="themes">
+      {
+        (['dark', 'light'] as const).map((t) => (
+          <div class="theme-panel" data-theme={t}>
+            <div class="tp-orbs" aria-hidden="true" />
+            <p class="eyebrow">{t} theme</p>
+            <p class="h3">
+              Agents that <span class="text-gradient">do the work.</span>
+            </p>
+            <p class="muted">Muted text stays AA on glass and over the orbs.</p>
+            <div class="cluster">
+              <Button size="sm" icon="arrow-right">Book a call</Button>
+              <Button size="sm" variant="glass">Get a quote</Button>
+              <ThemeToggle />
+            </div>
+            <div class="glass tp-card">
+              <p class="mono small subtle">.glass</p>
+              <p>Receptionist Agent</p>
+            </div>
+            <div class="glass-subtle tp-card">
+              <p class="mono small subtle">.glass-subtle</p>
+              <p class="muted small">Answers every call 24/7.</p>
+            </div>
+            <a class="link small" href="#themes">A link in the {t} theme</a>
+          </div>
+        ))
+      }
+    </div>
+  </Section>
+
+  <!-- ===== Motion ===== -->
+  <Section id="motion" eyebrow="Motion" title="Motion utilities" lead="Only transform, opacity and filter animate. All of it switches off with prefers-reduced-motion, and nothing is hidden without JavaScript.">
+    <div class="motion-grid">
+      <div class="glass-subtle mo" data-reveal><p class="mono small">data-reveal</p><p class="muted small">Rises into view.</p></div>
+      <div class="glass-subtle mo" data-reveal="fade" style="--reveal-delay:120ms"><p class="mono small">data-reveal="fade"</p></div>
+      <div class="glass-subtle mo" data-reveal="scale" style="--reveal-delay:240ms"><p class="mono small">data-reveal="scale"</p></div>
+      <button class="glass-subtle mo press" type="button"><span class="mono small">.press</span></button>
+      <div class="glass-subtle mo spotlight lift"><p class="mono small">.spotlight .lift</p><p class="muted small">Hover me.</p></div>
+    </div>
+    <p class="small subtle sg-note">Backdrop: animated orbs + aurora (this page), pointer parallax, film grain, paused in hidden tabs. Append <code>?perf=lite</code> to see lite mode.</p>
+  </Section>
+
+  <CtaBand location="styleguide" />
+</BaseLayout>
+
+<style>
+  .sg-hero {
+    padding-block-start: calc(var(--header-h) + var(--space-8));
+  }
+  .sg-intro {
+    display: grid;
+    gap: var(--space-5);
+    margin-block-start: var(--space-6);
+    max-width: 52rem;
+  }
+  .sg-sub {
+    margin-block: var(--space-7) var(--space-4);
+  }
+  .swatches {
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+  }
+  .swatch {
+    --glass-radius: var(--radius-md);
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-3);
+  }
+  .chip {
+    display: block;
+    height: 3.5rem;
+    border-radius: var(--radius-sm);
+  }
+  .chip.bordered {
+    box-shadow: inset 0 0 0 1px var(--border-strong);
+  }
+  .sw-name {
+    font-weight: 560;
+  }
+  .grads {
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  }
+  .grad {
+    --glass-radius: var(--radius-md);
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-3);
+  }
+  .grad-bar {
+    display: block;
+    height: 3.5rem;
+    border-radius: var(--radius-sm);
+  }
+  .type-list {
+    display: grid;
+    gap: var(--space-6);
+  }
+  .type-row {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .materials {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    align-items: start;
+  }
+  .mat {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-5);
+  }
+  .mat.glass-chip {
+    justify-self: start;
+    padding: var(--space-3) var(--space-5);
+  }
+  .lens-demo {
+    --glass-radius: var(--radius-xl);
+    display: grid;
+    gap: var(--space-3);
+    max-width: 34rem;
+    margin-block-start: var(--space-6);
+    padding: var(--space-7) var(--space-6);
+  }
+  .card-icon {
+    display: grid;
+    place-items: center;
+    inline-size: 2.75rem;
+    block-size: 2.75rem;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--brand-orange) 14%, transparent);
+    color: var(--accent);
+  }
+  .card-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-block-start: auto;
+    color: var(--accent);
+    font-weight: 560;
+  }
+  .stats {
+    --glass-radius: var(--radius-xl);
+    display: grid;
+    gap: var(--space-6);
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    padding: var(--space-6);
+  }
+  .themes {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  }
+  .theme-panel {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: grid;
+    gap: var(--space-4);
+    align-content: start;
+    padding: var(--space-6);
+    border-radius: var(--radius-xl);
+    background: var(--bg);
+    box-shadow: inset 0 0 0 1px var(--border-strong);
+  }
+  .tp-orbs {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(40% 50% at 10% 10%, var(--bd-orb-1), transparent 70%),
+      radial-gradient(45% 55% at 95% 20%, var(--bd-orb-2), transparent 70%),
+      radial-gradient(50% 50% at 60% 100%, var(--bd-orb-3), transparent 70%),
+      radial-gradient(40% 40% at 0% 100%, var(--bd-orb-4), transparent 70%);
+  }
+  .tp-card {
+    --glass-radius: var(--radius-md);
+    display: grid;
+    gap: var(--space-1);
+    padding: var(--space-4);
+  }
+  .motion-grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  }
+  .mo {
+    --glass-radius: var(--radius-md);
+    display: grid;
+    gap: var(--space-1);
+    min-height: 6rem;
+    padding: var(--space-4);
+    text-align: start;
+    align-content: start;
+  }
+  .sg-note {
+    margin-block-start: var(--space-5);
+  }
+</style>

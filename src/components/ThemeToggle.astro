@@ -1,0 +1,47 @@
+---
+/** Light/dark switch. Runtime keeps aria-pressed/aria-label in sync; the icon swaps with CSS only. */
+import Icon from './Icon.astro';
+interface Props {
+  class?: string;
+}
+const { class: className } = Astro.props;
+---
+
+<button type="button" class:list={['theme-toggle', 'press', className]} data-theme-toggle aria-pressed="true" aria-label="Switch to light theme">
+  <Icon name="sun" size={18} class="t-sun" />
+  <Icon name="moon" size={18} class="t-moon" />
+</button>
+
+<style>
+  .theme-toggle {
+    display: inline-grid;
+    place-items: center;
+    inline-size: 2.75rem;
+    block-size: 2.75rem;
+    border-radius: var(--radius-pill);
+    color: var(--fg);
+    transition: background-color var(--dur-2) var(--ease-out);
+  }
+  .theme-toggle:hover {
+    background: color-mix(in srgb, var(--fg) 8%, transparent);
+  }
+  .theme-toggle > :global(svg) {
+    grid-area: 1 / 1;
+    transition:
+      opacity var(--dur-3) var(--ease-out),
+      rotate var(--dur-3) var(--ease-out),
+      scale var(--dur-3) var(--ease-out);
+  }
+  /* Dark theme shows the sun (the action: go light), light shows the moon. Driven by inherited tokens
+     (--t-sun/--t-moon) so the nearest [data-theme] wins, even in nested theme containers. */
+  .theme-toggle > :global(.t-sun) {
+    opacity: var(--t-sun);
+    scale: calc(0.6 + 0.4 * var(--t-sun));
+    rotate: calc((1 - var(--t-sun)) * -60deg);
+  }
+  .theme-toggle > :global(.t-moon) {
+    opacity: var(--t-moon);
+    scale: calc(0.6 + 0.4 * var(--t-moon));
+    rotate: calc((1 - var(--t-moon)) * 60deg);
+  }
+</style>

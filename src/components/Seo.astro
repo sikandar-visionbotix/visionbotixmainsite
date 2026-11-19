@@ -1,0 +1,64 @@
+---
+/**
+ * Head tags for one page: title, description, canonical, robots, Open Graph, Twitter.
+ * Rules (PLAN §6.1): title ≤ 60 chars, keyword first, brand last; description ≤ 155 chars.
+ * The build warns when a page breaks them.
+ */
+import { site } from '@/data/site';
+import { abs } from '@/lib/schema';
+
+export interface SeoProps {
+  title: string;
+  description: string;
+  /** Use the title as-is (no " | Visionbotix"), e.g. for the homepage. */
+  titleAbsolute?: boolean;
+  canonical?: string;
+  image?: string;
+  imageAlt?: string;
+  type?: 'website' | 'article';
+  noindex?: boolean;
+  publishedTime?: string;
+  modifiedTime?: string;
+}
+type Props = SeoProps;
+
+const { title, description, titleAbsolute = false, canonical, image: imageProp, imageAlt, type = 'website', noindex = false, publishedTime, modifiedTime } =
+  Astro.props;
+
+const fullTitle = titleAbsolute ? title : `${title} | ${site.name}`;
+const canonicalUrl = canonical ? abs(canonical) : abs(Astro.url.pathname);
+// Per-page OG image (scripts/og.mjs renders it after the build from this page's og:title/description).
+// noindex pages share the default card.
+const ogSlug = Astro.url.pathname.replace(/^\/|\/$/g, '') || 'home';
+const image = imageProp ?? (noindex ? site.ogDefault : `/og/${ogSlug}.png`);
+const imageUrl = abs(image);
+
+if (!noindex) {
+  if (fullTitle.length > 60) console.warn(`[seo] title is ${fullTitle.length} chars (>60) on ${Astro.url.pathname}: "${fullTitle}"`);
+  if (description.length > 155) console.warn(`[seo] description is ${description.length} chars (>155) on ${Astro.url.pathname}`);
+  if (description.length < 70) console.warn(`[seo] description is short (${description.length} chars) on ${Astro.url.pathname}`);
+}
+---
+
+<title>{fullTitle}</title>
+<meta name="description" content={description} />
+{!noindex && <link rel="canonical" href={canonicalUrl} />}
+<meta name="robots" content={noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large, max-snippet:-1'} />
+
+<meta property="og:site_name" content={site.name} />
+<meta property="og:locale" content={site.locale} />
+<meta property="og:type" content={type} />
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonicalUrl} />
+<meta property="og:image" content={imageUrl} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={imageAlt ?? fullTitle} />
+{publishedTime && <meta property="article:published_time" content={publishedTime} />}
+{modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={fullTitle} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={imageUrl} />

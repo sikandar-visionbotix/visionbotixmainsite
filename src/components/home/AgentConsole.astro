@@ -1,0 +1,32 @@
+---
+/**
+ * Homepage hero showpiece (PLAN §4): the receptionist script played by the shared <AgentDemo> component.
+ * It is a demo with a fictional business, and it says so in the caption.
+ */
+import AgentDemo from '@/components/AgentDemo.astro';
+import type { DemoScript } from '@/lib/demo';
+
+const script: DemoScript = {
+  title: 'Receptionist agent',
+  status: 'Live · after hours',
+  icon: 'headset',
+  tools: [
+    { icon: 'whatsapp', label: 'WhatsApp' },
+    { icon: 'calendar', label: 'Calendar' },
+    { icon: 'database', label: 'CRM' },
+  ],
+  lines: [
+    { kind: 'in', who: 'WhatsApp · 21:47', text: 'Hi! Any chance of a cleaning this Saturday morning?', wait: 1300 },
+    { kind: 'sys', label: 'intent', text: 'new booking · new patient' },
+    { kind: 'tool', icon: 'calendar-clock', calls: ['calendar.find_slots("Sat AM")'], result: '09:30, 11:00' },
+    { kind: 'out', text: 'I can do 09:30 or 11:00 this Saturday. Which suits you?', wait: 1700 },
+    { kind: 'in', who: 'WhatsApp · 21:48', text: '11:00 please', wait: 1100 },
+    { kind: 'tool', icon: 'circle-check', calls: ['calendar.book("Sat 11:00")', 'crm.upsert(contact)'] },
+    { kind: 'out', text: "You're booked for Saturday at 11:00. I'll send a reminder the day before.", wait: 1400 },
+    { kind: 'done', text: 'Booked after hours · logged to CRM · reminder set · no human needed' },
+  ],
+  caption: 'Scripted demo · a fictional dental clinic',
+};
+---
+
+<AgentDemo {...script} id="console" lens />

@@ -1,0 +1,146 @@
+/* ==========================================================================
+   Liquid Glass materials (ported from the reference design system's materials, recoloured).
+   Use sparingly: every backdrop blur costs paint time on low-end phones.
+
+   .glass         sticky header, floating dock, capsules        tint + blur + sheen + rim
+   .glass-strong  panels people read in: menus, dialogs, hero   more opaque + stronger blur
+   .glass-subtle  bands in the flow, footer, most cards          lets ambient light through, NO blur
+   .glass-chip    small controls over imagery                    translucent + sheen, NO blur
+
+   Anatomy: background tint · ::before = gradient rim (masked 1px border) · ::after = refraction light pool.
+   An element with a material therefore can't use its own ::before/::after.
+   ========================================================================== */
+
+.glass,
+.glass-strong,
+.glass-subtle,
+.glass-chip {
+  position: relative;
+  isolation: isolate;
+  border-radius: var(--glass-radius, var(--radius-lg));
+  background-color: rgb(var(--glass-tint) / var(--glass-alpha));
+  box-shadow: var(--glass-sheen), var(--glass-shadow, var(--shadow-md));
+}
+
+.glass {
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+}
+.glass-strong {
+  background-color: rgb(var(--glass-tint) / var(--glass-alpha-strong));
+  -webkit-backdrop-filter: var(--glass-filter-strong);
+  backdrop-filter: var(--glass-filter-strong);
+  --glass-shadow: var(--shadow-lg);
+}
+.glass-subtle {
+  background-color: rgb(var(--glass-tint) / var(--glass-alpha-subtle));
+  --glass-shadow: var(--shadow-sm);
+}
+.glass-chip {
+  background-color: rgb(var(--glass-tint) / var(--glass-alpha-chip));
+  --glass-radius: var(--radius-pill);
+  --glass-shadow: var(--shadow-sm);
+}
+
+/* Rim: a gradient hairline painted through a mask (content-box excluded). */
+.glass::before,
+.glass-strong::before,
+.glass-subtle::before,
+.glass-chip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--rim-image);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+/* Refraction: soft light pools inside the panel, under the content. */
+.glass::after,
+.glass-strong::after,
+.glass-subtle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--refraction-image);
+  pointer-events: none;
+}
+
+/* ---- Spotlight hover: a light pool that follows the pointer (runtime sets --mx/--my). ---- */
+.spotlight {
+  background-image: radial-gradient(
+    22rem circle at var(--mx, 50%) var(--my, -30%),
+    var(--spotlight-color),
+    transparent 65%
+  );
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+@media (hover: hover) and (pointer: fine) {
+  .spotlight {
+    background-size: 0 0;
+  }
+  .spotlight:hover,
+  .spotlight:focus-within {
+    background-size: 100% 100%;
+  }
+}
+
+/* ---- Lens: SVG displacement refraction, hero showpiece only (Chromium). ----
+   WebKit and Gecko can't use backdrop-filter:url() (WebKit bug 245510), so the runtime only adds
+   html[data-lens] on Chromium; everywhere else the plain .glass-strong look is the fallback.
+   Needs <LensFilter /> once on the page. */
+html[data-lens] .lens {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: url(#vbx-lens) blur(8px) saturate(1.7);
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  html[data-lens] .lens {
+    backdrop-filter: none;
+  }
+}
+
+/* ---- Fallbacks ---- */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass,
+  .glass-strong {
+    background-color: rgb(var(--glass-tint) / 0.94);
+  }
+}
+
+html[data-perf='lite'] .glass,
+html[data-perf='lite'] .glass-strong {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background-color: rgb(var(--glass-tint) / 0.92);
+}
+
+@media (forced-colors: active) {
+  .glass,
+  .glass-strong,
+  .glass-subtle,
+  .glass-chip {
+    border: 1px solid CanvasText;
+    background: Canvas;
+  }
+  .glass::before,
+  .glass-strong::before,
+  .glass-subtle::before,
+  .glass-chip::before,
+  .glass::after,
+  .glass-strong::after,
+  .glass-subtle::after {
+    display: none;
+  }
+}

@@ -1,0 +1,430 @@
+---
+/**
+ * /pricing/ v1 (built in S5 so the site-wide "See pricing" links work at launch; S6 adds the estimator and more).
+ * Every number comes from src/data/pricing.ts (D23, D27, D32): change a price there, never here.
+ */
+import '@/styles/page-kit.css';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Button from '@/components/Button.astro';
+import Icon from '@/components/Icon.astro';
+import Accordion from '@/components/Accordion.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import { site } from '@/data/site';
+import { agentsByGroup, servicesByPillar, agents } from '@/data/catalogue';
+import { agentPrices, bundles, audit, servicePrices, teamRates, hourlyFrom, money, serviceLabel } from '@/data/pricing';
+import { bundleCopy } from '@/data/agents-hub';
+import { abs, type FaqItem, type Thing } from '@/lib/schema';
+
+const nameOf = (slug: string) => agents.find((a) => a.slug === slug)?.name ?? slug;
+const bundleRows = bundles.map((b) => {
+  const setupSep = b.agents.reduce((n, s) => n + agentPrices[s]!.setup, 0);
+  const monthlySep = b.agents.reduce((n, s) => n + (agentPrices[s]!.monthly ?? 0), 0);
+  return { ...b, setupSep, monthlySep, copy: bundleCopy[b.slug] };
+});
+const monthlyAgents = Object.values(agentPrices).filter((p) => p.monthly);
+const minSetup = Math.min(...monthlyAgents.map((p) => p.setup));
+const minMonthly = Math.min(...monthlyAgents.map((p) => p.monthly!));
+const minTeam = Math.min(...teamRates.map((r) => r.monthly));
+
+const jump = [
+  { href: '#agents', label: 'Packaged agents' },
+  { href: '#bundles', label: 'Bundles' },
+  { href: '#audit', label: 'AI audit' },
+  { href: '#projects', label: 'Custom projects' },
+  { href: '#teams', label: 'Dedicated teams' },
+];
+
+const included = [
+  'Setup, integration with your tools and testing before go-live',
+  'Hosting, monitoring and alerts',
+  'Weekly tuning from real conversations, with a short report',
+  'Guardrails, human approval gates and a full audit log',
+  'A fair-use volume of messages, calls and model usage',
+  'Changes to scripts, FAQs and workflows as your business changes',
+];
+const notIncluded = [
+  'Usage above the fair-use volume: model, messaging and call minutes at cost, no markup',
+  'Third-party subscriptions you choose (for example your CRM or phone numbers)',
+  'New integrations or new agents beyond the agreed scope (quoted first, never surprise-billed)',
+];
+
+const faqs: FaqItem[] = [
+  {
+    q: 'How much does an AI agent cost?',
+    a: `Our packaged AI agents start from ${money(minSetup)} for setup plus ${money(minMonthly)} a month for hosting, monitoring and tuning. Custom agents built from scratch start from ${money(servicePrices['ai-agent-development']!.from)}, at a fixed price agreed after scoping.`,
+  },
+  {
+    q: 'Are these prices fixed?',
+    a: 'They are "from" prices for a typical setup. After a free call we send a fixed quote within 24 hours. The price in the signed quote is the price you pay, by milestone.',
+  },
+  {
+    q: 'What does the monthly fee cover?',
+    a: 'Hosting, monitoring, weekly tuning, guardrails and a fair-use volume of usage. Usage above that is passed through at cost with no markup, and we tell you before it happens.',
+  },
+  {
+    q: 'Can I cancel a monthly plan?',
+    a: 'Yes. Monthly plans run month to month after any minimum term agreed in your quote. You keep your data and the configuration we built for you.',
+  },
+  {
+    q: 'Why are your prices lower than US or UK agencies?',
+    a: `Our engineering team is in ${site.address.countryName}, so our costs are lower, not our standards. You get senior engineers, weekly demos, overlap hours and the same security practices, and you own 100% of the code.`,
+  },
+  {
+    q: 'Which currency do you bill in?',
+    a: 'Prices are in US dollars and exclude taxes. If you need to be invoiced in another currency, mention it when you ask for your quote.',
+  },
+  {
+    q: 'Do you offer a cheaper way to start?',
+    a: `Yes: the ${audit.name}, ${money(audit.price)} for ${audit.duration}. It ends in a ranked plan of what to automate or build first, and the fee is credited in full if you go ahead with a build within 60 days.`,
+  },
+];
+
+const catalog: Thing = {
+  '@type': 'OfferCatalog',
+  '@id': `${abs('/pricing/')}#catalog`,
+  name: 'Visionbotix pricing',
+  itemListElement: agentsByGroup.flatMap((g) =>
+    g.items.map((a) => ({
+      '@type': 'Offer',
+      name: a.name,
+      url: abs(`/ai-agents/${a.slug}/`),
+      priceCurrency: 'USD',
+      priceSpecification: { '@type': 'PriceSpecification', minPrice: agentPrices[a.slug]!.setup, priceCurrency: 'USD' },
+    })),
+  ),
+};
+---
+
+<BaseLayout
+  seo={{
+    title: 'Pricing: AI Agents, Apps and Dedicated Teams',
+    description: `Public "from" prices: AI agents from ${money(minSetup)} + ${money(minMonthly)}/mo, custom software from ${money(servicePrices['custom-software-development']!.from)}, engineers from ${money(minTeam)}/mo. Fixed quotes in 24h.`,
+  }}
+  schema={[catalog]}
+>
+  <section class="container pk-hero" data-compact aria-labelledby="pp-title">
+    <div class="pk-copy">
+      <Breadcrumbs items={[{ name: 'Pricing', href: '/pricing/' }]} />
+      <p class="eyebrow">Pricing</p>
+      <h1 id="pp-title" class="pk-title">Public prices. Fixed quotes. No surprises.</h1>
+      <p class="lead pk-lead">
+        Packaged AI agents start from {money(minSetup)} setup plus {money(minMonthly)} a month. Custom projects are fixed-price after a free call, and dedicated engineers start
+        from {money(minTeam)} a month. Every price below is a real starting point, and your quote arrives within 24 hours.
+      </p>
+      <nav aria-label="On this page">
+        <ul role="list" class="pp-jump">
+          {
+            jump.map((j) => (
+              <li>
+                <a class="pk-rel-chip glass-chip press" href={j.href}>
+                  {j.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+    </div>
+  </section>
+
+  <!-- ============ Agents ============ -->
+  <Section id="agents" eyebrow="Packaged AI agents" title="Set up, connected and managed for you." lead="One-off setup, then a monthly fee for hosting, monitoring and weekly tuning. Most agents go live in about two weeks." space="tight">
+    <div class="pp-table-wrap glass-subtle" data-reveal>
+      <table class="pp-table">
+        <caption class="visually-hidden">Packaged AI agent prices in US dollars</caption>
+        <thead>
+          <tr>
+            <th scope="col">Agent</th>
+            <th scope="col">Setup from</th>
+            <th scope="col">Monthly from</th>
+          </tr>
+        </thead>
+        {
+          agentsByGroup.map((g) => (
+            <tbody>
+              <tr class="pp-group">
+                <th scope="rowgroup" colspan="3">
+                  {g.label} <span class="small subtle">· {g.blurb}</span>
+                </th>
+              </tr>
+              {g.items.map((a) => {
+                const p = agentPrices[a.slug]!;
+                return (
+                  <tr>
+                    <th scope="row">
+                      <a href={`/ai-agents/${a.slug}/`}>{a.name}</a>
+                      <span class="pp-line small muted">{a.line}</span>
+                    </th>
+                    <td class="mono">{money(p.setup)}</td>
+                    <td class="mono">{p.monthly ? `${money(p.monthly)}/mo` : <span class="small muted">{p.note}</span>}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          ))
+        }
+      </table>
+    </div>
+
+    <div class="pk-cols pp-inc" style="--n:2">
+      <div class="pk-col glass-subtle" data-reveal>
+        <h3 class="pk-col-head"><Icon name="circle-check" size={18} /> Every agent plan includes</h3>
+        <ul role="list" class="pk-checks">
+          {
+            included.map((c) => (
+              <li>
+                <Icon name="check" size={15} strokeWidth={2.5} />
+                {c}
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div class="pk-col glass-subtle" data-reveal>
+        <h3 class="pk-col-head"><Icon name="info" size={18} /> Billed separately, always agreed first</h3>
+        <ul role="list" class="pk-checks">
+          {
+            notIncluded.map((c) => (
+              <li>
+                <Icon name="chevron-right" size={15} strokeWidth={2.5} />
+                {c}
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </Section>
+
+  <!-- ============ Bundles ============ -->
+  <Section id="bundles" eyebrow="Bundles" title="Agents that work better together, for less." space="tight">
+    <ul role="list" class="pk-cards" data-cols="2" data-stagger>
+      {
+        bundleRows.map((b) => (
+          <li class="pk-card glass-subtle spotlight">
+            {b.copy && (
+              <span class="pk-icon" aria-hidden="true">
+                <Icon name={b.copy.icon} size={20} />
+              </span>
+            )}
+            <h3 class="h4">{b.name}</h3>
+            {b.copy && <p class="muted small">{b.copy.blurb}</p>}
+            <p class="pp-bundle-agents small">{b.agents.map(nameOf).join(' + ')}</p>
+            <p class="pp-price">
+              <span class="small muted">From</span> {money(b.setup)} <span class="small muted">+</span> {money(b.monthly)}/mo
+            </p>
+            <p class="small subtle">
+              Separately: {money(b.setupSep)} + {money(b.monthlySep)}/mo
+            </p>
+            <a class="pk-more small" href={`/ai-agents/#${b.slug}`}>
+              See the bundle <Icon name="arrow-right" size={14} />
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <!-- ============ Audit ============ -->
+  <Section id="audit" space="tight">
+    <div class="pp-audit glass-strong" data-reveal="scale">
+      <div>
+        <p class="eyebrow">Not sure where to start?</p>
+        <h2 class="h2">{audit.name}: {money(audit.price)}</h2>
+        <p class="muted">
+          A {audit.duration} review of your processes, data and systems that ends in a ranked plan: what to automate or build first, what it will save and what it will cost.
+          {audit.note}.
+        </p>
+      </div>
+      <div class="cluster">
+        <Button href="/contact/?topic=ai-opportunity-audit#quote" icon="arrow-right" data-event="quote_click" data-event-location="pricing-audit">Book the audit</Button>
+        <Button href="/services/ai-consulting/" variant="glass">What's in it</Button>
+      </div>
+    </div>
+  </Section>
+
+  <!-- ============ Projects ============ -->
+  <Section id="projects" eyebrow="Custom projects" title="Fixed price, paid by milestone." lead="After a free scoping call you get a fixed quote within 24 hours. You see working software at a demo every week and pay only for milestones you have seen working." space="tight">
+    <div class="pk-cols" style="--n:3">
+      {
+        servicesByPillar.map((p) => (
+          <div class="pk-col glass-subtle" data-reveal>
+            <h3 class="pk-col-head">{p.label}</h3>
+            <ul role="list" class="pp-svc">
+              {p.items.map((s) => (
+                <li>
+                  <a href={`/services/${s.slug}/`}>{s.name}</a>
+                  <span class="mono small">{serviceLabel(s.slug)}</span>
+                  <span class="small subtle">{servicePrices[s.slug]!.basis}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </div>
+  </Section>
+
+  <!-- ============ Teams ============ -->
+  <Section id="teams" eyebrow="Dedicated teams" title="Full-time engineers, one monthly rate." lead={`Engineers and designers who work in your tools and sprints, led by a named lead, with overlap hours agreed up front. Hourly work from ${money(hourlyFrom)}/hour.`} space="tight">
+    <div class="pp-table-wrap glass-subtle pp-narrow" data-reveal>
+      <table class="pp-table">
+        <caption class="visually-hidden">Dedicated team monthly rates in US dollars</caption>
+        <thead>
+          <tr>
+            <th scope="col">Role</th>
+            <th scope="col">Full time, from</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            teamRates.map((r) => (
+              <tr>
+                <th scope="row">{r.role}</th>
+                <td class="mono">{money(r.monthly)}/mo</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="pk-foot">
+      <Button href="/services/dedicated-teams/" variant="glass" icon="arrow-right">How dedicated teams work</Button>
+    </div>
+  </Section>
+
+  <Section id="faq" eyebrow="FAQ" title="Pricing questions." width="narrow" align="center">
+    <Accordion items={faqs} schema name="pricing-faq" />
+    <p class="pk-faq-more small muted">
+      Prices in US dollars, excluding taxes. "From" prices are starting points, not offers; your signed quote is binding. See our <a class="link" href="/terms/">terms</a>.
+    </p>
+  </Section>
+
+  <CtaBand title="Get your fixed quote within 24 hours." location="pricing-final" />
+</BaseLayout>
+
+<style>
+  .pp-jump {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .pp-table-wrap {
+    --glass-radius: var(--radius-lg);
+    padding: var(--space-2) clamp(0.75rem, 0.5rem + 1vw, 1.5rem);
+    overflow-x: auto;
+  }
+  .pp-narrow {
+    max-inline-size: 40rem;
+  }
+  .pp-table {
+    position: relative;
+    z-index: 2;
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--step--1);
+  }
+  .pp-table th,
+  .pp-table td {
+    padding: 0.75rem 0.6rem;
+    text-align: start;
+    vertical-align: top;
+    border-block-end: 1px solid var(--border);
+  }
+  .pp-table thead th {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--fg-subtle);
+  }
+  .pp-table tbody th {
+    font-weight: 600;
+  }
+  .pp-table tbody th a {
+    color: var(--fg);
+    text-decoration: none;
+  }
+  .pp-table tbody th a:hover {
+    color: var(--accent);
+  }
+  .pp-line {
+    display: block;
+    font-weight: 400;
+  }
+  .pp-table td.mono {
+    white-space: nowrap;
+  }
+  .pp-group th {
+    padding-block-start: 1.25rem;
+    font-size: var(--step-0);
+    color: var(--accent);
+  }
+  .pp-group .subtle {
+    font-weight: 400;
+  }
+  @media (max-width: 34rem) {
+    .pp-line {
+      display: none;
+    }
+  }
+  .pp-inc {
+    margin-block-start: var(--space-5);
+  }
+  .pp-bundle-agents {
+    font-weight: 540;
+  }
+  .pp-price {
+    font-size: var(--step-1);
+    font-weight: 680;
+    letter-spacing: -0.02em;
+  }
+  .pp-audit {
+    --glass-radius: var(--radius-xl);
+    display: grid;
+    gap: var(--space-5);
+    align-items: center;
+    padding: clamp(1.5rem, 1rem + 2vw, 2.75rem);
+  }
+  .pp-audit > * {
+    position: relative;
+    z-index: 2;
+  }
+  @media (min-width: 56rem) {
+    .pp-audit {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+  }
+  .pp-audit .muted {
+    max-width: 60ch;
+    margin-block-start: var(--space-3);
+  }
+  .pp-svc {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .pp-svc li {
+    display: grid;
+    gap: 0.1rem;
+    padding-block-end: var(--space-3);
+    border-block-end: 1px solid var(--border);
+  }
+  .pp-svc li:last-child {
+    border-block-end: 0;
+    padding-block-end: 0;
+  }
+  .pp-svc a {
+    font-weight: 600;
+    color: var(--fg);
+    text-decoration: none;
+  }
+  .pp-svc a:hover {
+    color: var(--accent);
+  }
+  .pp-svc .mono {
+    color: var(--accent);
+  }
+</style>

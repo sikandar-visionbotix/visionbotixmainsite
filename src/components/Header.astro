@@ -1,0 +1,612 @@
+---
+/**
+ * Site header: floating glass capsule + mega-menus (native Popover API: works without JS, Esc and light-dismiss
+ * built in) + mobile glass dock + full-screen menu sheet. Runtime adds auto-hide and aria-expanded syncing.
+ */
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import Button from './Button.astro';
+import ThemeToggle from './ThemeToggle.astro';
+import { site } from '@/data/site';
+import { agentsByGroup, servicesByPillar, products, company, industries, industriesLive } from '@/data/catalogue';
+
+const path = Astro.url.pathname;
+const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
+const agentCols = [
+  agentsByGroup.filter((g) => g.key === 'answer' || g.key === 'sell'),
+  agentsByGroup.filter((g) => g.key === 'market'),
+  agentsByGroup.filter((g) => g.key === 'operate' || g.key === 'secure-build'),
+];
+const companyLinks = company.filter((c) => c.href !== '/work/');
+const wa = site.contact.whatsapp;
+---
+
+<header class="site-header" data-header>
+  <div class="header-bar glass">
+    <Logo height={30} class="header-logo" />
+
+    <nav class="nav-desktop" aria-label="Main">
+      <ul role="list">
+        <li>
+          <button class="nav-item" popovertarget="mm-agents" aria-controls="mm-agents" aria-expanded="false" aria-current={isCurrent('/ai-agents/') ? 'page' : undefined}>
+            AI Agents <Icon name="chevron-down" size={15} class="chev" />
+          </button>
+        </li>
+        <li>
+          <button class="nav-item" popovertarget="mm-services" aria-controls="mm-services" aria-expanded="false" aria-current={isCurrent('/services/') ? 'page' : undefined}>
+            Services <Icon name="chevron-down" size={15} class="chev" />
+          </button>
+        </li>
+        {industriesLive && <li><a class="nav-item" href="/industries/" aria-current={isCurrent('/industries/') ? 'page' : undefined}>Industries</a></li>}
+        <li><a class="nav-item" href="/work/" aria-current={isCurrent('/work/') ? 'page' : undefined}>Work</a></li>
+        <li><a class="nav-item" href="/pricing/" aria-current={isCurrent('/pricing/') ? 'page' : undefined}>Pricing</a></li>
+        <li>
+          <button class="nav-item" popovertarget="mm-company" aria-controls="mm-company" aria-expanded="false">
+            Company <Icon name="chevron-down" size={15} class="chev" />
+          </button>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="header-actions">
+      <ThemeToggle />
+      <Button href={site.contact.bookingUrl} size="sm" icon="arrow-right" class="header-cta" data-event="book_call" data-event-location="header">
+        Book a call
+      </Button>
+    </div>
+  </div>
+</header>
+
+<!-- Mega-menu: AI agents -->
+<div id="mm-agents" popover data-menu="mega" class="mega glass-strong" aria-label="AI agents">
+  <div class="mega-grid mega-agents">
+    {
+      agentCols.map((col) => (
+        <div class="mega-col">
+          {col.map((g) => (
+            <div class="mega-group">
+              <p class="mega-label">{g.label}</p>
+              <ul role="list">
+                {g.items.map((a) => (
+                  <li>
+                    <a class="mega-link" href={`/ai-agents/${a.slug}/`}>
+                      <span class="mega-icon">
+                        <Icon name={a.icon} size={18} />
+                      </span>
+                      <span>
+                        <span class="mega-name">{a.name}</span>
+                        <span class="mega-line">{a.line}</span>
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      ))
+    }
+    <aside class="mega-aside glass-subtle">
+      <p class="eyebrow">Productised agents</p>
+      <p class="mega-aside-title">Live in about two weeks, with guardrails, approvals and an audit log.</p>
+      <a class="link" href="/ai-agents/">Browse all 16 agents <span aria-hidden="true">→</span></a>
+      <a class="link" href="/services/ai-agent-development/">Custom agent development <span aria-hidden="true">→</span></a>
+    </aside>
+  </div>
+</div>
+
+<!-- Mega-menu: services -->
+<div id="mm-services" popover data-menu="mega" class="mega glass-strong" aria-label="Services">
+  <div class="mega-grid mega-services">
+    {
+      servicesByPillar.map((p) => (
+        <div class="mega-col">
+          <p class="mega-label">{p.label}</p>
+          <ul role="list">
+            {p.items.map((s) => (
+              <li>
+                <a class="mega-link compact" href={`/services/${s.slug}/`}>
+                  <span class="mega-icon">
+                    <Icon name={s.icon} size={18} />
+                  </span>
+                  <span class="mega-name">{s.name}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))
+    }
+    <aside class="mega-aside glass-subtle">
+      <p class="eyebrow">Our products</p>
+      <ul role="list" class="mega-products">
+        {
+          products.map((p) => (
+            <li>
+              <a href={`/products/${p.slug}/`}>
+                <span class="mega-name">{p.name}</span>
+                <span class="mega-line">{p.line}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <a class="link" href="/services/">All services <span aria-hidden="true">→</span></a>
+    </aside>
+  </div>
+</div>
+
+<!-- Mega-menu: company -->
+<div id="mm-company" popover data-menu="mega" class="mega mega-small glass-strong" aria-label="Company">
+  <ul role="list" class="mega-list">
+    {
+      companyLinks.map((c) => (
+        <li>
+          <a class="mega-link compact" href={c.href}>
+            <span class="mega-name">{c.name}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</div>
+
+<!-- Mobile: bottom dock -->
+<nav class="dock glass" aria-label="Quick actions">
+  <a class="dock-item" href="/ai-agents/" aria-current={isCurrent('/ai-agents/') ? 'page' : undefined}>
+    <Icon name="bot" size={22} /><span>Agents</span>
+  </a>
+  <a class="dock-item" href="/services/" aria-current={isCurrent('/services/') ? 'page' : undefined}>
+    <Icon name="layers" size={22} /><span>Services</span>
+  </a>
+  <a class="dock-item dock-primary" href={site.contact.bookingUrl} data-event="book_call" data-event-location="dock">
+    <Icon name="calendar-check" size={22} /><span>Book</span>
+  </a>
+  {
+    wa ? (
+      <a class="dock-item" href={`https://wa.me/${wa}`} target="_blank" rel="noopener" data-event="whatsapp_click">
+        <Icon name="whatsapp" size={21} />
+        <span>WhatsApp</span>
+      </a>
+    ) : (
+      <a class="dock-item" href={`mailto:${site.contact.email}`} data-event="email_click">
+        <Icon name="mail" size={22} />
+        <span>Email</span>
+      </a>
+    )
+  }
+  <button class="dock-item" popovertarget="nav-sheet" aria-controls="nav-sheet" aria-expanded="false">
+    <Icon name="menu" size={22} /><span>Menu</span>
+  </button>
+</nav>
+
+<!-- Mobile: full menu sheet -->
+<div id="nav-sheet" popover data-menu="sheet" class="sheet glass-strong" aria-label="Site menu">
+  <div class="sheet-head">
+    <Logo height={28} />
+    <button class="sheet-close" popovertarget="nav-sheet" popovertargetaction="hide" aria-label="Close menu">
+      <Icon name="x" size={22} />
+    </button>
+  </div>
+  <nav aria-label="Site">
+    <details class="sheet-group" name="sheet">
+      <summary>AI Agents <Icon name="chevron-down" size={18} class="chev" /></summary>
+      <ul role="list">
+        <li><a href="/ai-agents/"><strong>All agents</strong></a></li>
+        {
+          agentsByGroup.flatMap((g) => g.items).map((a) => (
+            <li>
+              <a href={`/ai-agents/${a.slug}/`}>{a.name}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </details>
+    <details class="sheet-group" name="sheet">
+      <summary>Services <Icon name="chevron-down" size={18} class="chev" /></summary>
+      <ul role="list">
+        <li><a href="/services/"><strong>All services</strong></a></li>
+        {
+          servicesByPillar.flatMap((p) => p.items).map((s) => (
+            <li>
+              <a href={`/services/${s.slug}/`}>{s.name}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </details>
+    {industriesLive && <details class="sheet-group" name="sheet">
+      <summary>Industries <Icon name="chevron-down" size={18} class="chev" /></summary>
+      <ul role="list">
+        <li><a href="/industries/"><strong>All industries</strong></a></li>
+        {
+          industries.map((i) => (
+            <li>
+              <a href={`/industries/${i.slug}/`}>{i.name}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </details>}
+    <details class="sheet-group" name="sheet">
+      <summary>Products <Icon name="chevron-down" size={18} class="chev" /></summary>
+      <ul role="list">
+        {
+          products.map((p) => (
+            <li>
+              <a href={`/products/${p.slug}/`}>{p.name}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </details>
+    <ul role="list" class="sheet-links">
+      <li><a href="/work/">Work</a></li>
+      <li><a href="/pricing/">Pricing</a></li>
+      {
+        companyLinks.map((c) => (
+          <li>
+            <a href={c.href}>{c.name}</a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+  <div class="sheet-foot">
+    <Button href={site.contact.bookingUrl} block icon="arrow-right" data-event="book_call" data-event-location="sheet">Book a free strategy call</Button>
+    <a class="link small" href={`mailto:${site.contact.email}`}>{site.contact.email}</a>
+  </div>
+</div>
+
+<style>
+  /* ---------- bar ---------- */
+  .site-header {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: var(--z-header);
+    padding: 0.75rem var(--gutter) 0;
+    pointer-events: none;
+    transition: translate var(--dur-3) var(--ease-out);
+  }
+  .site-header[data-hidden] {
+    translate: 0 calc(-100% - 1rem);
+  }
+  .header-bar {
+    --glass-radius: var(--radius-pill);
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    max-width: calc(var(--container) + 1.5rem);
+    min-height: 3.5rem;
+    margin-inline: auto;
+    padding: 0.375rem 0.375rem 0.375rem 1.125rem;
+    transition: box-shadow var(--dur-3) var(--ease-out);
+  }
+  .site-header[data-scrolled] .header-bar {
+    --glass-shadow: var(--shadow-lg);
+  }
+  .nav-desktop {
+    display: none;
+    margin-inline: auto;
+  }
+  .nav-desktop ul {
+    display: flex;
+    gap: 0.125rem;
+  }
+  .nav-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 2.5rem;
+    padding: 0 0.85rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--fg-muted);
+    text-decoration: none;
+    transition:
+      color var(--dur-2) var(--ease-out),
+      background-color var(--dur-2) var(--ease-out);
+  }
+  .nav-item:hover,
+  .nav-item[aria-expanded='true'],
+  .nav-item[aria-current='page'] {
+    color: var(--fg);
+    background: color-mix(in srgb, var(--fg) 7%, transparent);
+  }
+  .nav-item :global(.chev) {
+    transition: rotate var(--dur-2) var(--ease-out);
+  }
+  .nav-item[aria-expanded='true'] :global(.chev) {
+    rotate: 180deg;
+  }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-inline-start: auto;
+  }
+  @media (min-width: 64rem) {
+    .nav-desktop {
+      display: block;
+    }
+    .header-actions {
+      margin-inline-start: 0;
+    }
+  }
+  @media (max-width: 30rem) {
+    .header-actions :global(.header-cta) {
+      display: none;
+    }
+  }
+
+  /* ---------- popovers (shared) ---------- */
+  [popover] {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    color: var(--fg);
+    background-color: rgb(var(--glass-tint) / var(--glass-alpha-strong));
+    overflow: visible;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    [popover] {
+      transition:
+        opacity var(--dur-3) var(--ease-out),
+        translate var(--dur-3) var(--ease-out),
+        scale var(--dur-3) var(--ease-out),
+        overlay var(--dur-3) allow-discrete,
+        display var(--dur-3) allow-discrete;
+    }
+  }
+
+  /* ---------- mega-menus ---------- */
+  .mega {
+    --glass-radius: var(--radius-xl);
+    position: fixed;
+    inset: auto;
+    top: calc(0.75rem + 3.5rem + 0.75rem);
+    left: 50%;
+    width: min(100% - 2 * var(--gutter), 68rem);
+    max-height: calc(100dvh - 7rem);
+    overflow: auto;
+    translate: -50% 0;
+    padding: var(--space-5);
+    opacity: 1;
+  }
+  .mega:not(:popover-open) {
+    opacity: 0;
+    translate: -50% -0.5rem;
+  }
+  @starting-style {
+    .mega:popover-open {
+      opacity: 0;
+      translate: -50% -0.5rem;
+    }
+  }
+  .mega-small {
+    width: 16rem;
+    left: auto;
+    right: max(var(--gutter), (100vw - var(--container)) / 2 + 9rem);
+    translate: 0 0;
+    padding: var(--space-3);
+  }
+  .mega-small:not(:popover-open) {
+    translate: 0 -0.5rem;
+  }
+  @starting-style {
+    .mega-small:popover-open {
+      translate: 0 -0.5rem;
+    }
+  }
+  .mega-grid {
+    display: grid;
+    gap: var(--space-5);
+  }
+  .mega-agents {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) 15rem;
+  }
+  .mega-services {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) 15rem;
+  }
+  .mega-col {
+    display: grid;
+    align-content: start;
+    gap: var(--space-5);
+  }
+  .mega-label {
+    margin-block-end: var(--space-2);
+    padding-inline: 0.625rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--fg-subtle);
+  }
+  .mega-link {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    padding: 0.55rem 0.625rem;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    transition: background-color var(--dur-2) var(--ease-out);
+  }
+  .mega-link.compact {
+    align-items: center;
+  }
+  .mega-link:hover,
+  .mega-link:focus-visible {
+    background: color-mix(in srgb, var(--fg) 7%, transparent);
+  }
+  .mega-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 2rem;
+    block-size: 2rem;
+    border-radius: var(--radius-xs);
+    background: color-mix(in srgb, var(--brand-orange) 14%, transparent);
+    color: var(--accent);
+  }
+  .mega-name {
+    display: block;
+    font-weight: 560;
+    font-size: 0.9375rem;
+    line-height: 1.3;
+  }
+  .mega-line {
+    display: block;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: var(--fg-muted);
+  }
+  .mega-aside {
+    --glass-radius: var(--radius-lg);
+    display: grid;
+    align-content: start;
+    gap: var(--space-3);
+    padding: var(--space-5);
+  }
+  .mega-aside-title {
+    font-weight: 560;
+    line-height: 1.4;
+  }
+  .mega-products {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .mega-products a {
+    text-decoration: none;
+  }
+  .mega-products a:hover .mega-name {
+    color: var(--accent);
+  }
+  .mega-list {
+    display: grid;
+  }
+
+  /* ---------- mobile dock ---------- */
+  .dock {
+    --glass-radius: var(--radius-xl);
+    position: fixed;
+    inset: auto 0.625rem calc(0.625rem + env(safe-area-inset-bottom));
+    z-index: var(--z-dock);
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    align-items: center;
+    height: var(--dock-h);
+    padding: 0.375rem;
+  }
+  .dock-item {
+    display: grid;
+    justify-items: center;
+    gap: 0.2rem;
+    padding-block: 0.375rem;
+    border-radius: var(--radius-md);
+    font-size: 0.6875rem;
+    font-weight: 560;
+    color: var(--fg-muted);
+    text-decoration: none;
+  }
+  .dock-item[aria-current='page'],
+  .dock-item[aria-expanded='true'] {
+    color: var(--fg);
+  }
+  .dock-primary {
+    margin-inline: 0.125rem;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+    box-shadow: var(--btn-primary-glow);
+  }
+  @media (min-width: 64rem) {
+    .dock {
+      display: none;
+    }
+  }
+
+  /* ---------- sheet ---------- */
+  .sheet {
+    --glass-radius: var(--radius-xl);
+    position: fixed;
+    inset: auto 0.625rem calc(var(--dock-h) + 1.25rem + env(safe-area-inset-bottom));
+    width: auto;
+    max-height: calc(100dvh - var(--dock-h) - 2.5rem);
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: var(--space-4) var(--space-5) var(--space-5);
+    opacity: 1;
+  }
+  .sheet:not(:popover-open) {
+    opacity: 0;
+    translate: 0 1rem;
+  }
+  @starting-style {
+    .sheet:popover-open {
+      opacity: 0;
+      translate: 0 1rem;
+    }
+  }
+  .sheet::backdrop {
+    background: rgb(0 0 0 / 0.25);
+  }
+  .sheet-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-block-end: var(--space-3);
+  }
+  .sheet-close {
+    display: grid;
+    place-items: center;
+    inline-size: 2.75rem;
+    block-size: 2.75rem;
+    border-radius: var(--radius-pill);
+  }
+  .sheet-group {
+    border-block-end: 1px solid var(--border);
+  }
+  .sheet-group summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 3rem;
+    font-size: var(--step-1);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+  }
+  .sheet-group summary::-webkit-details-marker {
+    display: none;
+  }
+  .sheet-group[open] :global(.chev) {
+    rotate: 180deg;
+  }
+  .sheet-group ul {
+    display: grid;
+    gap: 0.125rem;
+    padding-block-end: var(--space-3);
+  }
+  .sheet a {
+    display: block;
+    padding: 0.5rem 0;
+    color: var(--fg);
+    text-decoration: none;
+  }
+  .sheet-group a {
+    color: var(--fg-muted);
+  }
+  .sheet-links {
+    display: grid;
+    padding-block: var(--space-3);
+    font-size: var(--step-1);
+    font-weight: 600;
+  }
+  .sheet-foot {
+    display: grid;
+    gap: var(--space-3);
+    justify-items: center;
+    padding-block-start: var(--space-3);
+  }
+</style>

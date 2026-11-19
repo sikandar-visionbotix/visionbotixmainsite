@@ -1,0 +1,502 @@
+/*
+ * Page kit (S5): shared layout patterns for the product, company, pricing and legal pages, so each page keeps only
+ * its own special styles. Same look as the S3/S4 agent and service templates. Import in a page's frontmatter:
+ *   import '@/styles/page-kit.css';
+ * Every class is prefixed `pk-` so it never collides with the scoped styles of older pages.
+ */
+
+/* ---------- hero ---------- */
+.pk-hero {
+  display: grid;
+  align-items: center;
+  gap: clamp(2rem, 1.5rem + 3vw, 4rem);
+  padding-block: calc(var(--header-h) + clamp(1.25rem, 0.5rem + 3vw, 3rem)) clamp(2rem, 1rem + 3vw, 4rem);
+}
+@media (min-width: 64rem) {
+  .pk-hero[data-split] {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    min-height: min(100svh, 50rem);
+  }
+}
+.pk-hero[data-compact] {
+  padding-block-end: clamp(1rem, 0.5rem + 2vw, 2rem);
+}
+.pk-copy {
+  display: grid;
+  gap: var(--space-5);
+  justify-items: start;
+}
+.pk-hero[data-center] .pk-copy {
+  justify-items: center;
+  text-align: center;
+}
+.pk-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.pk-eyebrow-icon {
+  display: grid;
+  place-items: center;
+  inline-size: 1.6rem;
+  block-size: 1.6rem;
+  border-radius: 0.5rem;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
+}
+.pk-title {
+  font-size: clamp(2.25rem, 1.5rem + 2.8vw, 3.6rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-weight: 680;
+  max-width: 20ch;
+  text-wrap: balance;
+}
+.pk-hero[data-center] .pk-title {
+  max-width: 22ch;
+}
+.pk-lead {
+  max-width: 60ch;
+}
+@media (max-width: 40rem) {
+  .pk-lead {
+    font-size: var(--step-0);
+  }
+}
+.pk-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  font-size: var(--step--1);
+}
+.pk-facts li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.pk-facts .icon {
+  flex: none;
+  color: var(--accent);
+}
+
+/* ---------- snapshot panel (hero aside) ---------- */
+.pk-snap {
+  --glass-radius: var(--radius-xl);
+  display: grid;
+  gap: var(--space-4);
+  padding: clamp(1.25rem, 1rem + 1vw, 1.75rem);
+  inline-size: 100%;
+  max-inline-size: 32rem;
+  justify-self: center;
+}
+@media (min-width: 64rem) {
+  .pk-snap {
+    justify-self: end;
+  }
+}
+.pk-snap > * {
+  position: relative;
+  z-index: 2;
+}
+.pk-snap-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-block-end: var(--space-4);
+  border-block-end: 1px solid var(--border);
+}
+.pk-snap-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  border-radius: 0.95rem;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
+  box-shadow: var(--btn-primary-glow);
+}
+.pk-snap-name {
+  font-weight: 640;
+}
+.pk-snap-sub {
+  font-size: 0.6875rem;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+.pk-rows {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+.pk-row {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: baseline;
+  font-size: var(--step--1);
+}
+.pk-row dt {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--fg-subtle);
+}
+.pk-row dd {
+  margin: 0;
+}
+@media (max-width: 30rem) {
+  .pk-row {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+}
+.pk-snap-foot {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--border);
+}
+.pk-live-dot {
+  flex: none;
+  inline-size: 0.45rem;
+  block-size: 0.45rem;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgb(34 197 94 / 0.22);
+}
+
+/* ---------- problem list ---------- */
+.pk-problems {
+  display: grid;
+  gap: var(--space-3);
+}
+@media (min-width: 52rem) {
+  .pk-problems {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .pk-problems[data-n='3'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.pk-problem {
+  --glass-radius: var(--radius-md);
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-4) var(--space-5);
+}
+.pk-problem > * {
+  position: relative;
+  z-index: 2;
+}
+.pk-problem .icon {
+  flex: none;
+  margin-block-start: 0.15rem;
+  color: var(--fg-subtle);
+}
+
+/* ---------- chip rows ---------- */
+.pk-chiprow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block-start: var(--space-5);
+}
+.pk-chiprow > .mono {
+  margin-inline-end: var(--space-2);
+  font-size: 0.75rem;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+.pk-chip {
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-pill);
+  color: var(--fg-muted);
+  background: color-mix(in srgb, var(--fg) 7%, transparent);
+}
+
+/* ---------- card grids ---------- */
+.pk-cards {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+}
+.pk-cards[data-min='wide'] {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+}
+@media (min-width: 64rem) {
+  .pk-cards[data-cols='2'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .pk-cards[data-cols='3'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .pk-cards[data-cols='4'] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.pk-card {
+  --glass-radius: var(--radius-lg);
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  padding: var(--space-5);
+}
+.pk-card > :not(.card-cover) {
+  position: relative;
+  z-index: 2;
+}
+.pk-card[data-link] {
+  cursor: pointer;
+}
+.pk-card .card-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+}
+.pk-card h3 a {
+  text-decoration: none;
+}
+.pk-card:has(h3 a:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+.pk-num {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--accent);
+}
+.pk-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  border-radius: 0.9rem;
+  margin-block-end: var(--space-1);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+.pk-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-block-start: var(--space-2);
+  font-weight: 560;
+  color: var(--accent);
+}
+.pk-foot {
+  margin-block-start: var(--space-6);
+}
+
+/* ---------- columns with a heading and a check list ---------- */
+.pk-cols {
+  display: grid;
+  gap: var(--space-4);
+}
+@media (min-width: 60rem) {
+  .pk-cols {
+    grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr));
+  }
+}
+.pk-col {
+  --glass-radius: var(--radius-lg);
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+  padding: var(--space-5);
+}
+.pk-col > * {
+  position: relative;
+  z-index: 2;
+}
+.pk-col-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--step-0);
+  font-weight: 620;
+}
+.pk-col-head .icon {
+  color: var(--accent);
+}
+.pk-checks {
+  display: grid;
+  gap: var(--space-3);
+  font-size: var(--step--1);
+}
+.pk-checks li {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  line-height: 1.45;
+}
+.pk-checks .icon {
+  flex: none;
+  margin-block-start: 0.2rem;
+  color: var(--accent);
+}
+.pk-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+.pk-tags li {
+  padding: 0.25rem 0.7rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.8125rem;
+  font-weight: 520;
+  background: color-mix(in srgb, var(--fg) 8%, transparent);
+}
+
+/* ---------- spec table ---------- */
+.pk-specs {
+  --glass-radius: var(--radius-lg);
+  display: grid;
+  margin: 0;
+  padding: var(--space-2) clamp(1rem, 0.75rem + 1vw, 1.75rem);
+}
+.pk-specs > div {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.4fr) minmax(0, 1fr);
+  gap: var(--space-4);
+  padding-block: 0.85rem;
+  border-block-end: 1px solid var(--border);
+  font-size: var(--step--1);
+}
+.pk-specs > div:last-child {
+  border-block-end: 0;
+}
+.pk-specs dt {
+  color: var(--fg-muted);
+  font-weight: 520;
+}
+.pk-specs dd {
+  margin: 0;
+}
+@media (max-width: 30rem) {
+  .pk-specs > div {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+}
+
+/* ---------- Markdown body (comparison tables, legal text) ---------- */
+.pk-md {
+  --glass-radius: var(--radius-lg);
+  padding: clamp(1.25rem, 1rem + 1.5vw, 2rem);
+  overflow-x: auto;
+}
+.pk-md > * {
+  position: relative;
+  z-index: 2;
+}
+.pk-md h2 {
+  font-size: var(--step-2);
+  margin-block: var(--space-6) var(--space-3);
+}
+.pk-md h2:first-child {
+  margin-block-start: 0;
+}
+.pk-md h3 {
+  font-size: var(--step-1);
+  margin-block: var(--space-5) var(--space-2);
+}
+.pk-md p,
+.pk-md ul,
+.pk-md ol {
+  max-width: 70ch;
+  color: var(--fg-muted);
+}
+.pk-md p + p,
+.pk-md p + ul,
+.pk-md ul + p,
+.pk-md p + ol,
+.pk-md * + table,
+.pk-md table + p {
+  margin-block-start: var(--space-3);
+}
+.pk-md ul,
+.pk-md ol {
+  display: grid;
+  gap: 0.4rem;
+  padding-inline-start: 1.25rem;
+  list-style: disc;
+}
+.pk-md ol {
+  list-style: decimal;
+}
+.pk-md strong {
+  color: var(--fg);
+}
+.pk-md a {
+  color: var(--accent);
+  text-underline-offset: 0.2em;
+}
+.pk-md table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: var(--step--1);
+}
+.pk-md th,
+.pk-md td {
+  padding: 0.6rem 0.75rem;
+  text-align: start;
+  vertical-align: top;
+  border-block-end: 1px solid var(--border);
+}
+.pk-md thead th {
+  font-weight: 620;
+  color: var(--fg);
+}
+.pk-md[data-compare] tbody td:first-child {
+  color: var(--fg-muted);
+  font-weight: 520;
+}
+.pk-md[data-compare] th:last-child,
+.pk-md[data-compare] td:last-child {
+  color: var(--fg);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+@media (max-width: 40rem) {
+  .pk-md[data-compare] table {
+    min-inline-size: 34rem;
+  }
+}
+
+/* ---------- FAQ footer and related chips ---------- */
+.pk-faq-more {
+  display: grid;
+  gap: var(--space-2);
+  margin-block-start: var(--space-5);
+  text-align: center;
+}
+.pk-updated {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--fg-subtle);
+}
+.pk-rel-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.5rem;
+  padding: 0 0.95rem;
+  font-weight: 540;
+  text-decoration: none;
+}
+.pk-rel-chip > * {
+  position: relative;
+  z-index: 2;
+}
+.pk-rel-chip .icon {
+  color: var(--accent);
+}

@@ -1,0 +1,63 @@
+---
+/** Visible breadcrumb trail + BreadcrumbList JSON-LD. Pass the trail without "Home"; the current page is last. */
+import JsonLd from './JsonLd.astro';
+import Icon from './Icon.astro';
+import { breadcrumbList, type Crumb } from '@/lib/schema';
+
+interface Props {
+  items: Crumb[];
+}
+const { items } = Astro.props;
+const trail: Crumb[] = [{ name: 'Home', href: '/' }, ...items];
+---
+
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <ol role="list">
+    {
+      trail.map((c, i) => (
+        <li>
+          {i < trail.length - 1 ? (
+            <>
+              <a href={c.href}>{c.name}</a>
+              <Icon name="chevron-right" size={14} class="sep" />
+            </>
+          ) : (
+            <span aria-current="page">{c.name}</span>
+          )}
+        </li>
+      ))
+    }
+  </ol>
+</nav>
+<JsonLd data={breadcrumbList(trail)} />
+
+<style>
+  ol {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: var(--step--1);
+    color: var(--fg-muted);
+  }
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+  a {
+    color: var(--fg-muted);
+    text-decoration: none;
+  }
+  a:hover {
+    color: var(--fg);
+    text-decoration: underline;
+  }
+  [aria-current='page'] {
+    color: var(--fg);
+    font-weight: 500;
+  }
+  li :global(.sep) {
+    opacity: 0.6;
+  }
+</style>

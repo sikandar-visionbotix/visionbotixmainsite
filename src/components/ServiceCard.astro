@@ -1,0 +1,113 @@
+---
+/**
+ * Service card (/services/ hub, "Related services" on service pages). Same anatomy as AgentCard: the whole card is one
+ * link via a cover anchor, the heading link carries the accessible name, the "from" price comes from pricing.ts.
+ */
+import Icon from '@/components/Icon.astro';
+import { serviceLabel } from '@/data/pricing';
+import type { IconName } from '@/lib/icons';
+
+interface Props {
+  slug: string;
+  name: string;
+  line: string;
+  icon: IconName;
+  /** Short tags, e.g. the first offerings. */
+  tags?: string[];
+  heading?: 'h2' | 'h3';
+  as?: 'li' | 'div';
+}
+const { slug, name, line, icon, tags = [], heading: H = 'h3', as: Tag = 'li' } = Astro.props;
+const href = `/services/${slug}/`;
+const price = serviceLabel(slug);
+---
+
+<Tag class="svc-card glass-subtle spotlight lift">
+  <a class="card-cover" href={href} aria-hidden="true" tabindex="-1"></a>
+  <span class="svc-icon" aria-hidden="true"><Icon name={icon} size={20} /></span>
+  <H class="h4 svc-name"><a href={href}>{name}</a></H>
+  <p class="muted small">{line}</p>
+  {
+    tags.length > 0 && (
+      <ul role="list" class="svc-tags">
+        {tags.map((t) => (
+          <li>{t}</li>
+        ))}
+      </ul>
+    )
+  }
+  {price && <p class="svc-price mono">{price}</p>}
+</Tag>
+
+<style>
+  .svc-card {
+    --glass-radius: var(--radius-lg);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-5);
+    cursor: pointer;
+  }
+  .svc-card > :not(.card-cover) {
+    position: relative;
+    z-index: 2;
+  }
+  .card-cover {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    border-radius: inherit;
+  }
+  .svc-name a {
+    text-decoration: none;
+  }
+  .svc-card:has(.svc-name a:focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+  }
+  .svc-icon {
+    display: grid;
+    place-items: center;
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
+    border-radius: 0.9rem;
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    color: var(--accent);
+  }
+  .svc-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+  .svc-tags li {
+    padding: 0.12rem 0.5rem;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--fg-muted);
+    background: color-mix(in srgb, var(--fg) 7%, transparent);
+  }
+  .svc-price {
+    margin-block-start: auto;
+    padding-block-start: var(--space-2);
+    font-size: 0.75rem;
+    color: var(--accent);
+  }
+  @media (max-width: 40rem) {
+    .svc-card {
+      padding: var(--space-4);
+      gap: var(--space-2);
+    }
+    .svc-name {
+      font-size: var(--step-0);
+    }
+    .svc-icon {
+      inline-size: 2.125rem;
+      block-size: 2.125rem;
+    }
+    .svc-tags {
+      display: none;
+    }
+  }
+</style>

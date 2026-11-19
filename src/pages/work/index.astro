@@ -1,0 +1,204 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import WorkArt from '@/components/WorkArt.astro';
+import Icon from '@/components/Icon.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import { getWork, workFilters, filterKeysFor, kindLabel } from '@/lib/work';
+
+const work = await getWork();
+const anyUnverified = work.some((w) => !w.data.verified);
+const counts = Object.fromEntries(workFilters.map((f) => [f.key, work.filter((w) => filterKeysFor(w.data.kind).includes(f.key)).length]));
+---
+
+<BaseLayout
+  seo={{
+    title: 'Our Work: AI, App and Computer Vision Projects',
+    description: 'Case studies of AI agents, mobile and web apps, marketplaces, computer vision and robotics we have designed and built for clients worldwide.',
+    noindex: anyUnverified,
+  }}
+  pageType="CollectionPage"
+>
+  <Section class="work-head" space="tight">
+    <Breadcrumbs items={[{ name: 'Work', href: '/work/' }]} />
+    <div class="intro">
+      <p class="eyebrow">Our work</p>
+      <h1>Software that is already doing the work.</h1>
+      <p class="lead">
+        A selection of what we have shipped: AI and computer vision, mobile and web platforms, robotics and IoT. Our clients'
+        names stay private by default; ask us on a call and we will walk you through the work in detail, under NDA.
+      </p>
+    </div>
+  </Section>
+
+  <section class="container work-hub" aria-label="Case studies">
+    <fieldset class="filters">
+      <legend class="visually-hidden">Filter case studies</legend>
+      <input type="radio" name="wf" id="wf-all" value="all" checked />
+      <label for="wf-all">All <span class="n">{work.length}</span></label>
+      {
+        workFilters.map((f) => (
+          <>
+            <input type="radio" name="wf" id={`wf-${f.key}`} value={f.key} />
+            <label for={`wf-${f.key}`}>
+              {f.label} <span class="n">{counts[f.key]}</span>
+            </label>
+          </>
+        ))
+      }
+    </fieldset>
+
+    <ul role="list" class="work-grid" data-stagger>
+      {
+        work.map((w) => (
+          <li class="work-card glass-subtle spotlight lift" data-cats={filterKeysFor(w.data.kind).join(' ')}>
+            <a class="card-cover" href={`/work/${w.id}/`} aria-hidden="true" tabindex="-1" />
+            <WorkArt art={w.data.art} />
+            <div class="wc-body">
+              <p class="eyebrow">{w.data.sector}</p>
+              <h2 class="h4">
+                <a href={`/work/${w.id}/`}>{w.data.title}</a>
+              </h2>
+              <p class="muted wc-sum">{w.data.summary}</p>
+              <ul role="list" class="tags">
+                {w.data.kind.slice(0, 4).map((k) => (
+                  <li>{kindLabel(k)}</li>
+                ))}
+              </ul>
+              <span class="wc-more small">
+                Read the case study <Icon name="arrow-right" size={14} />
+              </span>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <CtaBand title="Want something like this, built for you?" location="work-hub" />
+</BaseLayout>
+
+<style>
+  .work-head {
+    padding-block-start: calc(var(--header-h) + var(--space-7));
+  }
+  .intro {
+    display: grid;
+    gap: var(--space-4);
+    max-width: 48rem;
+    margin-block-start: var(--space-5);
+  }
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-6);
+    padding: 0;
+    border: 0;
+  }
+  .filters input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .filters label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 2.5rem;
+    padding: 0 1rem;
+    border-radius: var(--radius-pill);
+    background: rgb(var(--glass-tint) / var(--glass-alpha-chip));
+    box-shadow:
+      var(--glass-sheen),
+      inset 0 0 0 1px var(--border);
+    font-size: 0.9375rem;
+    font-weight: 540;
+    color: var(--fg-muted);
+    cursor: pointer;
+    transition:
+      color var(--dur-2),
+      background-color var(--dur-2);
+  }
+  .filters input:checked + label {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+    box-shadow: var(--btn-primary-glow);
+  }
+  .filters input:focus-visible + label {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+  }
+  .n {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    opacity: 0.75;
+  }
+  /* zero-JS filtering */
+  .work-hub:has(#wf-ai:checked) .work-card:not([data-cats~='ai']),
+  .work-hub:has(#wf-vision:checked) .work-card:not([data-cats~='vision']),
+  .work-hub:has(#wf-mobile:checked) .work-card:not([data-cats~='mobile']),
+  .work-hub:has(#wf-web:checked) .work-card:not([data-cats~='web']),
+  .work-hub:has(#wf-robotics:checked) .work-card:not([data-cats~='robotics']) {
+    display: none;
+  }
+  .work-grid {
+    display: grid;
+    gap: var(--space-5);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr));
+  }
+  .work-card {
+    --glass-radius: var(--radius-lg);
+    display: grid;
+    align-content: start;
+    gap: var(--space-4);
+    padding: var(--space-3);
+    cursor: pointer;
+  }
+  .card-cover {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    border-radius: inherit;
+  }
+  .wc-body {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3) var(--space-3);
+  }
+  .wc-body h2 a {
+    text-decoration: none;
+  }
+  .work-card:has(h2 a:focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+  }
+  .wc-sum {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 0.9375rem;
+  }
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+  .tags li {
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--fg-muted);
+    background: color-mix(in srgb, var(--fg) 7%, transparent);
+  }
+  .wc-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--accent);
+    font-weight: 560;
+  }
+</style>

@@ -1,0 +1,219 @@
+---
+/**
+ * /about/ (S5). Owner facts only (site.ts → facts, founder, address, deliveredIn; D22/D24). No team list (owner),
+ * no testimonials (D12), no client names (D18). Principles are commitments the owner confirmed (home.ts guarantees).
+ */
+import '@/styles/page-kit.css';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Button from '@/components/Button.astro';
+import Icon from '@/components/Icon.astro';
+import Stat from '@/components/Stat.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import { site } from '@/data/site';
+import { pillars } from '@/data/catalogue';
+import { pillarCopy, guarantees } from '@/data/home';
+import { abs, ORG_ID, type Thing } from '@/lib/schema';
+import type { IconName } from '@/lib/icons';
+
+const f = site.facts;
+const years = f.foundingYear ? new Date().getFullYear() - f.foundingYear : null;
+
+const built: { icon: IconName; title: string; text: string; href: string; ext?: boolean }[] = [
+  { icon: 'scale', title: 'Wakeel', text: 'An AI legal matching platform: people describe a problem in Urdu or English and get verified lawyers.', href: '/products/wakeel/' },
+  { icon: 'lock', title: 'VX-1 IP Encryptor', text: 'AES-256 network encryption in FPGA hardware, with no operating system to attack.', href: '/products/vx-1-ip-encryptor/' },
+  { icon: 'shield-check', title: 'ThreatIQ', text: 'Internal defense for air-gapped networks: vulnerabilities, insider risk and compliance, offline.', href: '/products/threatiq/' },
+  { icon: 'server', title: 'Cyber Range', text: 'Red and blue team exercises and network device testing on real equipment.', href: '/products/cyber-range/' },
+  { icon: 'sprout', title: 'Smart Livestock', text: 'AI cameras and IoT sensors that watch over every animal on a dairy farm.', href: 'https://livestock.visionbotix.com', ext: true },
+  { icon: 'scan-eye', title: 'Vision AI cameras', text: 'Cameras trained to recognize people, vehicles and objects and raise alerts in real time.', href: 'https://cv.visionbotix.com', ext: true },
+];
+
+const principles: { icon: IconName; title: string; text: string }[] = [
+  { icon: 'presentation', title: 'Show working software', text: 'Every week you see something that runs, not a slide. Progress you can click is the only progress that counts.' },
+  { icon: 'user-check', title: 'AI with a human in the loop', text: 'Agents work inside guardrails, ask for approval on anything risky, and log every action. Useful beats impressive.' },
+  { icon: 'lock', title: 'Security from the first sketch', text: 'We build encryption hardware and network defense, so threat modeling is how we start, not a launch checklist.' },
+  { icon: 'wallet', title: 'Prices in public', text: 'Our starting prices are on the website and our quotes are fixed. You should know the cost before you commit.' },
+];
+
+const aboutNode: Thing = {
+  '@type': 'AboutPage',
+  '@id': `${abs('/about/')}#about`,
+  url: abs('/about/'),
+  name: `About ${site.name}`,
+  mainEntity: { '@id': ORG_ID },
+};
+---
+
+<BaseLayout
+  seo={{
+    title: 'About Us: AI-First Product Engineering Studio',
+    description: `Visionbotix is an AI-first product engineering studio founded in ${f.foundingYear}: ${f.teamSize} people in Rawalpindi, Pakistan, with projects delivered in ${f.countriesServed} countries.`,
+  }}
+  schema={[aboutNode]}
+>
+  <section class="container pk-hero" data-split aria-labelledby="ab-title">
+    <div class="pk-copy">
+      <Breadcrumbs items={[{ name: 'About', href: '/about/' }]} />
+      <p class="eyebrow">About Visionbotix</p>
+      <h1 id="ab-title" class="pk-title">An AI-first studio that ships its own products, too.</h1>
+      <p class="lead pk-lead">
+        Visionbotix is a product engineering studio. We build AI agents that do real work, the web and mobile software they run in, and the hard tech underneath:
+        computer vision, IoT and security hardware. Since {f.foundingYear} our team has delivered {f.projectsDelivered}+ projects for clients in {f.countriesServed} countries.
+      </p>
+      <div class="cluster">
+        <Button href={site.contact.bookingUrl} icon="arrow-right" data-event="book_call" data-event-location="about-hero">Book a free strategy call</Button>
+        <Button href="/work/" variant="glass">See our work</Button>
+      </div>
+    </div>
+    <aside class="pk-snap glass-strong" aria-label="Company facts">
+      <div class="pk-snap-head">
+        <span class="pk-snap-icon" aria-hidden="true"><Icon name="building-2" size={20} /></span>
+        <div>
+          <p class="pk-snap-name">{site.legalName}</p>
+          <p class="mono subtle pk-snap-sub">Company facts</p>
+        </div>
+      </div>
+      <dl class="pk-rows">
+        <div class="pk-row"><dt>Founded</dt><dd>{f.foundingYear}</dd></div>
+        <div class="pk-row"><dt>Team</dt><dd>{f.teamSize} engineers, designers and specialists</dd></div>
+        <div class="pk-row"><dt>Projects</dt><dd>{f.projectsDelivered}+ delivered by our team</dd></div>
+        <div class="pk-row"><dt>Clients in</dt><dd>{f.countriesServed} countries, including {site.deliveredIn.join(', ')}</dd></div>
+        <div class="pk-row"><dt>Office</dt><dd>{site.address.locality}, {site.address.countryName}</dd></div>
+        <div class="pk-row"><dt>Founder</dt><dd><a class="link" href={site.founder.url} target="_blank" rel="noopener">{site.founder.name}</a></dd></div>
+      </dl>
+    </aside>
+  </section>
+
+  <section class="container ab-stats" aria-label="In numbers">
+    <div class="ab-stats-row glass-subtle" data-stagger>
+      <Stat value={years} suffix="+" label={`years building software, since ${f.foundingYear}`} />
+      <Stat value={f.projectsDelivered} suffix="+" label="projects delivered by our team" />
+      <Stat value={f.countriesServed} label="countries served" />
+      <Stat value={f.teamSize} label="people on the team" />
+    </div>
+  </section>
+
+  <Section id="what" eyebrow="What we do" title="Three disciplines, one team." lead="Most studios do one of these. Doing all three is why our agents ship inside real products, and our products ship with security built in.">
+    <ul role="list" class="pk-cards" data-cols="3" data-stagger>
+      {
+        (Object.keys(pillars) as (keyof typeof pillars)[]).map((k) => (
+          <li class="pk-card glass-subtle spotlight lift" data-link>
+            <a class="card-cover" href={pillarCopy[k].href} aria-hidden="true" tabindex="-1" />
+            <span class="pk-icon" aria-hidden="true">
+              <Icon name={pillarCopy[k].icon} size={20} />
+            </span>
+            <h3 class="h4">
+              <a href={pillarCopy[k].href}>{pillars[k].label}</a>
+            </h3>
+            <p class="muted small">{pillarCopy[k].text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section id="built" eyebrow="Proof we can point to" title="Products we built and run ourselves." lead="Client work stays confidential, so here is what we can show in public: our own products, live and in use." space="tight">
+    <ul role="list" class="pk-cards" data-cols="3" data-stagger>
+      {
+        built.map((b) => (
+          <li class="pk-card glass-subtle spotlight lift" data-link>
+            <a class="card-cover" href={b.href} aria-hidden="true" tabindex="-1" {...(b.ext ? { target: '_blank', rel: 'noopener' } : {})} />
+            <span class="pk-icon" aria-hidden="true">
+              <Icon name={b.icon} size={20} />
+            </span>
+            <h3 class="h4">
+              <a href={b.href} {...(b.ext ? { target: '_blank', rel: 'noopener' } : {})}>
+                {b.title}
+                {b.ext && <span class="visually-hidden"> (opens in a new tab)</span>}
+              </a>
+            </h3>
+            <p class="muted small">{b.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+    <div class="pk-foot cluster">
+      <Button href="/products/" variant="glass" icon="arrow-right">All products</Button>
+      <Button href="/work/" variant="ghost">Anonymous case studies</Button>
+    </div>
+  </Section>
+
+  <Section id="principles" eyebrow="How we think" title="What we hold ourselves to.">
+    <ul role="list" class="pk-cards" data-cols="4" data-stagger>
+      {
+        principles.map((p) => (
+          <li class="pk-card glass-subtle">
+            <span class="pk-icon" aria-hidden="true">
+              <Icon name={p.icon} size={20} />
+            </span>
+            <h3 class="h4">{p.title}</h3>
+            <p class="muted small">{p.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section id="promises" eyebrow="Working with us" title="Promises in every contract." space="tight">
+    <div class="pk-cols" style="--n:2">
+      <div class="pk-col glass-subtle" data-reveal>
+        <ul role="list" class="pk-checks">
+          {
+            guarantees.map((g) => (
+              <li>
+                <Icon name="check" size={15} strokeWidth={2.5} />
+                <span>
+                  <strong>{g.title}.</strong> {g.text}
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div class="pk-col glass-subtle" data-reveal>
+        <h3 class="pk-col-head"><Icon name="map-pin" size={18} /> Where we are</h3>
+        <address class="small muted ab-addr">
+          {site.legalName}<br />
+          {site.address.street}<br />
+          {site.address.locality}, {site.address.countryName}
+        </address>
+        <p class="small muted">
+          Our team works from {site.address.locality} with hours that overlap the US, UK, Europe, the Gulf and Australia. We have delivered projects for clients in {site.deliveredIn.slice(0, -1).join(', ')} and {site.deliveredIn.at(-1)}, among others.
+        </p>
+        <div class="cluster">
+          <Button href="/process/" size="sm" variant="glass" icon="arrow-right">How we work</Button>
+          <Button href="/careers/" size="sm" variant="ghost">Careers</Button>
+        </div>
+      </div>
+    </div>
+  </Section>
+
+  <CtaBand title="Let's build something that does the work." location="about-final" />
+</BaseLayout>
+
+<style>
+  .ab-stats {
+    padding-block-end: var(--space-5);
+  }
+  .ab-stats-row {
+    --glass-radius: var(--radius-xl);
+    display: grid;
+    gap: var(--space-5);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: clamp(1.25rem, 1rem + 2vw, 2.25rem);
+  }
+  .ab-stats-row > :global(*) {
+    position: relative;
+    z-index: 2;
+  }
+  @media (min-width: 56rem) {
+    .ab-stats-row {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  .ab-addr {
+    font-style: normal;
+    line-height: 1.6;
+  }
+</style>

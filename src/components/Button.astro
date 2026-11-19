@@ -1,0 +1,167 @@
+---
+/**
+ * Button / link-button.
+ *   primary  brand gradient + shine sweep (the conversion action; one per view)
+ *   glass    translucent capsule with sheen (secondary action over the backdrop)
+ *   ghost    text-weight action
+ * Renders <a> when `href` is set, otherwise <button>. Extra attributes (data-event, popovertarget…) pass through.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import Icon from './Icon.astro';
+import type { IconName } from '@/lib/icons';
+
+type Common = {
+  variant?: 'primary' | 'glass' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  icon?: IconName | undefined;
+  iconLeading?: IconName | undefined;
+  block?: boolean;
+  class?: string;
+};
+type Props = Common & (({ href: string } & Omit<HTMLAttributes<'a'>, 'class'>) | ({ href?: never } & Omit<HTMLAttributes<'button'>, 'class'>));
+
+const { variant = 'primary', size = 'md', icon, iconLeading, block = false, class: className, href, ...rest } = Astro.props as Common & {
+  href?: string;
+} & Record<string, unknown>;
+
+const external = typeof href === 'string' && /^https?:\/\//.test(href) && !href.startsWith('https://visionbotix.com');
+const linkAttrs = external ? { target: '_blank', rel: 'noopener' } : {};
+const classes = ['btn', `btn-${variant}`, `btn-${size}`, 'press', { 'btn-block': block }, className];
+---
+
+{
+  href ? (
+    <a href={href} class:list={classes} {...linkAttrs} {...rest}>
+      {iconLeading && <Icon name={iconLeading} size={18} />}
+      <span class="btn-label"><slot /></span>
+      {icon && <Icon name={icon} size={18} class="btn-icon" />}
+      {external && <span class="visually-hidden"> (opens in a new tab)</span>}
+    </a>
+  ) : (
+    <button type="button" class:list={classes} {...rest}>
+      {iconLeading && <Icon name={iconLeading} size={18} />}
+      <span class="btn-label"><slot /></span>
+      {icon && <Icon name={icon} size={18} class="btn-icon" />}
+    </button>
+  )
+}
+
+<style>
+  .btn {
+    --btn-h: 2.875rem;
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: var(--btn-h);
+    padding: 0 1.25rem;
+    border-radius: var(--radius-pill);
+    font-weight: 600;
+    font-size: var(--step-0);
+    line-height: 1;
+    letter-spacing: -0.005em;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    transition:
+      background-color var(--dur-2) var(--ease-out),
+      box-shadow var(--dur-2) var(--ease-out),
+      color var(--dur-2) var(--ease-out),
+      scale var(--dur-1) var(--ease-out);
+  }
+  .btn-sm {
+    --btn-h: 2.375rem;
+    padding: 0 0.95rem;
+    font-size: var(--step--1);
+  }
+  .btn-lg {
+    --btn-h: 3.375rem;
+    padding: 0 1.6rem;
+    font-size: var(--step-1);
+  }
+  .btn-block {
+    display: flex;
+    width: 100%;
+  }
+  .btn :global(.btn-icon) {
+    transition: translate var(--dur-2) var(--ease-out);
+  }
+  .btn:hover :global(.btn-icon) {
+    translate: 3px 0;
+  }
+
+  /* primary */
+  .btn-primary {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.35),
+      var(--btn-primary-glow);
+  }
+  .btn-primary::after {
+    /* shine sweep */
+    content: '';
+    position: absolute;
+    inset: -50% auto -50% -60%;
+    width: 45%;
+    z-index: -1;
+    background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.45), transparent);
+    transform: skewX(-18deg);
+    translate: 0 0;
+    opacity: 0;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .btn-primary:hover::after,
+    .btn-primary:focus-visible::after {
+      opacity: 1;
+      translate: 380% 0;
+      transition:
+        translate 900ms var(--ease-out),
+        opacity 200ms;
+    }
+  }
+  .btn-primary:hover {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.4),
+      0 14px 36px -10px rgb(255 106 60 / 0.7);
+  }
+  .btn-primary .btn-label {
+    position: relative;
+  }
+
+  /* glass */
+  .btn-glass {
+    background-color: rgb(var(--glass-tint) / var(--glass-alpha-chip));
+    -webkit-backdrop-filter: blur(14px) saturate(1.6);
+    backdrop-filter: blur(14px) saturate(1.6);
+    color: var(--fg);
+    box-shadow:
+      var(--glass-sheen),
+      inset 0 0 0 1px var(--border-strong),
+      var(--shadow-sm);
+  }
+  .btn-glass:hover {
+    background-color: rgb(var(--glass-tint) / var(--glass-alpha-strong));
+  }
+
+  /* ghost */
+  .btn-ghost {
+    color: var(--fg);
+    background: transparent;
+  }
+  .btn-ghost:hover {
+    background: color-mix(in srgb, var(--fg) 7%, transparent);
+  }
+
+  html[data-perf='lite'] .btn-glass {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  @media (forced-colors: active) {
+    .btn {
+      border: 1px solid ButtonText;
+    }
+  }
+</style>

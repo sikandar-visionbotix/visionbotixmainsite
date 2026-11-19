@@ -1,0 +1,232 @@
+/* ==========================================================================
+   Visionbotix design tokens: "Liquid Glass" (PLAN.md §4, reference/liquid-glass-design.md)
+   Dark is the default; light applies with [data-theme="light"] on <html> or on any container
+   (the styleguide uses containers to show both themes side by side).
+   Contrast: every text/background pair is verified with `node scripts/check-contrast.mjs`
+   (WCAG AA 4.5:1, including text over bare orbs and over glass). Re-run it after changing a colour.
+   ========================================================================== */
+
+:root {
+  /* ---- Brand (from the original logo: coral wordmark #F1625B, red→amber mark) ---- */
+  /* Brand gradient sampled from the owner's assets/gradient_bar.png: #F7941D → #F0542D → #EC1E59 */
+  --brand-amber-orange: #f7941d;
+  --brand-orange: #ff7a1a;
+  --brand-coral: #f1625b;
+  --brand-magenta: #e8336d;
+  --brand-crimson: #ec1e59;
+  --brand-violet: #7c5cff;
+  --brand-cyan: #22d3ee;
+  --brand-amber: #ffb020;
+
+  /* ---- Type ---- */
+  --font-sans: var(--font-geist), 'Geist', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: var(--font-sans);
+  --font-mono: var(--font-geist-mono), 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Fluid type scale (min at 360px, max at 1280px viewport) */
+  --step--1: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
+  --step-0: clamp(1rem, 0.97rem + 0.15vw, 1.0625rem);
+  --step-1: clamp(1.125rem, 1.07rem + 0.3vw, 1.3125rem);
+  --step-2: clamp(1.375rem, 1.26rem + 0.55vw, 1.75rem);
+  --step-3: clamp(1.75rem, 1.53rem + 1.05vw, 2.5rem);
+  --step-4: clamp(2.125rem, 1.75rem + 1.9vw, 3.5rem);
+  --step-5: clamp(2.625rem, 1.95rem + 3.3vw, 5rem);
+
+  --leading-tight: 1.05;
+  --leading-snug: 1.25;
+  --leading-body: 1.6;
+  --tracking-display: -0.035em;
+  --tracking-heading: -0.022em;
+  --tracking-eyebrow: 0.12em;
+
+  /* ---- Space (4px base) ---- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 6rem;
+  --space-10: 8rem;
+  --section-y: clamp(4rem, 2.5rem + 6vw, 8rem);
+  --gutter: clamp(1rem, 0.6rem + 1.8vw, 2rem);
+  --container: 75rem; /* 1200px */
+  --container-narrow: 48rem;
+
+  /* ---- Radius ---- */
+  --radius-xs: 0.5rem;
+  --radius-sm: 0.75rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.375rem;
+  --radius-xl: 2rem;
+  --radius-pill: 999px;
+
+  /* ---- Motion (120 / 200 / 320 ms, as the reference design system) ---- */
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 320ms;
+  --dur-reveal: 700ms;
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* ---- Layers ---- */
+  --z-backdrop: -1;
+  --z-raised: 10;
+  --z-header: 50;
+  --z-dock: 60;
+  --z-overlay: 100;
+
+  --header-h: 4.25rem;
+  --dock-h: 4.5rem;
+}
+
+/* ---------------------------------------------------------------------------
+   DARK (default)
+   --------------------------------------------------------------------------- */
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #0b0d12;
+  --bg-elevated: #12141c;
+  --fg: #f5f5f3;
+  --fg-muted: #aeb3c0;
+  --fg-subtle: #959baa; /* large or secondary text only; AA on glass, 3:1 on bare orbs */
+  --border: rgb(255 255 255 / 0.1);
+  --border-strong: rgb(255 255 255 / 0.18);
+  --accent: #ff9a57; /* links, eyebrows: 9.3:1 on bg */
+  --accent-2: #f472b6;
+  --focus: #22d3ee;
+
+  /* Brand gradients */
+  --grad-brand: linear-gradient(135deg, #f7941d 0%, #f0542d 50%, #ec1e59 100%);
+  --grad-text: linear-gradient(100deg, #ffa25e 0%, #ff7a5c 40%, #f0508a 100%);
+  --grad-cool: linear-gradient(135deg, #7c5cff 0%, #22d3ee 100%);
+
+  /* Primary button: bright gradient + ink text (7.5:1 → 4.7:1) */
+  --btn-primary-bg: var(--grad-brand);
+  --btn-primary-fg: #0b0d12;
+  --btn-primary-glow: 0 10px 30px -10px rgb(255 106 60 / 0.6);
+
+  /* Glass material (from the reference design system materialCss, dark values) */
+  --glass-tint: 18 20 28; /* rgb triplet */
+  --glass-alpha: 0.62;
+  --glass-alpha-strong: 0.8;
+  --glass-alpha-subtle: 0.42;
+  --glass-alpha-chip: 0.5;
+  --glass-filter: blur(24px) saturate(1.8);
+  --glass-filter-strong: blur(32px) saturate(1.6);
+  --glass-sheen: inset 0 1px 0 0 rgb(255 255 255 / 0.1), inset 0 0 0 1px rgb(255 255 255 / 0.06);
+  --rim-image: linear-gradient(135deg, rgb(255 255 255 / 0.28), rgb(255 255 255 / 0.04) 40%, rgb(255 255 255 / 0.02) 60%, rgb(255 255 255 / 0.16));
+  --refraction-image: radial-gradient(120% 90% at 0% 0%, rgb(255 255 255 / 0.06), transparent 55%),
+    radial-gradient(80% 60% at 100% 100%, rgb(124 92 255 / 0.06), transparent 60%);
+  --spotlight-color: rgb(255 138 76 / 0.14);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 8px 24px -8px rgb(0 0 0 / 0.55);
+  --shadow-lg: 0 24px 60px -20px rgb(0 0 0 / 0.7);
+
+  /* Backdrop (animated orbs). Alphas are tuned so muted text stays AA over a bare orb core. */
+  --bd-orb-1: color-mix(in srgb, #ff7a1a 32%, transparent);
+  --bd-orb-2: color-mix(in srgb, #e8336d 34%, transparent);
+  --bd-orb-3: color-mix(in srgb, #7c5cff 34%, transparent);
+  --bd-orb-4: color-mix(in srgb, #22d3ee 22%, transparent);
+  --bd-orb-5: color-mix(in srgb, #7c5cff 28%, transparent);
+  --bd-orb-6: color-mix(in srgb, #ffb020 26%, transparent);
+  --bd-aurora-1: color-mix(in srgb, #ff7a1a 26%, transparent);
+  --bd-aurora-2: color-mix(in srgb, #e8336d 26%, transparent);
+  --bd-aurora-3: color-mix(in srgb, #7c5cff 30%, transparent);
+  --bd-field: radial-gradient(120% 80% at 50% -10%, #171a26 0%, #0b0d12 60%);
+  --bd-grain: 0.05;
+
+  --t-sun: 1;
+  --t-moon: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   LIGHT
+   --------------------------------------------------------------------------- */
+[data-theme='light'] {
+  color-scheme: light;
+
+  --bg: #f7f7f5;
+  --bg-elevated: #ffffff;
+  --fg: #0b0d12;
+  --fg-muted: #474d5b;
+  --fg-subtle: #575d6c;
+  --border: rgb(11 13 18 / 0.1);
+  --border-strong: rgb(11 13 18 / 0.18);
+  --accent: #b93d0a; /* 5.2:1 on bg, 4.7:1 on glass over magenta */
+  --accent-2: #b42a5a;
+  --focus: #5b3fd0;
+
+  --grad-brand: linear-gradient(135deg, #c2410c 0%, #c8324a 50%, #c2255c 100%);
+  --grad-text: linear-gradient(100deg, #c2410c 0%, #c8324a 45%, #b8326a 100%);
+  --grad-cool: linear-gradient(135deg, #5b3fd0 0%, #0e7490 100%);
+
+  /* Primary button: deep gradient + white text (5.2:1 → 5.7:1) */
+  --btn-primary-bg: var(--grad-brand);
+  --btn-primary-fg: #ffffff;
+  --btn-primary-glow: 0 10px 28px -12px rgb(194 65 12 / 0.55);
+
+  --glass-tint: 255 255 255;
+  --glass-alpha: 0.6;
+  --glass-alpha-strong: 0.78;
+  --glass-alpha-subtle: 0.45;
+  --glass-alpha-chip: 0.55;
+  --glass-sheen: inset 0 1px 0 0 rgb(255 255 255 / 0.55), inset 0 0 0 1px rgb(255 255 255 / 0.18);
+  --rim-image: linear-gradient(135deg, rgb(255 255 255 / 0.85), rgb(255 255 255 / 0.12) 38%, rgb(255 255 255 / 0.05) 62%, rgb(255 255 255 / 0.55));
+  --refraction-image: radial-gradient(120% 90% at 0% 0%, rgb(255 255 255 / 0.22), transparent 55%),
+    radial-gradient(80% 60% at 100% 100%, rgb(255 255 255 / 0.07), transparent 60%);
+  --spotlight-color: rgb(232 51 109 / 0.08);
+
+  --shadow-sm: 0 1px 2px rgb(11 13 18 / 0.06);
+  --shadow-md: 0 8px 24px -10px rgb(11 13 18 / 0.14), 0 1px 2px rgb(11 13 18 / 0.05);
+  --shadow-lg: 0 24px 60px -24px rgb(11 13 18 / 0.22);
+
+  --bd-orb-1: color-mix(in srgb, #ff7a1a 32%, transparent);
+  --bd-orb-2: color-mix(in srgb, #e8336d 28%, transparent);
+  --bd-orb-3: color-mix(in srgb, #7c5cff 28%, transparent);
+  --bd-orb-4: color-mix(in srgb, #22d3ee 32%, transparent);
+  --bd-orb-5: color-mix(in srgb, #f1625b 24%, transparent);
+  --bd-orb-6: color-mix(in srgb, #ffb020 30%, transparent);
+  --bd-aurora-1: color-mix(in srgb, #ff7a1a 24%, transparent);
+  --bd-aurora-2: color-mix(in srgb, #e8336d 20%, transparent);
+  --bd-aurora-3: color-mix(in srgb, #7c5cff 22%, transparent);
+  --bd-field: radial-gradient(120% 80% at 50% -10%, #ffffff 0%, #f7f7f5 60%);
+  --bd-grain: 0.035;
+
+  --t-sun: 0;
+  --t-moon: 1;
+}
+
+/* Any themed container paints its own surface so nested themes are readable. */
+[data-theme] {
+  color: var(--fg);
+}
+
+/* Reduced transparency or more contrast: solid surfaces, no blur (Safari has no
+   prefers-reduced-transparency, which is why the default tints above are already legible). */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  :root:root,
+  :root [data-theme] {
+    --glass-alpha: 1;
+    --glass-alpha-strong: 1;
+    --glass-alpha-subtle: 1;
+    --glass-alpha-chip: 1;
+    --glass-filter: none;
+    --glass-filter-strong: none;
+  }
+}
+@media (prefers-contrast: more) {
+  :root:root,
+  :root [data-theme] {
+    --border: currentColor;
+    --fg-muted: var(--fg);
+    --fg-subtle: var(--fg);
+  }
+}

@@ -1,0 +1,219 @@
+---
+/** Mega footer on a subtle glass band: brand + contact, then agents, services, products, company. */
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import { site } from '@/data/site';
+import { agents, services, products, company, industriesLive } from '@/data/catalogue';
+import type { IconName } from '@/lib/icons';
+
+const year = new Date().getFullYear();
+const topAgents = agents.slice(0, 8);
+const topServices = services.filter((s) => ['ai-agent-development', 'generative-ai-development', 'custom-software-development', 'web-app-development', 'mobile-app-development', 'saas-mvp-development', 'computer-vision', 'dedicated-teams'].includes(s.slug));
+---
+
+<footer class="site-footer">
+  <div class="container footer-panel glass-subtle">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <Logo height={32} eager={false} />
+        <p class="muted">{site.description}</p>
+        <address class="footer-contact">
+          <a href={`mailto:${site.contact.email}`}><Icon name="mail" size={16} />{site.contact.email}</a>
+          <a href={site.contact.phoneHref}><Icon name="phone" size={16} />{site.contact.phone}</a>
+          <span><Icon name="map-pin" size={16} />{site.address.street}, {site.address.locality}, {site.address.countryName}</span>
+        </address>
+        <ul role="list" class="footer-social">
+          {
+            site.social.map((s) => (
+              <li>
+                <a href={s.href} target="_blank" rel="noopener me" aria-label={`${site.name} on ${s.name}`}>
+                  <Icon name={s.icon as IconName} size={18} />
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+
+      <nav class="footer-col" aria-labelledby="f-agents">
+        <h2 id="f-agents" class="footer-title">AI Agents</h2>
+        <ul role="list">
+          {topAgents.map((a) => <li><a href={`/ai-agents/${a.slug}/`}>{a.name}</a></li>)}
+          <li><a class="more" href="/ai-agents/">All 16 agents →</a></li>
+        </ul>
+      </nav>
+
+      <nav class="footer-col" aria-labelledby="f-services">
+        <h2 id="f-services" class="footer-title">Services</h2>
+        <ul role="list">
+          {topServices.map((s) => <li><a href={`/services/${s.slug}/`}>{s.name}</a></li>)}
+          <li><a class="more" href="/services/">All services →</a></li>
+        </ul>
+      </nav>
+
+      <nav class="footer-col" aria-labelledby="f-products">
+        <h2 id="f-products" class="footer-title">Products</h2>
+        <ul role="list">
+          {products.map((p) => <li><a href={`/products/${p.slug}/`}>{p.name}</a></li>)}
+          {
+            site.properties.map((p) => (
+              <li>
+                <a href={p.href} target="_blank" rel="noopener">
+                  {p.name} <Icon name="arrow-up-right" size={13} class="ext" />
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+
+      <nav class="footer-col" aria-labelledby="f-company">
+        <h2 id="f-company" class="footer-title">Company</h2>
+        <ul role="list">
+          {company.map((c) => <li><a href={c.href}>{c.name}</a></li>)}
+          {industriesLive && <li><a href="/industries/">Industries</a></li>}
+          <li><a href="/pricing/">Pricing</a></li>
+        </ul>
+      </nav>
+    </div>
+
+    <div class="footer-bottom">
+      <p class="small subtle">© {year} {site.legalName}. All rights reserved.</p>
+      <ul role="list" class="footer-legal small">
+        <li><a href="/privacy/">Privacy</a></li>
+        <li><a href="/terms/">Terms</a></li>
+        <li><a href="/sitemap-index.xml">Sitemap</a></li>
+        {(site.analytics.ga4 || site.analytics.clarity) && <li><button type="button" class="footer-btn" data-consent-open>Cookie settings</button></li>}
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .footer-btn {
+    padding: 0;
+    border: 0;
+    font: inherit;
+    color: inherit;
+    background: none;
+    cursor: pointer;
+  }
+  .footer-btn:hover {
+    text-decoration: underline;
+  }
+  .site-footer {
+    padding-block: var(--space-8) var(--space-6);
+  }
+  .footer-panel {
+    --glass-radius: var(--radius-xl);
+    padding: clamp(1.5rem, 1rem + 3vw, 3.5rem);
+  }
+  .footer-grid {
+    display: grid;
+    gap: var(--space-7) var(--space-6);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .footer-brand {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: var(--space-4);
+    align-content: start;
+    max-width: 26rem;
+  }
+  @media (min-width: 56rem) {
+    .footer-grid {
+      grid-template-columns: 1.6fr repeat(4, minmax(0, 1fr));
+    }
+    .footer-brand {
+      grid-column: auto;
+    }
+  }
+  .footer-contact {
+    display: grid;
+    gap: var(--space-2);
+    font-style: normal;
+    font-size: var(--step--1);
+    color: var(--fg-muted);
+  }
+  .footer-contact > * {
+    display: flex;
+    gap: var(--space-2);
+    align-items: flex-start;
+    text-decoration: none;
+  }
+  .footer-contact :global(svg) {
+    margin-top: 0.2em;
+  }
+  .footer-contact a:hover {
+    color: var(--fg);
+  }
+  .footer-social {
+    display: flex;
+    gap: var(--space-2);
+  }
+  .footer-social a {
+    display: grid;
+    place-items: center;
+    inline-size: 2.75rem;
+    block-size: 2.75rem;
+    border-radius: var(--radius-pill);
+    color: var(--fg-muted);
+    background: color-mix(in srgb, var(--fg) 6%, transparent);
+    transition:
+      color var(--dur-2),
+      background-color var(--dur-2);
+  }
+  .footer-social a:hover {
+    color: var(--fg);
+    background: color-mix(in srgb, var(--fg) 12%, transparent);
+  }
+  .footer-title {
+    margin-block-end: var(--space-3);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--fg-subtle);
+  }
+  .footer-col ul {
+    display: grid;
+    gap: 0.125rem;
+  }
+  .footer-col a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 2rem;
+    font-size: 0.9375rem;
+    color: var(--fg-muted);
+    text-decoration: none;
+  }
+  .footer-col a:hover {
+    color: var(--fg);
+  }
+  .footer-col .more {
+    color: var(--accent);
+  }
+  .footer-bottom {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-5);
+    justify-content: space-between;
+    align-items: center;
+    margin-block-start: var(--space-7);
+    padding-block-start: var(--space-5);
+    border-top: 1px solid var(--border);
+  }
+  .footer-legal {
+    display: flex;
+    gap: var(--space-4);
+  }
+  .footer-legal a {
+    color: var(--fg-subtle);
+    text-decoration: none;
+  }
+  .footer-legal a:hover {
+    color: var(--fg);
+  }
+</style>

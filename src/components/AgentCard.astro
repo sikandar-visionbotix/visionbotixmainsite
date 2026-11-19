@@ -1,0 +1,134 @@
+---
+/**
+ * Agent card (homepage grid, /ai-agents/ hub, "Pairs well with" on agent pages). The whole card is one link via a
+ * cover anchor; the heading link carries the accessible name. Two columns on phones are handled by the parent grid.
+ */
+import Icon from '@/components/Icon.astro';
+import { agentGroups, type AgentGroup } from '@/data/catalogue';
+import { priceLabel } from '@/data/pricing';
+import type { IconName } from '@/lib/icons';
+
+interface Props {
+  slug: string;
+  name: string;
+  line: string;
+  group: AgentGroup;
+  icon: IconName;
+  /** Show the group badge (off inside a group section on the hub). */
+  showGroup?: boolean;
+  /** Short capability tags, e.g. the agent's verbs. */
+  tags?: string[];
+  heading?: 'h2' | 'h3';
+  as?: 'li' | 'div';
+}
+const { slug, name, line, group, icon, showGroup = true, tags = [], heading: H = 'h3', as: Tag = 'li' } = Astro.props;
+const href = `/ai-agents/${slug}/`;
+const price = priceLabel(slug);
+---
+
+<Tag class="agent glass-subtle spotlight lift">
+  <a class="card-cover" href={href} aria-hidden="true" tabindex="-1"></a>
+  <div class="agent-top">
+    <span class="agent-icon" aria-hidden="true"><Icon name={icon} size={20} /></span>
+    {showGroup && <span class="agent-group mono">{agentGroups[group].label}</span>}
+  </div>
+  <H class="h4 agent-name"><a href={href}>{name}</a></H>
+  <p class="muted small">{line}</p>
+  {
+    tags.length > 0 && (
+      <ul role="list" class="agent-tags">
+        {tags.map((t) => (
+          <li>{t}</li>
+        ))}
+      </ul>
+    )
+  }
+  {price && <p class="agent-price mono">{price}</p>}
+</Tag>
+
+<style>
+  .agent {
+    --glass-radius: var(--radius-lg);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-5);
+    cursor: pointer;
+  }
+  .agent > :not(.card-cover) {
+    position: relative;
+    z-index: 2;
+  }
+  .card-cover {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    border-radius: inherit;
+  }
+  .agent-name a {
+    text-decoration: none;
+  }
+  .agent:has(.agent-name a:focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+  }
+  .agent-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .agent-icon {
+    display: grid;
+    place-items: center;
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
+    border-radius: 0.9rem;
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    color: var(--accent);
+  }
+  .agent-group {
+    padding: 0.15rem 0.55rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+    box-shadow: inset 0 0 0 1px var(--border-strong);
+  }
+  .agent-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+  .agent-tags li {
+    padding: 0.12rem 0.5rem;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--fg-muted);
+    background: color-mix(in srgb, var(--fg) 7%, transparent);
+  }
+  .agent-price {
+    margin-block-start: auto;
+    padding-block-start: var(--space-2);
+    font-size: 0.75rem;
+    color: var(--accent);
+  }
+  @media (max-width: 40rem) {
+    .agent {
+      padding: var(--space-4);
+      gap: var(--space-2);
+    }
+    .agent-name {
+      font-size: var(--step-0);
+    }
+    .agent-icon {
+      inline-size: 2.125rem;
+      block-size: 2.125rem;
+    }
+    .agent-tags {
+      display: none;
+    }
+  }
+</style>

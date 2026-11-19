@@ -1,0 +1,23 @@
+---
+/**
+ * Animated gradient background (owner requirement: every page). Six drifting colour orbs, optional aurora
+ * bands (hero pages), film grain. Pointer parallax, pause-when-hidden and lite mode come from scripts/runtime.ts;
+ * reduced motion, reduced transparency and contrast fallbacks are pure CSS (styles/backdrop.css).
+ */
+interface Props {
+  variant?: 'orbs' | 'aurora';
+  grain?: boolean;
+}
+const { variant = 'orbs', grain = true } = Astro.props;
+---
+
+<div class="backdrop" data-backdrop data-variant={variant} aria-hidden="true">
+  {variant === 'aurora' && <div class="bd-aurora" />}
+  <span class="bd-orb bd-orb-1"></span>
+  <span class="bd-orb bd-orb-2"></span>
+  <span class="bd-orb bd-orb-3"></span>
+  <span class="bd-orb bd-orb-4"></span>
+  <span class="bd-orb bd-orb-5"></span>
+  <span class="bd-orb bd-orb-6"></span>
+  {grain && <div class="bd-grain" />}
+</div>

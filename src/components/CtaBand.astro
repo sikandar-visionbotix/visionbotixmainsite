@@ -1,0 +1,74 @@
+---
+/** Conversion band: big heading, one line, primary + secondary action. Use every 2–3 sections. */
+import Button from './Button.astro';
+import { site } from '@/data/site';
+
+interface Props {
+  title?: string;
+  text?: string;
+  primary?: { label: string; href: string };
+  secondary?: { label: string; href: string } | null;
+  note?: string;
+  location?: string;
+}
+const {
+  title = 'Ready to put AI to work?',
+  text = 'Book a free 30-minute strategy call. We map where agents save you the most time, and you leave with a plan whether or not we work together.',
+  primary = { label: 'Book a free strategy call', href: site.contact.bookingUrl },
+  secondary = { label: 'Get a quote in 24h', href: '/contact/#quote' },
+  note = 'NDA on request from the first call · You own 100% of the code and IP',
+  location = 'cta-band',
+} = Astro.props;
+---
+
+<section class="cta-band container" aria-label="Get started">
+  <div class="cta-panel glass-strong" data-reveal="scale">
+    <div class="cta-glow" aria-hidden="true"></div>
+    <h2 class="cta-title" set:html={title} />
+    {text && <p class="lead">{text}</p>}
+    <div class="cluster cta-actions">
+      <Button href={primary.href} size="lg" icon="arrow-right" data-event="book_call" data-event-location={location}>{primary.label}</Button>
+      {secondary && <Button href={secondary.href} size="lg" variant="glass" data-event="quote_click" data-event-location={location}>{secondary.label}</Button>}
+    </div>
+    {note && <p class="small subtle cta-note">{note}</p>}
+  </div>
+</section>
+
+<style>
+  .cta-band {
+    padding-block: var(--section-y);
+  }
+  .cta-panel {
+    --glass-radius: var(--radius-xl);
+    overflow: hidden;
+    display: grid;
+    justify-items: center;
+    gap: var(--space-5);
+    padding: clamp(2.5rem, 1.5rem + 5vw, 5.5rem) clamp(1.25rem, 1rem + 4vw, 5rem);
+    text-align: center;
+  }
+  .cta-glow {
+    position: absolute;
+    inset: auto -10% -60% -10%;
+    height: 120%;
+    z-index: -1;
+    background:
+      radial-gradient(50% 50% at 30% 60%, var(--bd-orb-1), transparent 70%),
+      radial-gradient(45% 45% at 70% 55%, var(--bd-orb-2), transparent 70%),
+      radial-gradient(40% 40% at 50% 40%, var(--bd-orb-3), transparent 70%);
+    pointer-events: none;
+  }
+  .cta-title {
+    font-size: var(--step-4);
+    max-width: 22ch;
+  }
+  .lead {
+    margin-inline: auto;
+  }
+  .cta-actions {
+    justify-content: center;
+  }
+  .cta-note {
+    margin-block-start: calc(var(--space-2) * -1);
+  }
+</style>

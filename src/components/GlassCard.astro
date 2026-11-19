@@ -1,0 +1,64 @@
+---
+/**
+ * Card on a glass material. `href` makes the whole card one link (the title should be the link text).
+ * Default material is `subtle` (no blur), which is the right choice for grids; reserve `glass`/`strong` for few, important panels.
+ */
+interface Props {
+  material?: 'glass' | 'strong' | 'subtle' | 'chip';
+  as?: 'div' | 'article' | 'section' | 'li' | 'aside';
+  href?: string | undefined;
+  spotlight?: boolean;
+  lift?: boolean;
+  pad?: 'sm' | 'md' | 'lg';
+  class?: string;
+  reveal?: boolean;
+}
+const { material = 'subtle', as: Tag = 'div', href, spotlight = true, lift = !!href, pad = 'md', class: className, reveal = false } = Astro.props;
+const materialClass = material === 'strong' ? 'glass-strong' : material === 'subtle' ? 'glass-subtle' : material === 'chip' ? 'glass-chip' : 'glass';
+---
+
+<Tag
+  class:list={['card', materialClass, `pad-${pad}`, { spotlight, lift, 'card-link': href }, className]}
+  data-reveal={reveal ? '' : undefined}
+>
+  {href ? <a class="card-cover" href={href} aria-hidden="true" tabindex="-1" /> : null}
+  <slot />
+</Tag>
+
+<style>
+  .card {
+    --glass-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    color: var(--fg);
+  }
+  .pad-sm {
+    padding: var(--space-4);
+  }
+  .pad-md {
+    padding: clamp(1.25rem, 1rem + 1vw, 1.75rem);
+  }
+  .pad-lg {
+    padding: clamp(1.5rem, 1rem + 2.5vw, 3rem);
+  }
+  /* Whole-card link: an invisible cover link; real links inside stay clickable above it. */
+  .card-link {
+    cursor: pointer;
+  }
+  .card-cover {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+  }
+  .card-link :global(a:not(.card-cover)),
+  .card-link :global(button) {
+    position: relative;
+    z-index: 2;
+  }
+  .card-link:has(:global(a:not(.card-cover)):focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+  }
+</style>

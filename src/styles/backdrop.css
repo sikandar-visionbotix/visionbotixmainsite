@@ -1,0 +1,133 @@
+/* ==========================================================================
+   Animated gradient backdrop: owner requirement, on every page.
+   Port of our reference design system's backdrop (style "orbs" + optional "aurora"), recoloured to the logo palette.
+   Markup: components/Backdrop.astro. Runtime: scripts/runtime.ts (parallax, pause when hidden, lite mode).
+   Orbs are plain radial gradients (no filter blur), so they are cheap to paint; only transform animates.
+   ========================================================================== */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-backdrop);
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+  background: var(--bd-field);
+  --bd-px: 0;
+  --bd-py: 0;
+  --bd-speed: 1;
+  --bd-play: running;
+}
+.backdrop[data-paused] * {
+  animation-play-state: paused !important;
+}
+
+.bd-orb {
+  position: absolute;
+  width: var(--size);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--orb) 0%, transparent 100%);
+  will-change: transform;
+  translate: calc(var(--bd-px) * var(--depth, 1) * 28px) calc(var(--bd-py) * var(--depth, 1) * 28px);
+  transition: translate 900ms var(--ease-out);
+  animation: bd-orb-drift calc(var(--dur, 30s) * var(--bd-speed)) ease-in-out infinite alternate;
+  animation-delay: var(--delay, 0s);
+  animation-play-state: var(--bd-play);
+}
+.bd-orb-1 { --orb: var(--bd-orb-1); --size: 44vmax; top: -12%; inset-inline-start: -8%; --dur: 34s; --depth: 1.4; }
+.bd-orb-2 { --orb: var(--bd-orb-2); --size: 40vmax; top: -6%; inset-inline-end: -10%; --dur: 29s; --delay: -6s; --depth: 0.8; }
+.bd-orb-3 { --orb: var(--bd-orb-3); --size: 36vmax; top: 38%; inset-inline-start: 30%; --dur: 38s; --delay: -12s; --depth: 1.8; }
+.bd-orb-4 { --orb: var(--bd-orb-4); --size: 34vmax; bottom: -14%; inset-inline-start: -6%; --dur: 31s; --delay: -3s; --depth: 1.1; }
+.bd-orb-5 { --orb: var(--bd-orb-5); --size: 42vmax; bottom: -18%; inset-inline-end: -4%; --dur: 36s; --delay: -18s; --depth: 0.6; }
+.bd-orb-6 { --orb: var(--bd-orb-6); --size: 22vmax; top: 12%; inset-inline-start: 58%; --dur: 26s; --delay: -9s; --depth: 2.2; }
+
+@keyframes bd-orb-drift {
+  0% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+  50% { transform: translate3d(6vmax, 4vmax, 0) scale(1.08) rotate(40deg); }
+  100% { transform: translate3d(-4vmax, 7vmax, 0) scale(0.94) rotate(-25deg); }
+}
+
+/* Aurora: slanted light bands, for hero pages (Backdrop variant="aurora"). */
+.bd-aurora {
+  position: absolute;
+  inset: -20%;
+  mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 85%);
+}
+.bd-aurora::before,
+.bd-aurora::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+  animation: bd-aurora-a calc(38s * var(--bd-speed)) ease-in-out infinite alternate;
+  animation-play-state: var(--bd-play);
+  background:
+    linear-gradient(115deg, transparent 18%, var(--bd-aurora-1) 32%, transparent 46%),
+    linear-gradient(100deg, transparent 38%, var(--bd-aurora-2) 52%, transparent 66%),
+    linear-gradient(125deg, transparent 58%, var(--bd-aurora-3) 72%, transparent 86%);
+}
+.bd-aurora::after {
+  animation-name: bd-aurora-b;
+  animation-duration: calc(46s * var(--bd-speed));
+  background:
+    radial-gradient(50% 40% at 30% 70%, var(--bd-orb-4), transparent 70%),
+    radial-gradient(45% 35% at 75% 25%, var(--bd-orb-6), transparent 70%);
+}
+@keyframes bd-aurora-a {
+  from { transform: translate3d(-6%, -2%, 0) rotate(-4deg) scale(1.05); }
+  to { transform: translate3d(6%, 3%, 0) rotate(5deg) scale(1.12); }
+}
+@keyframes bd-aurora-b {
+  from { transform: translate3d(5%, 4%, 0) scale(1.1); }
+  to { transform: translate3d(-5%, -3%, 0) scale(1); }
+}
+
+/* Film grain: SVG noise, overlay blend. */
+.bd-grain {
+  position: absolute;
+  inset: 0;
+  opacity: var(--bd-grain);
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Phones: fewer, bigger layers. */
+@media (max-width: 40rem) {
+  .bd-orb-5,
+  .bd-orb-6 {
+    display: none;
+  }
+  .bd-orb {
+    --size: 70vmax;
+  }
+  .bd-orb-3 {
+    inset-inline-start: 10%;
+  }
+}
+
+/* Lite performance (low-end devices, data saver): static, fewer orbs. */
+html[data-perf='lite'] .backdrop * {
+  animation: none !important;
+}
+html[data-perf='lite'] .bd-orb-5,
+html[data-perf='lite'] .bd-orb-6,
+html[data-perf='lite'] .bd-grain {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop * {
+    animation: none !important;
+  }
+  .bd-orb {
+    transition: none;
+  }
+}
+
+/* Reduced transparency or more contrast: no ambient layer at all. */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .backdrop {
+    display: none;
+  }
+}

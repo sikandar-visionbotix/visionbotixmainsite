@@ -1,0 +1,73 @@
+/* ==========================================================================
+   Motion utilities. Only transform, opacity and filter animate. Everything is off under
+   prefers-reduced-motion. Content is never hidden without JS: hiding needs html.js (set inline in <head>).
+
+   data-reveal                 rise into view when scrolled to (runtime sets data-inview)
+   data-reveal="fade|scale"    variants
+   data-stagger                on a parent: children reveal one after another (runtime sets --i)
+   .press                      scale down a touch while pressed
+   .lift                       hover lift (cards)
+   .spotlight                  pointer light pool (glass.css)
+   ========================================================================== */
+
+@media (prefers-reduced-motion: no-preference) {
+  html.js [data-reveal]:not([data-inview]),
+  html.js [data-stagger]:not([data-inview]) > * {
+    opacity: 0;
+    translate: 0 1.25rem;
+  }
+  html.js [data-reveal='fade']:not([data-inview]) {
+    translate: none;
+  }
+  html.js [data-reveal='scale']:not([data-inview]) {
+    translate: none;
+    scale: 0.96;
+  }
+
+  html.js [data-reveal],
+  html.js [data-stagger] > * {
+    transition:
+      opacity var(--dur-reveal) var(--ease-out),
+      translate var(--dur-reveal) var(--ease-out),
+      scale var(--dur-reveal) var(--ease-out);
+    transition-delay: calc(var(--i, 0) * 70ms + var(--reveal-delay, 0ms));
+  }
+
+  .press {
+    transition: scale var(--dur-1) var(--ease-out);
+  }
+  .press:active {
+    scale: 0.97;
+  }
+
+  .lift {
+    transition:
+      translate var(--dur-3) var(--ease-out),
+      box-shadow var(--dur-3) var(--ease-out);
+  }
+  @media (hover: hover) {
+    .lift:hover {
+      translate: 0 -3px;
+      box-shadow: var(--glass-sheen), var(--shadow-lg);
+    }
+  }
+}
+
+/* Text reveal for hero headings: each word (wrapped by <TextReveal>) rises in, LCP-safe (no opacity:0 on load). */
+@media (prefers-reduced-motion: no-preference) {
+  .text-reveal .word {
+    display: inline-block;
+    animation: word-rise 900ms var(--ease-out) both;
+    animation-delay: calc(var(--w, 0) * 45ms + 80ms);
+  }
+}
+@keyframes word-rise {
+  from {
+    translate: 0 0.35em;
+    filter: blur(6px);
+  }
+  to {
+    translate: 0 0;
+    filter: blur(0);
+  }
+}

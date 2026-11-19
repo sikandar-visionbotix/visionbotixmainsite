@@ -1,0 +1,118 @@
+---
+/**
+ * Consent-gated analytics (S5). Renders nothing until site.analytics has an ID. Then: a small consent banner; on
+ * "Accept" it loads GA4 (13-month cookie, Google Signals and ad personalisation off) and Microsoft Clarity; on
+ * "Decline" nothing loads. The choice is kept in localStorage ("vbx-consent") and can be changed from the footer's
+ * "Cookie settings" button ([data-consent-open]). Conversion events: any click on [data-event] plus `vbx:track`
+ * CustomEvents (prompt hero, contact form) are sent to GA4 once consent is given.
+ */
+import { site } from '@/data/site';
+import Button from './Button.astro';
+
+const { ga4, clarity } = site.analytics;
+const enabled = !!(ga4 || clarity);
+---
+
+{
+  enabled && (
+    <>
+      <div class="consent glass-strong" data-consent hidden role="region" aria-label="Cookie consent">
+        <p class="small">
+          May we use analytics cookies (Google Analytics{clarity ? ' and Microsoft Clarity' : ''}) to see how the site is used? Nothing loads unless you accept.{' '}
+          <a class="link" href="/privacy/#cookies-and-similar-technologies">Details</a>
+        </p>
+        <div class="cluster consent-actions">
+          <Button size="sm" data-consent-choice="granted">Accept</Button>
+          <Button size="sm" variant="glass" data-consent-choice="denied">Decline</Button>
+        </div>
+      </div>
+      <script is:inline define:vars={{ ga4, clarity }}>
+        (function () {
+          var KEY = 'vbx-consent';
+          var box = document.querySelector('[data-consent]');
+          var loaded = false;
+          var get = function () { try { return localStorage.getItem(KEY); } catch (e) { return null; } };
+          var set = function (v) { try { localStorage.setItem(KEY, v); } catch (e) {} };
+          window.dataLayer = window.dataLayer || [];
+          function gtag() { window.dataLayer.push(arguments); }
+          window.gtag = window.gtag || gtag;
+          function load() {
+            if (loaded) return;
+            loaded = true;
+            if (ga4) {
+              var s = document.createElement('script');
+              s.async = true;
+              s.src = 'https://www.googletagmanager.com/gtag/js?id=' + ga4;
+              document.head.appendChild(s);
+              gtag('js', new Date());
+              gtag('config', ga4, { cookie_expires: 34128000, allow_google_signals: false, allow_ad_personalization_signals: false });
+            }
+            if (clarity) {
+              (function (c, l, a, r, i, t, y) {
+                c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); };
+                t = l.createElement(r); t.async = 1; t.src = 'https://www.clarity.ms/tag/' + i;
+                y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+              })(window, document, 'clarity', 'script', clarity);
+              window.clarity('consent');
+            }
+          }
+          function track(name, params) {
+            if (get() !== 'granted' || !ga4) return;
+            gtag('event', name, params || {});
+          }
+          var state = get();
+          if (state === 'granted') load();
+          else if (state !== 'denied') box.hidden = false;
+          document.addEventListener('click', function (e) {
+            var t = e.target.closest && e.target.closest('[data-consent-choice],[data-consent-open],[data-event]');
+            if (!t) return;
+            if (t.hasAttribute('data-consent-choice')) {
+              var v = t.getAttribute('data-consent-choice');
+              set(v);
+              box.hidden = true;
+              if (v === 'granted') load();
+              else if (loaded) location.reload();
+            } else if (t.hasAttribute('data-consent-open')) {
+              box.hidden = false;
+            } else {
+              track(t.getAttribute('data-event'), { location: t.getAttribute('data-event-location') || '', link_url: t.getAttribute('href') || '' });
+            }
+          });
+          window.addEventListener('vbx:track', function (e) {
+            var d = Object.assign({}, e.detail);
+            var n = d.event;
+            delete d.event;
+            track(n, d);
+          });
+        })();
+      </script>
+    </>
+  )
+}
+
+<style>
+  .consent {
+    --glass-radius: var(--radius-lg);
+    position: fixed;
+    z-index: calc(var(--z-header) + 1);
+    inset-inline: var(--gutter);
+    inset-block-end: calc(env(safe-area-inset-bottom) + 5.5rem);
+    display: grid;
+    gap: var(--space-3);
+    max-inline-size: 26rem;
+    padding: var(--space-4);
+  }
+  .consent[hidden] {
+    display: none;
+  }
+  .consent > * {
+    position: relative;
+    z-index: 2;
+  }
+  @media (min-width: 64rem) {
+    .consent {
+      inset-block-end: 1.25rem;
+      inset-inline: auto 1.25rem;
+    }
+  }
+</style>

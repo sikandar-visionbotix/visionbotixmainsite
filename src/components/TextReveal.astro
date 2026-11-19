@@ -1,0 +1,29 @@
+---
+/**
+ * Word-by-word rise for hero headings. Words stay fully opaque (only translate/blur animate), so the heading
+ * still counts as painted for LCP. Pass plain text; wrap emphasised words with `accent` to gradient them.
+ */
+interface Props {
+  text: string;
+  accent?: string;
+  as?: 'h1' | 'h2' | 'p' | 'span';
+  class?: string;
+  id?: string;
+}
+const { text, accent, as: Tag = 'h1', class: className, id } = Astro.props;
+const words = text.split(/\s+/).filter(Boolean);
+const bare = (w: string) => w.toLowerCase().replace(/[^\p{L}\p{N}-]/gu, '');
+const accentWords = new Set((accent ?? '').split(/\s+/).filter(Boolean).map(bare));
+---
+
+<Tag id={id} class:list={['text-reveal', className]}>
+  {
+    words.map((w, i) => (
+      <>
+        <span class:list={['word', { 'text-gradient': accentWords.has(bare(w)) }]} style={`--w:${i}`}>
+          {w}
+        </span>{' '}
+      </>
+    ))
+  }
+</Tag>
