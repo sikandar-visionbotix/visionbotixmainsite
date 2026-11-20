@@ -767,7 +767,7 @@ const stepNames = { type: 'Project', scope: 'Scope', extras: 'Platforms', when: 
       btn.disabled = true;
       sendStatus.textContent = 'Sending…';
       try {
-        const token = await lead.token();
+        const token = await lead.tokenOrTick(() => (sendStatus.textContent = 'One quick check first: tick the box above the button and it sends.'));
         if (token) body['cf-turnstile-response'] = token;
         const r = await fetch('/api/contact/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         const j = await r.json().catch(() => ({}));

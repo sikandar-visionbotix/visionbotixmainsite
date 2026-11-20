@@ -661,7 +661,7 @@ Sitemap: https://www.example.com/sitemap.xml`;
       btn.disabled = true;
       status.textContent = 'Sending…';
       try {
-        const token = await lead.token();
+        const token = await lead.tokenOrTick(() => (status.textContent = 'One quick check first: tick the box above the button and it sends.'));
         if (token) body['cf-turnstile-response'] = token;
         const r = await fetch('/api/contact/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         const j = await r.json().catch(() => ({}));

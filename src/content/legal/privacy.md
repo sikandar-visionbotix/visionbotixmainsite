@@ -54,6 +54,8 @@ Our cost estimator works out a price range in your browser. Your answers are not
 
 Our [AI visibility checker](/tools/ai-visibility-checker/) fetches the public web page you enter, plus that site's robots.txt, sitemap and llms.txt, and shows you a report. To do that, the address you enter is sent to our server. We keep the report in memory for up to 10 minutes so that a repeat check is quick, and our log records only the website's host name and its score, not your IP address. A Cloudflare Turnstile check, as on our forms, keeps automated abuse out, and a per-address limit on checks is enforced with a short-lived counter based on a one-way hash of your IP address. Nothing reaches our team unless you choose to send us the report with your name and email address, in which case it is handled like the contact form.
 
+Our [AI readiness score](/tools/ai-readiness-score/) runs entirely in your browser: your answers are not sent to us or stored by us. The link to your results holds the answers in the web address itself, so anyone you share it with sees the same result. Nothing reaches our team unless you choose to send us your results with your name and email address, in which case they are handled like the contact form.
+
 ### Booking a call
 
 If you book a call with us, the booking is handled by our scheduling provider, Cal.com. It collects the details you enter (such as your name, email address and chosen time) and shares them with us so we can hold the meeting. Your use of the scheduling tool is also governed by that provider's own privacy policy.

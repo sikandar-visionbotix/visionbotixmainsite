@@ -1,5 +1,5 @@
 ---
-/** /tools/ (S11): the free tools in one place: AI visibility checker, cost estimator, live agent demos. */
+/** /tools/ (S11): the free tools in one place: AI visibility checker, AI readiness score (S12), cost estimator, live agent demos. */
 import '@/styles/page-kit.css';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Breadcrumbs from '@/components/Breadcrumbs.astro';
@@ -18,6 +18,14 @@ const tools: { href: string; icon: IconName; name: string; body: string; cta: st
     body: `Can ChatGPT, Claude, Perplexity and Google’s AI read and cite your site? Checks robots.txt for ${BOTS.length} AI crawlers, indexing rules, the text AI crawlers see and your entity signals. Score out of 100 and the fixes that matter most.`,
     cta: 'Check your site',
     badge: 'New',
+  },
+  {
+    href: '/tools/ai-readiness-score/',
+    icon: 'gauge',
+    name: 'AI readiness score',
+    body: 'How ready is your business for AI agents? Thirteen questions on processes, knowledge, tools, volume and team. A score out of 100, what to fix first, and which agents to start with, with prices.',
+    cta: 'Get your score',
+    badge: '3 minutes',
   },
   {
     href: '/estimate/',
@@ -51,7 +59,7 @@ const list: Thing = {
 ---
 
 <BaseLayout
-  seo={{ title: 'Free AI Tools: Visibility Checker, Estimator', description: 'Free tools from Visionbotix: check whether AI search can read your site, estimate what your app or AI agent will cost, and try 16 live AI agents.' }}
+  seo={{ title: 'Free AI Tools: Visibility Checker, Estimator', description: 'Free tools from Visionbotix: check whether AI search can read your site, score your AI readiness, estimate what a project will cost, and try 16 live AI agents.' }}
   schema={[list]}
 >
   <section class="container pk-hero" data-compact aria-labelledby="tl-title">
@@ -59,7 +67,7 @@ const list: Thing = {
       <Breadcrumbs items={[{ name: 'Free tools', href: '/tools/' }]} />
       <p class="eyebrow">Free tools</p>
       <h1 id="tl-title" class="pk-title">Free tools for AI search, project costs and AI agents.</h1>
-      <p class="lead pk-lead">No sign-up and nothing sent to us unless you choose. Check how AI search sees your website, price a project from our public price list, or try a working AI agent before you talk to anyone.</p>
+      <p class="lead pk-lead">No sign-up and nothing sent to us unless you choose. Check how AI search sees your website, score how ready your business is for AI agents, price a project from our public price list, or try a working AI agent before you talk to anyone.</p>
     </div>
   </section>
 

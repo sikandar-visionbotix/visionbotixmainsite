@@ -14,7 +14,7 @@ const resources = readFileSync('src/data/resources.ts', 'utf8');
 const tagList = [...resources.matchAll(/\{ slug: '([a-z-]+)', name: '[^']+', blurb/g)].map((m) => m[1]);
 const authorList = [...resources.matchAll(/^\s+slug: '([a-z-]+)',$/gm)].map((m) => m[1]);
 const tokenKinds = ['price', 'setup', 'monthly', 'bundle', 'bundle-agents', 'project', 'service', 'team', 'audit', 'hourly', 'agents-setup-range', 'agents-monthly-range', 'table'];
-const staticPages = ['/', '/pricing/', '/estimate/', '/contact/', '/about/', '/process/', '/work/', '/careers/', '/demos/', '/ai-agents/', '/services/', '/industries/', '/locations/', '/products/', '/resources/', '/privacy/', '/terms/'];
+const staticPages = ['/', '/pricing/', '/estimate/', '/contact/', '/about/', '/process/', '/work/', '/careers/', '/demos/', '/ai-agents/', '/services/', '/industries/', '/locations/', '/products/', '/resources/', '/privacy/', '/terms/', '/tools/', '/tools/ai-visibility-checker/', '/tools/ai-readiness-score/'];
 const collections = { 'ai-agents': 'agents', services: 'services', industries: 'industries', locations: 'locations', products: 'products', work: 'work', resources: 'posts', demos: null };
 
 const common = [

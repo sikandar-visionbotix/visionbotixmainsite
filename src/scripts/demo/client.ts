@@ -348,12 +348,24 @@ class LiveDemo {
       this.t0 = performance.now();
       track('demo_start', { demo: this.id });
     }
-    const typing = this.typing();
+    let typing = this.typing();
     this.voice?.thinking();
     let r: ApiReply | null = null;
     let status = 0;
     try {
-      const ts = this.session ? '' : await this.ts.token();
+      let ts = this.session ? '' : await this.ts.token();
+      if (!ts && this.ts.needsTick) {
+        // Cloudflare wants a tick (S12): ask for it under the composer and carry on by itself once it's done.
+        typing.remove();
+        this.voice?.idle();
+        const note = this.sys('One quick check first: tick the box under the message field and your message goes through.');
+        this.root.querySelector<HTMLElement>('[data-ts]')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        track('demo_tick', { demo: this.id });
+        ts = await this.ts.waitTick();
+        note.remove();
+        typing = this.typing();
+        this.voice?.thinking();
+      }
       const res = await fetch(API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

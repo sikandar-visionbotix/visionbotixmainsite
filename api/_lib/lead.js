@@ -68,6 +68,7 @@ const SUBJECT = {
   estimate: (f) => `estimate ${f.range ? `(${f.range})` : ''}`,
   concierge: (f) => `concierge lead: ${f.topic || 'website'}`,
   checker: (f) => `AI visibility check ${f.range ? `(${f.range})` : ''}`,
+  readiness: (f) => `AI readiness score ${f.range ? `(${f.range})` : ''}`,
   contact: (f) => `enquiry: ${f.topic || 'website'}`,
 };
 
@@ -123,7 +124,7 @@ async function sendWebhook(f, wantsCall) {
   }
 }
 
-const FORM_LABEL = { estimate: 'Cost estimator', concierge: 'AI concierge', checker: 'AI visibility checker', contact: 'Contact' };
+const FORM_LABEL = { estimate: 'Cost estimator', concierge: 'AI concierge', checker: 'AI visibility checker', readiness: 'AI readiness score', contact: 'Contact' };
 
 /**
  * Sends a cleaned lead `f` (keys of LIMITS) by email and/or webhook.

@@ -96,7 +96,7 @@ for (const slug of slugs) {
   if ((r.services ?? []).length > 3) errs.push('related.services > 3');
   (r.industries ?? []).forEach((s) => !catalogue.includes(`slug: '${s}', name:`) && errs.push(`related.industries: unknown industry "${s}"`));
   if ((r.industries ?? []).length > 4) errs.push('related.industries > 4');
-  (r.products ?? []).forEach((s) => !['vx-1-ip-encryptor', 'threatiq', 'cyber-range'].includes(s) && errs.push(`related.products: unknown "${s}"`));
+  (r.products ?? []).forEach((s) => !existsSync(`src/content/products/${s}.md`) && errs.push(`related.products: unknown "${s}"`));
   if (!icons.includes(`'${d.icon}'`)) errs.push(`icon "${d.icon}" not in src/lib/icons.ts`);
   for (const [re, what] of banned) {
     const hit = raw.match(re);

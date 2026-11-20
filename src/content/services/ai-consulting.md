@@ -11,7 +11,7 @@ seo:
   description: AI consulting services that start with a 1-week AI Opportunity Audit, with ranked use cases, build-vs-buy advice, data readiness and governance steps.
 keywords:
   primary: AI consulting services
-  secondary: [AI strategy consulting, AI readiness assessment, AI opportunity audit, generative AI consulting, AI governance consulting, EU AI Act readiness]
+  secondary: [AI strategy consulting, AI opportunity audit, generative AI consulting, AI governance consulting, EU AI Act readiness]
 summary: >-
   Visionbotix offers AI consulting services for business leaders who want a clear AI plan. We start with a 1-week AI
   Opportunity Audit: we map your workflows, rank AI use cases by value and risk, check data readiness and recommend
@@ -65,7 +65,7 @@ faq:
   - q: Do we have to build with you after the audit?
     a: No. The plan is yours to use with your own team, another vendor or an off-the-shelf tool. We write it so anyone can act on it, and the credit simply applies if you choose us within 60 days.
   - q: Is our data ready for AI?
-    a: Often more than you think, because many useful projects start with documents, emails and tickets you already have. The data readiness review shows, per use case, what exists, what is missing or messy, and whether you are allowed to use it, so you know what to fix first.
+    a: Often more than you think, because many useful projects start with documents, emails and tickets you already have. The data readiness review shows, per use case, what exists, what is missing or messy, and whether you are allowed to use it, so you know what to fix first. For a quick first read, our free <a class="link" href="/tools/ai-readiness-score/">AI readiness score</a> takes three minutes and shows which of five areas to work on.
   - q: Do you help with AI governance and the EU AI Act?
     a: Yes. We draft an AI use policy, build a register of the AI systems you use, map each to its likely risk tier and set approval and human-oversight steps. This is practical awareness, not legal advice, and we flag where your counsel should review.
   - q: Should we build our own AI or buy a tool?

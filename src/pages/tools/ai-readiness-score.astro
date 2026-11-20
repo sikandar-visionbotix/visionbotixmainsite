@@ -1,0 +1,1051 @@
+---
+/**
+ * /tools/ai-readiness-score/ (S12, D78): free AI readiness assessment. Thirteen questions, scored in the browser
+ * (model in src/data/readiness.ts): a score out of 100 in five weighted dimensions, a band, what to fix first, and up
+ * to three recommended agents (plus a bundle when one fits) with prices from pricing.ts and timelines from the agent
+ * files. Nothing is sent unless the visitor presses "Send my results"; the share link (?r=…) carries the answers.
+ * Without JS the page still explains the dimensions, the weights, the bands and which agent fits which problem.
+ */
+import '@/styles/page-kit.css';
+import '@/styles/forms.css';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Button from '@/components/Button.astro';
+import Icon from '@/components/Icon.astro';
+import Accordion from '@/components/Accordion.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import RelatedReading from '@/components/RelatedReading.astro';
+import { site } from '@/data/site';
+import { agentPrices, audit, bundles, money, priceLabel, projectFrom } from '@/data/pricing';
+import { agents as catalogue } from '@/data/catalogue';
+import { demoForAgent } from '@/data/demos';
+import { getAgents } from '@/lib/agents';
+import { bands, dims, needAgent, questions, scored, type Dim, type MultiQuestion } from '@/data/readiness';
+import { abs, ORG_ID, type FaqItem, type Thing } from '@/lib/schema';
+import type { IconName } from '@/lib/icons';
+
+const PATH = '/tools/ai-readiness-score/';
+const entries = await getAgents();
+const timeline = (slug: string) => entries.find((e) => e.id === slug)?.data.timeline ?? '';
+
+/** Everything the result needs about an agent, computed here so the client never holds a price list of its own. */
+const agentData = Object.fromEntries(
+  catalogue.map((a) => {
+    const demo = demoForAgent(a.slug);
+    return [a.slug, { name: a.name, line: a.line, icon: a.icon, href: `/ai-agents/${a.slug}/`, price: priceLabel(a.slug), timeline: timeline(a.slug), demo: demo ? `/demos/${demo.id}/` : null }];
+  }),
+);
+const bundleData = bundles.map((b) => {
+  const setup = b.agents.reduce((s, x) => s + agentPrices[x]!.setup, 0);
+  const monthly = b.agents.reduce((s, x) => s + (agentPrices[x]!.monthly ?? 0), 0);
+  return {
+    slug: b.slug,
+    name: b.name,
+    agents: b.agents,
+    price: `From ${money(b.setup)} + ${money(b.monthly)}/mo`,
+    separate: `${money(setup)} + ${money(monthly)}/mo bought separately`,
+  };
+});
+const clientData = {
+  agents: agentData,
+  bundles: bundleData,
+  audit: { name: audit.name, price: money(audit.price), duration: audit.duration, note: audit.note },
+  customAgent: money(projectFrom.customAgent),
+  booking: site.contact.bookingUrl ?? '/contact/',
+};
+
+const needsQ = questions.find((q): q is MultiQuestion => q.kind === 'multi')!;
+const startTable = needsQ.options.map((o) => ({ problem: o.label, slug: needAgent[o.key], ...agentData[needAgent[o.key]]! }));
+const cheapest = Object.entries(agentPrices)
+  .filter(([, p]) => p.monthly)
+  .sort((a, b) => a[1].setup - b[1].setup)[0]!;
+const cheapestName = catalogue.find((a) => a.slug === cheapest[0])!.name;
+const receptionist = agentPrices['ai-receptionist']!;
+
+const dimIcon: Record<Dim, IconName> = { process: 'list-checks', knowledge: 'book-open', systems: 'plug', payoff: 'chart-line', people: 'users' };
+const dimList = (Object.keys(dims) as Dim[]).map((d) => ({ key: d, ...dims[d], qs: scored.filter((q) => q.dim === d).map((q) => q.q) }));
+const bandRows = bands.map((b, i) => ({ ...b, max: (bands[i + 1]?.min ?? 101) - 1 }));
+
+const faqs: FaqItem[] = [
+  {
+    q: 'What is an AI readiness assessment?',
+    a: 'An AI readiness assessment checks whether a business has what AI agents and automation need to work: clear processes, knowledge and records an AI can read, tools it can connect to, enough volume or value to pay off, and someone to own it. This free version asks 13 questions and gives a score out of 100, what to fix first, and which agents fit the problems you pick. It takes about three minutes.',
+  },
+  {
+    q: 'How is the AI readiness score calculated?',
+    a: `Nine of the questions are scored from 0 to 3 points. They fall into five dimensions with fixed weights: clear processes ${dims.process.weight}%, knowledge and records ${dims.knowledge.weight}%, connected tools ${dims.systems.weight}%, volume and value ${dims.payoff.weight}%, and ownership and comfort ${dims.people.weight}%. Each dimension scores its share of the possible points, and the total is the weighted sum. The other four questions (your sector, team size, where you lose time, and sensitive data) do not change the score; they choose the recommendations.`,
+  },
+  {
+    q: 'What score do I need before using AI agents?',
+    a: `There is no pass mark. Under ${bands[1].min} means a little groundwork, such as writing down one process and its answers, will make the first agent work much better. From ${bands[1].min} to ${bands[2].min - 1}, a first agent on your biggest leak makes sense now. ${bands[2].min} and above means you can run several agents together or connect AI to your own systems. Many small businesses start with a packaged agent that needs little preparation, such as an AI receptionist for missed calls.`,
+  },
+  {
+    q: 'Which AI agent should a small business start with?',
+    a: `Start where you lose the most time or money and where the rules are clear. Missed calls point to a <a class="link" href="/ai-agents/ai-receptionist/">Receptionist Agent</a>; slow replies to new leads to a <a class="link" href="/ai-agents/ai-booking-agent/">Booking Agent</a>; the same questions every day to a <a class="link" href="/ai-agents/ai-customer-support-agent/">Support Agent</a>. The table on this page maps 14 common problems to the agent built for each, with prices and timelines.`,
+  },
+  {
+    q: 'How much does a first AI agent cost?',
+    a: `Our packaged agents start at ${money(cheapest[1].setup)} setup and ${money(cheapest[1].monthly!)}/month (the ${cheapestName}). An AI receptionist starts at ${money(receptionist.setup)} setup and ${money(receptionist.monthly!)}/month. The monthly fee covers hosting, monitoring, weekly tuning and a fair-use volume. If you are not sure where to start, the ${audit.name} (${money(audit.price)}, ${audit.duration}) maps your options and is credited in full if you go ahead within 60 days. All prices are on the <a class="link" href="/pricing/">pricing page</a>.`,
+  },
+  {
+    q: 'Do I need clean data before I can use AI?',
+    a: 'Not for most first agents. A receptionist, booking or review agent works from a short brief: your services, prices, opening hours and booking rules, which setup writes up with you. Agents that work on your records, such as a data analyst or document agent, do need consistent data, and the readiness score tells you when that is the gap to close first.',
+  },
+  {
+    q: 'What happens to my answers?',
+    a: 'The quiz runs entirely in your browser. Your answers are not sent anywhere unless you press “Send my results”, and the share link holds them in the address itself, so anyone you send it to sees the same result. See the <a class="link" href="/privacy/#free-tools">privacy policy</a>.',
+  },
+];
+
+const app: Thing = {
+  '@type': 'WebApplication',
+  '@id': `${abs(PATH)}#app`,
+  name: 'AI readiness score',
+  url: abs(PATH),
+  description: 'Free AI readiness assessment for small and mid-sized businesses: 13 questions, a score out of 100 across five dimensions, what to fix first, and which AI agents to start with, with prices.',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Any (runs in the browser)',
+  isAccessibleForFree: true,
+  offers: { '@type': 'Offer', price: 0, priceCurrency: 'USD' },
+  publisher: { '@id': ORG_ID },
+};
+---
+
+<BaseLayout
+  seo={{
+    title: 'Free AI Readiness Assessment for Your Business',
+    description: 'How ready is your business for AI agents? 13 questions, a score out of 100, what to fix first and which agents to start with, with prices. Free, 3 minutes.',
+  }}
+  schema={[app]}
+  exitOffer={false}
+>
+  <section class="container pk-hero ars-hero" data-compact aria-labelledby="ars-title">
+    <div class="pk-copy">
+      <Breadcrumbs items={[{ name: 'Free tools', href: '/tools/' }, { name: 'AI readiness score', href: PATH }]} />
+      <p class="eyebrow">Free tool</p>
+      <h1 id="ars-title" class="pk-title">How ready is your business for AI agents?</h1>
+      <p class="lead pk-lead">
+        This free AI readiness assessment asks 13 questions about your processes, knowledge, tools, volume and team. You get a score out of 100, the two things to fix first, and the agents that fit
+        the problems you pick, with prices and timelines.
+      </p>
+      <ul role="list" class="pk-facts">
+        <li><Icon name="clock" size={16} /> About 3 minutes</li>
+        <li><Icon name="lock" size={16} /> Runs in your browser, nothing sent unless you choose</li>
+        <li><Icon name="badge-check" size={16} /> Free, no sign-up</li>
+      </ul>
+    </div>
+
+    <!-- ============ The quiz (driven by the script) ============ -->
+    <div class="ars-quiz glass-strong" data-ars aria-live="off">
+      <div class="ars-intro" data-ars-intro>
+        <div>
+          <p class="ars-intro-t">Thirteen questions. Pick the answer closest to how things are today, not how you would like them to be.</p>
+          <p class="small muted">You can go back and change any answer.</p>
+        </div>
+        <Button icon="arrow-right" data-ars-start disabled>Start the assessment</Button>
+        <noscript><p class="small">The quiz needs JavaScript. How the score works is explained below.</p></noscript>
+      </div>
+
+      <div class="ars-steps" data-ars-steps hidden>
+        <div class="ars-progress">
+          <span class="mono small muted" data-ars-count>Question 1 of {questions.length}</span>
+          <span class="ars-track" aria-hidden="true"><span class="ars-fill" data-ars-fill></span></span>
+        </div>
+        {
+          questions.map((q, i) => (
+            <div class="ars-step" data-ars-step={q.id} data-kind={q.kind} hidden role="group" aria-labelledby={`ars-q-${q.id}`}>
+              <h2 id={`ars-q-${q.id}`} class="ars-q" tabindex="-1">
+                {q.q}
+              </h2>
+              {q.hint && <p class="small muted ars-hint">{q.hint}</p>}
+              <ul role="list" class:list={['ars-opts', { 'ars-opts-multi': q.kind === 'multi', 'ars-opts-wide': q.options.length > 4 }]}>
+                {q.options.map((o, j) => (
+                  <li>
+                    <button type="button" class="ars-opt" data-opt={j} aria-pressed="false">
+                      <span class="ars-tick" aria-hidden="true">
+                        <Icon name="check" size={14} strokeWidth={3} />
+                      </span>
+                      <span>{o.label}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <div class="ars-nav">
+                {i > 0 ? (
+                  <Button variant="ghost" size="sm" iconLeading="arrow-left" data-ars-back>
+                    Back
+                  </Button>
+                ) : (
+                  <span />
+                )}
+                {q.kind === 'multi' && (
+                  <Button size="sm" icon="arrow-right" data-ars-next>
+                    Next
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Result (filled by the script) ============ -->
+  <section class="container ars-result" data-ars-result hidden aria-labelledby="arr-title">
+    <div class="ars-top">
+      <div class="ars-score glass-strong">
+        <div class="ars-ring" data-ars-ring style="--p: 0">
+          <span class="ars-num" data-ars-score>0</span>
+          <span class="ars-of">/100</span>
+        </div>
+        <div>
+          <p class="eyebrow">AI readiness score</p>
+          <h2 id="arr-title" class="ars-band" tabindex="-1" data-ars-band></h2>
+          <p class="small muted" data-ars-line></p>
+        </div>
+        <ul role="list" class="ars-dims" data-ars-dims></ul>
+      </div>
+
+      <div class="ars-fix glass-subtle">
+        <h3 class="h4" data-ars-fix-title>Work on these first</h3>
+        <ol class="ars-fixlist" data-ars-fixes></ol>
+        <p class="small muted" data-ars-data-note hidden></p>
+        <div class="ars-tools">
+          <Button variant="ghost" size="sm" iconLeading="copy" data-ars-copy>Copy link to your results</Button>
+          <Button variant="ghost" size="sm" iconLeading="rotate-ccw" data-ars-again>Start again</Button>
+        </div>
+      </div>
+    </div>
+
+    <div class="ars-recs">
+      <div class="ars-recs-head">
+        <p class="eyebrow">Where to start</p>
+        <h3 class="h3" data-ars-recs-title>Agents for the problems you picked</h3>
+      </div>
+      <ul role="list" class="ars-cards" data-ars-cards></ul>
+      <div class="ars-bundle glass-subtle" data-ars-bundle hidden></div>
+    </div>
+
+    <div class="ars-next glass-strong">
+      <div>
+        <p class="eyebrow">Next step</p>
+        <h3 class="h3" data-ars-next-title></h3>
+        <p class="muted" data-ars-next-text></p>
+        <div class="ars-ctas">
+          <Button href={clientData.booking} icon="calendar-check" data-event="book_call" data-event-location="readiness-result">Book a free strategy call</Button>
+          <Button href="/pricing/#audit" variant="glass" icon="arrow-right" data-ars-second data-event="readiness_cta" data-event-location="readiness-next">See the AI audit</Button>
+        </div>
+      </div>
+
+      <form class="ars-send" data-ars-send data-turnstile={site.turnstile.siteKey ?? undefined} novalidate>
+        <p class="ars-send-title"><Icon name="mail" size={16} /> Send my results to your team</p>
+        <div class="field">
+          <label for="r-name">Name</label>
+          <input id="r-name" name="name" autocomplete="name" required maxlength="120" />
+          <p class="field-err" id="re-name" hidden></p>
+        </div>
+        <div class="field">
+          <label for="r-email">Work email</label>
+          <input id="r-email" name="email" type="email" autocomplete="email" required maxlength="200" />
+          <p class="field-err" id="re-email" hidden></p>
+        </div>
+        <div class="field">
+          <label for="r-company">Company or website <span class="opt">optional</span></label>
+          <input id="r-company" name="company" autocomplete="organization" maxlength="160" />
+        </div>
+        <div class="ct-hp" aria-hidden="true">
+          <label for="r-website">Website</label>
+          <input id="r-website" name="website" tabindex="-1" autocomplete="off" />
+        </div>
+        <div data-ts-slot></div>
+        <Button type="submit" variant="glass" icon="send-horizontal" block>Send my results</Button>
+        <p class="small subtle">An engineer reads them and replies within one business day with a suggested first step. <a class="link" href="/privacy/">Privacy</a></p>
+        <p class="small" role="status" aria-live="polite" data-ars-send-status></p>
+      </form>
+      <div class="ars-sent" data-ars-sent hidden tabindex="-1">
+        <Icon name="mail-check" size={22} />
+        <p><strong>Sent.</strong> An engineer will reply within one business day.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ What it measures (static, also for search and AI answers) ============ -->
+  <Section id="dimensions" eyebrow="What the score measures" title="Five things decide whether an AI agent works in your business." lead="Each dimension has a fixed weight. The questions are the same for every business, so you can retake it in three months and compare." space="tight">
+    <ul role="list" class="pk-cards" data-min="wide" data-stagger>
+      {
+        dimList.map((d) => (
+          <li class="pk-card glass-subtle">
+            <span class="ars-dim-top">
+              <span class="pk-icon" aria-hidden="true">
+                <Icon name={dimIcon[d.key]} size={20} />
+              </span>
+              <span class="mono small ars-weight">{d.weight}% of the score</span>
+            </span>
+            <h3 class="h4">{d.label}</h3>
+            <p class="small muted">{d.what}</p>
+            <ul role="list" class="pk-checks small">
+              {d.qs.map((q) => (
+                <li>
+                  <Icon name="circle-help" size={14} /> {q}
+                </li>
+              ))}
+            </ul>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section id="bands" eyebrow="How to read it" title="What your score means." width="narrow" space="tight">
+    <div class="pk-md ars-table">
+      <table>
+        <caption class="visually-hidden">AI readiness score bands</caption>
+        <thead><tr><th scope="col">Score</th><th scope="col">Band</th><th scope="col">What to do</th></tr></thead>
+        <tbody>
+          {
+            bandRows.map((b) => (
+              <tr>
+                <td class="mono ars-nowrap">
+                  {b.min}–{b.max}
+                </td>
+                <th scope="row">{b.label}</th>
+                <td>{b.line}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted ars-note">
+      The total is the weighted sum of the five dimensions. Your sector, team size, the problems you pick and whether you handle sensitive data do not change the score; they choose which agents we suggest and the notes you see.
+    </p>
+  </Section>
+
+  <Section id="where-to-start" eyebrow="Reference" title="Which AI agent fits which problem." lead="The 14 problems the assessment asks about, the agent built for each, and what it costs. Prices are our public “from” prices; your fixed quote follows a free call." space="tight">
+    <div class="pk-md ars-table ars-wide glass-subtle">
+      <table>
+        <caption class="visually-hidden">Common business problems and the AI agent for each, with prices and timelines</caption>
+        <thead><tr><th scope="col">Where you lose time or money</th><th scope="col">Agent</th><th scope="col">From</th><th scope="col">Timeline</th><th scope="col">Try it</th></tr></thead>
+        <tbody>
+          {
+            startTable.map((r) => (
+              <tr>
+                <td>{r.problem}</td>
+                <th scope="row">
+                  <a class="link" href={r.href}>
+                    {r.name}
+                  </a>
+                </th>
+                <td class="ars-nowrap">{r.price?.replace(/^From /, '')}</td>
+                <td>{r.timeline}</td>
+                <td>{r.demo ? <a class="link" href={r.demo}>Live demo</a> : '—'}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </Section>
+
+  <Section id="faq" eyebrow="FAQ" title="AI readiness questions." width="narrow" align="center">
+    <Accordion items={faqs} schema name="ars-faq" />
+  </Section>
+
+  <RelatedReading />
+
+  <CtaBand title="Want a second opinion on your score?" text="Book a free 30-minute call. We look at your answers with you and suggest the first agent, with a fixed quote within 24 hours." location="readiness-final" />
+</BaseLayout>
+
+<script type="application/json" id="ars-data" set:html={JSON.stringify(clientData)} />
+
+<script>
+  import { attachLead, track } from '@/scripts/lead';
+  import { bandFor, bundleFor, decode, dimScores, dims, encode, isComplete, questions, recommend, totalScore, weakest, type Answers, type Dim, type MultiQuestion } from '@/data/readiness';
+
+  interface AgentInfo {
+    name: string;
+    line: string;
+    href: string;
+    price: string | null;
+    timeline: string;
+    demo: string | null;
+  }
+  interface Data {
+    agents: Record<string, AgentInfo>;
+    bundles: { slug: string; name: string; agents: string[]; price: string; separate: string }[];
+    audit: { name: string; price: string; duration: string; note: string };
+    customAgent: string;
+    booking: string;
+  }
+
+  const root = document.querySelector<HTMLElement>('[data-ars]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const data = JSON.parse(document.getElementById('ars-data')!.textContent!) as Data;
+    const $ = <T extends HTMLElement = HTMLElement>(sel: string, el: ParentNode = document) => el.querySelector<T>(sel)!;
+    const setLabel = (btn: HTMLElement, text: string) => (btn.querySelector('.btn-label')!.textContent = text);
+    const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+    const steps = [...root.querySelectorAll<HTMLElement>('[data-ars-step]')];
+    const result = $('[data-ars-result]');
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let answers: Answers = {};
+    let started = false;
+
+    const show = (i: number, focus = true) => {
+      steps.forEach((s, j) => (s.hidden = j !== i));
+      $('[data-ars-count]', root).textContent = `Question ${i + 1} of ${steps.length}`;
+      $('[data-ars-fill]', root).style.inlineSize = `${(i / steps.length) * 100}%`;
+      const q = questions[i]!;
+      const v = answers[q.id];
+      steps[i]!.querySelectorAll<HTMLButtonElement>('[data-opt]').forEach((b) => {
+        const n = Number(b.dataset.opt);
+        b.setAttribute('aria-pressed', String(Array.isArray(v) ? v.includes(n) : v === n));
+      });
+      if (q.kind === 'multi') syncMulti(steps[i]!, q);
+      if (focus) $<HTMLElement>('.ars-q', steps[i]).focus({ preventScroll: true });
+      if (focus && root.getBoundingClientRect().top < 0) root.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+    };
+
+    const syncMulti = (step: HTMLElement, q: MultiQuestion) => {
+      const v = (answers[q.id] as number[] | undefined) ?? [];
+      step.querySelectorAll<HTMLButtonElement>('[data-opt]').forEach((b) => {
+        const on = v.includes(Number(b.dataset.opt));
+        b.disabled = !on && v.length >= q.max;
+      });
+      setLabel($('[data-ars-next]', step), v.length ? 'Next' : 'Skip');
+    };
+
+    const begin = () => {
+      $('[data-ars-intro]', root).hidden = true;
+      $('[data-ars-steps]', root).hidden = false;
+      if (!started) {
+        started = true;
+        track('readiness_start');
+      }
+      show(0);
+    };
+    const startBtn = $<HTMLButtonElement>('[data-ars-start]', root);
+    startBtn.disabled = false;
+    startBtn.addEventListener('click', begin);
+
+    steps.forEach((step, i) => {
+      const q = questions[i]!;
+      step.querySelectorAll<HTMLButtonElement>('[data-opt]').forEach((b) =>
+        b.addEventListener('click', () => {
+          const n = Number(b.dataset.opt);
+          if (q.kind === 'multi') {
+            const v = new Set((answers[q.id] as number[] | undefined) ?? []);
+            if (v.has(n)) v.delete(n);
+            else if (v.size < q.max) v.add(n);
+            answers[q.id] = [...v].sort((x, y) => x - y);
+            b.setAttribute('aria-pressed', String(v.has(n)));
+            syncMulti(step, q);
+            return;
+          }
+          answers[q.id] = n;
+          step.querySelectorAll<HTMLButtonElement>('[data-opt]').forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+          // A short pause so the choice is visible before the next question.
+          setTimeout(() => advance(i), reduce ? 0 : 180);
+        }),
+      );
+      step.querySelector('[data-ars-back]')?.addEventListener('click', () => show(i - 1));
+      step.querySelector('[data-ars-next]')?.addEventListener('click', () => {
+        if (!Array.isArray(answers[q.id])) answers[q.id] = [];
+        advance(i);
+      });
+    });
+
+    const advance = (i: number) => {
+      if (i + 1 < steps.length) return show(i + 1);
+      finish(true);
+    };
+
+    // ---------- result ----------
+    const finish = (fresh: boolean) => {
+      const score = totalScore(answers);
+      const band = bandFor(score);
+      const ds = dimScores(answers);
+      const level = score >= 70 ? 'good' : score >= 40 ? 'ok' : 'warn';
+      const code = encode(answers);
+      history.replaceState(null, '', `?r=${code}`);
+
+      $('[data-ars-steps]', root).hidden = true;
+      $('[data-ars-intro]', root).hidden = false;
+      setLabel($('[data-ars-start]', root), 'Change my answers');
+      $('.ars-intro-t', root).textContent = 'Your results are below. You can change any answer and the result updates.';
+
+      const ring = $('[data-ars-ring]');
+      ring.dataset.band = level;
+      ring.style.setProperty('--p', String(score));
+      $('[data-ars-score]').textContent = String(score);
+      $('[data-ars-band]').textContent = band.label;
+      $('[data-ars-line]').textContent = band.line;
+      $('[data-ars-dims]').innerHTML = (Object.keys(dims) as Dim[])
+        .map((d) => {
+          const p = Math.round(ds[d] * 100);
+          const lv = p >= 67 ? 'good' : p >= 40 ? 'ok' : 'warn';
+          return `<li><span class="ars-d-head"><span>${esc(dims[d].label)} <span class="subtle">· ${dims[d].weight}%</span></span><span class="mono">${p}%</span></span><span class="ars-bar" data-band="${lv}" style="--w:${p}%"></span></li>`;
+        })
+        .join('');
+
+      // What to fix first, or what is already strong.
+      const weak = weakest(answers);
+      $('[data-ars-fix-title]').textContent = weak.length ? 'Work on these first' : 'Already in good shape';
+      const strong = (Object.keys(dims) as Dim[]).filter((d) => !weak.includes(d)).sort((x, y) => ds[y] - ds[x]);
+      $('[data-ars-fixes]').innerHTML = (weak.length ? weak.map((d) => [dims[d].label, dims[d].fix]) : strong.slice(0, 2).map((d) => [dims[d].label, dims[d].strong]))
+        .map(([t, b]) => `<li><p class="ars-fix-t"><strong>${esc(t!)}</strong></p><p class="small muted">${esc(b!)}</p></li>`)
+        .join('');
+      const dataNote = $('[data-ars-data-note]');
+      dataNote.hidden = answers.data !== 2;
+      dataNote.innerHTML = `<strong>Sensitive data:</strong> anything involving money, health or identity runs behind approval gates, and we go through where data is stored and who can see it before launch. For an AI tool you already run, the <a class="link" href="/ai-agents/ai-security-audit/">Guardrail &amp; Eval Audit</a> tests it for leaks and prompt injection.`;
+
+      // Recommended agents.
+      const recs = recommend(answers);
+      const anyNeed = recs.some((r) => r.reason === 'need');
+      $('[data-ars-recs-title]').textContent = anyNeed ? 'Agents for the problems you picked' : 'Where businesses like yours usually start';
+      $('[data-ars-cards]').innerHTML = recs
+        .map((r, i) => {
+          const a = data.agents[r.slug];
+          if (!a) return '';
+          return `<li class="ars-card glass-subtle${i === 0 ? ' is-first' : ''}">
+            ${i === 0 ? '<span class="ars-badge mono small">Start here</span>' : ''}
+            <h4 class="h4"><a href="${a.href}">${esc(a.name)}</a></h4>
+            <p class="small muted">${esc(a.line)}</p>
+            <p class="ars-price"><strong>${esc(a.price ?? '')}</strong><br /><span class="small subtle">${esc(a.timeline)}</span></p>
+            <p class="small ars-why">${r.reason === 'need' ? 'Matches a problem you picked.' : 'A common first agent in your sector.'}</p>
+            ${r.prep ? `<p class="small ars-prep"><strong>To prepare:</strong> ${esc(r.prep)}</p>` : ''}
+            <span class="ars-links">${a.demo ? `<a class="link small" href="${a.demo}" data-event="readiness_cta" data-event-location="readiness-demo">Try it live</a>` : ''}<a class="link small" href="${a.href}">How it works</a></span>
+          </li>`;
+        })
+        .join('');
+      const bslug = bundleFor(answers, data.bundles);
+      const bundle = data.bundles.find((b) => b.slug === bslug);
+      const bEl = $('[data-ars-bundle]');
+      bEl.hidden = !bundle;
+      if (bundle)
+        bEl.innerHTML = `<p><strong>${esc(bundle.name)} bundle:</strong> ${bundle.agents.map((s) => esc(data.agents[s]?.name ?? s)).join(', ')}. ${esc(bundle.price)}, against ${esc(bundle.separate)}. <a class="link" href="/pricing/#bundles" data-event="readiness_cta" data-event-location="readiness-bundle">See bundles</a></p>`;
+
+      // Next step by band.
+      const first = recs[0] ? data.agents[recs[0].slug] : null;
+      const second = $<HTMLAnchorElement>('[data-ars-second]');
+      if (band.key === 'groundwork') {
+        $('[data-ars-next-title]').textContent = 'Do the groundwork first, or let us do it with you.';
+        $('[data-ars-next-text]').textContent = `The ${data.audit.name} (${data.audit.price}, ${data.audit.duration}) maps your processes, knowledge and tools, picks the first agent and writes its rules with you. ${data.audit.note}.`;
+        second.href = '/pricing/#audit';
+        setLabel(second, 'See the AI audit');
+      } else if (band.key === 'first' && first) {
+        $('[data-ars-next-title]').textContent = `Put the ${first.name} to work first.`;
+        $('[data-ars-next-text]').textContent = `${first.price}. ${first.timeline}. On a free call we confirm it fits, agree the rules and the hand-offs to your team, and send a fixed quote within 24 hours.`;
+        second.href = first.demo ?? first.href;
+        setLabel(second, first.demo ? `Try the ${first.name} live` : `See the ${first.name}`);
+      } else {
+        $('[data-ars-next-title]').textContent = bundle ? `Start with the ${bundle.name}.` : 'Run a team of agents, or connect AI to your own systems.';
+        $('[data-ars-next-text]').textContent = bundle
+          ? `Three agents that work together, ${bundle.price}. Or, if your own systems are the bottleneck, custom agents start from ${data.customAgent}.`
+          : `Your basics are in place. Combine the agents above, or build a custom agent on your own systems (from ${data.customAgent}, fixed price after scoping).`;
+        second.href = bundle ? '/pricing/#bundles' : '/services/ai-agent-development/';
+        setLabel(second, bundle ? 'See bundles' : 'Custom AI agents');
+      }
+
+      result.hidden = false;
+      if (fresh) {
+        track('readiness_complete', { score, band: band.key });
+        $('[data-ars-band]').focus({ preventScroll: true });
+        result.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+      }
+      last = { score, band: band.label, code };
+    };
+
+    let last: { score: number; band: string; code: string } | null = null;
+
+    $('[data-ars-again]').addEventListener('click', () => {
+      answers = {};
+      history.replaceState(null, '', location.pathname);
+      result.hidden = true;
+      setLabel($('[data-ars-start]', root), 'Start the assessment');
+      begin();
+    });
+    $('[data-ars-copy]').addEventListener('click', async (e) => {
+      const b = e.currentTarget as HTMLButtonElement;
+      try {
+        await navigator.clipboard.writeText(location.href);
+        setLabel(b, 'Link copied');
+        setTimeout(() => setLabel(b, 'Copy link to your results'), 2000);
+      } catch {}
+    });
+
+    const shared = new URL(location.href).searchParams.get('r');
+    const restored = shared ? decode(shared) : null;
+    if (restored && isComplete(restored)) {
+      answers = restored;
+      finish(false);
+    }
+
+    // ---------- "Send my results" ----------
+    const send = $<HTMLFormElement>('[data-ars-send]');
+    const status = $('[data-ars-send-status]');
+    const lead = attachLead(send, 'readiness');
+    const needsQ = questions.find((q): q is MultiQuestion => q.kind === 'multi')!;
+    const optLabel = (id: string) => {
+      const q = questions.find((x) => x.id === id)!;
+      const v = answers[id];
+      return Array.isArray(v) ? v.map((i) => q.options[i]?.label).join('; ') || 'none picked' : typeof v === 'number' ? q.options[v]?.label : '';
+    };
+    const summary = () => {
+      const ds = dimScores(answers);
+      return [
+        `AI readiness score: ${last!.score}/100 (${last!.band})`,
+        ...(Object.keys(dims) as Dim[]).map((d) => `${dims[d].label}: ${Math.round(ds[d] * 100)}%`),
+        '',
+        ...questions.map((q) => `${q.q} ${q.id === needsQ.id ? optLabel(q.id) : `→ ${optLabel(q.id)}`}`),
+        '',
+        `Suggested: ${recommend(answers)
+          .map((r) => data.agents[r.slug]?.name)
+          .join(', ')}`,
+        `Results: ${location.href}`,
+      ].join('\n');
+    };
+    send.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      if (!last) return;
+      const d = Object.fromEntries([...new FormData(send)].map(([k, v]) => [k, String(v)]));
+      const errs: Record<string, string> = {};
+      if ((d.name ?? '').trim().length < 2) errs.name = 'Please enter your name.';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test((d.email ?? '').trim())) errs.email = 'Please enter a valid email address.';
+      for (const f of ['name', 'email']) {
+        const p = document.getElementById(`re-${f}`)!;
+        p.textContent = errs[f] ?? '';
+        p.hidden = !errs[f];
+        (send.elements.namedItem(f) as HTMLInputElement).toggleAttribute('aria-invalid', !!errs[f]);
+      }
+      const firstErr = ['name', 'email'].find((f) => errs[f]);
+      if (firstErr) return (send.elements.namedItem(firstErr) as HTMLElement).focus();
+      const body: Record<string, string> = { ...d, form: 'readiness', topic: 'AI readiness score', range: `${last.score}/100 · ${last.band}`.slice(0, 120), message: summary() };
+      const btn = send.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+      btn.disabled = true;
+      status.textContent = 'Sending…';
+      try {
+        const token = await lead.tokenOrTick(() => (status.textContent = 'One quick check first: tick the box above the button and it sends.'));
+        if (token) body['cf-turnstile-response'] = token;
+        const r = await fetch('/api/contact/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const j = await r.json().catch(() => ({}));
+        if (!(r.ok && j.ok)) throw new Error('fallback');
+        track('readiness_send', { score: last.score });
+        try {
+          sessionStorage.setItem('vbx-lead', '1');
+        } catch {}
+        send.hidden = true;
+        const done = $('[data-ars-sent]');
+        done.hidden = false;
+        done.focus();
+      } catch {
+        const a = Object.assign(document.createElement('a'), {
+          className: 'link',
+          href: `mailto:info@visionbotix.com?subject=${encodeURIComponent(`AI readiness score: ${last.score}/100`)}&body=${encodeURIComponent(body.message!)}`,
+          textContent: 'send them by email instead',
+        });
+        status.replaceChildren('We could not send them just now. Please ', a, '.');
+        track('form_fallback', { form: 'readiness' });
+        lead.reset();
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  }
+</script>
+
+<style is:global>
+  /* Global on purpose: much of the result is built by the script; every class is ars-prefixed. */
+  :root {
+    --ars-ok: #4ade80;
+    --ars-lime: #a3e635;
+    --ars-amber: #fbbf24;
+  }
+  [data-theme='light'] {
+    --ars-ok: #15803d;
+    --ars-lime: #4d7c0f;
+    --ars-amber: #b45309;
+  }
+  .ars-hero {
+    display: grid;
+    gap: var(--space-5);
+  }
+  .ars-quiz {
+    --glass-radius: var(--radius-xl);
+    display: grid;
+    padding: clamp(1.1rem, 0.8rem + 1.2vw, 1.75rem);
+    max-inline-size: 48rem;
+    scroll-margin-block-start: calc(var(--header-h) + 1rem);
+  }
+  .ars-intro {
+    display: grid;
+    gap: var(--space-4);
+    justify-items: start;
+  }
+  .ars-intro[hidden],
+  .ars-steps[hidden],
+  .ars-step[hidden] {
+    display: none;
+  }
+  .ars-intro-t {
+    font-weight: 600;
+  }
+  .ars-steps {
+    display: grid;
+    gap: var(--space-4);
+  }
+  .ars-progress {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .ars-track {
+    display: block;
+    block-size: 4px;
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--fg) 10%, transparent);
+    overflow: hidden;
+  }
+  .ars-fill {
+    display: block;
+    block-size: 100%;
+    inline-size: 0;
+    background: var(--btn-primary-bg);
+    transition: inline-size 0.3s var(--ease-out, ease);
+  }
+  .ars-step {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .ars-q {
+    font-size: var(--step-1);
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+  .ars-q:focus {
+    outline: none;
+  }
+  .ars-hint {
+    margin-block-start: calc(-1 * var(--space-2));
+  }
+  .ars-opts {
+    display: grid;
+    gap: var(--space-2);
+  }
+  @media (min-width: 40rem) {
+    .ars-opts-wide {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .ars-opt {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    inline-size: 100%;
+    min-block-size: 3rem;
+    padding: 0.7rem 0.95rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--bg-elevated) 55%, transparent);
+    color: var(--fg);
+    font: inherit;
+    font-size: var(--step--1);
+    text-align: start;
+    cursor: pointer;
+    transition:
+      border-color 0.15s,
+      background-color 0.15s;
+  }
+  .ars-opt:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  }
+  .ars-opt:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .ars-opt[aria-pressed='true'] {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, var(--bg-elevated));
+  }
+  .ars-opt:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .ars-tick {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 1.3rem;
+    block-size: 1.3rem;
+    border: 1.5px solid var(--border-strong, var(--border));
+    border-radius: 50%;
+    color: transparent;
+  }
+  .ars-opts-multi .ars-tick {
+    border-radius: 0.35rem;
+  }
+  .ars-opt[aria-pressed='true'] .ars-tick {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .ars-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+    min-block-size: 2.5rem;
+  }
+
+  /* ---------- result ---------- */
+  .ars-result {
+    display: grid;
+    gap: var(--space-5);
+    padding-block: var(--space-6);
+    scroll-margin-block-start: calc(var(--header-h) + 1rem);
+  }
+  .ars-result[hidden] {
+    display: none;
+  }
+  .ars-top {
+    display: grid;
+    gap: var(--space-5);
+  }
+  @media (min-width: 60rem) {
+    .ars-top {
+      grid-template-columns: 1.15fr 1fr;
+    }
+  }
+  .ars-score {
+    --glass-radius: var(--radius-xl);
+    display: grid;
+    gap: var(--space-4) var(--space-5);
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    align-content: start;
+    padding: clamp(1.1rem, 0.8rem + 1.2vw, 1.75rem);
+  }
+  .ars-ring {
+    --c: var(--ars-amber);
+    position: relative;
+    display: grid;
+    place-items: center;
+    inline-size: clamp(6.5rem, 5rem + 5vw, 8.5rem);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: conic-gradient(var(--c) calc(var(--p) * 1%), color-mix(in srgb, var(--fg) 10%, transparent) 0);
+  }
+  .ars-ring::before {
+    content: '';
+    position: absolute;
+    inset: 9px;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+  }
+  .ars-ring > * {
+    position: relative;
+  }
+  .ars-num {
+    font-size: clamp(2rem, 1.5rem + 2vw, 2.75rem);
+    font-weight: 750;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .ars-of {
+    position: absolute;
+    inset-block-end: 24%;
+    font-size: var(--step--1);
+    color: var(--fg-subtle);
+  }
+  .ars-ring[data-band='good'],
+  .ars-bar[data-band='good'] {
+    --c: var(--ars-ok);
+  }
+  .ars-ring[data-band='ok'],
+  .ars-bar[data-band='ok'] {
+    --c: var(--ars-lime);
+  }
+  .ars-band {
+    font-size: var(--step-3);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+  .ars-band:focus {
+    outline: none;
+  }
+  .ars-dims {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: var(--space-3);
+  }
+  .ars-d-head {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    font-size: var(--step--1);
+  }
+  .ars-bar {
+    --c: var(--ars-amber);
+    display: block;
+    block-size: 6px;
+    margin-block-start: 0.35rem;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(var(--c), var(--c)) no-repeat 0 0 / var(--w) 100%, color-mix(in srgb, var(--fg) 10%, transparent);
+  }
+  .ars-fix {
+    display: grid;
+    align-content: start;
+    gap: var(--space-3);
+    padding: clamp(1.1rem, 0.8rem + 1.2vw, 1.75rem);
+  }
+  .ars-fixlist {
+    display: grid;
+    gap: var(--space-4);
+    padding-inline-start: 1.2rem;
+  }
+  .ars-fixlist li::marker {
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .ars-fix-t {
+    margin-block-end: 0.2rem;
+  }
+  .ars-tools,
+  .ars-ctas,
+  .ars-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    align-items: center;
+  }
+  .ars-tools {
+    gap: var(--space-2);
+  }
+  .ars-recs {
+    display: grid;
+    gap: var(--space-4);
+  }
+  .ars-recs-head {
+    display: grid;
+    gap: var(--space-1);
+  }
+  .ars-cards {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  }
+  .ars-card {
+    --glass-radius: var(--radius-lg);
+    position: relative;
+    display: grid;
+    align-content: start;
+    gap: var(--space-2);
+    padding: var(--space-5);
+  }
+  .ars-card.is-first {
+    outline: 1.5px solid color-mix(in srgb, var(--accent) 60%, transparent);
+    outline-offset: -1.5px;
+  }
+  .ars-card h4 a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .ars-card h4 a:hover {
+    text-decoration: underline;
+  }
+  .ars-badge {
+    justify-self: start;
+    padding: 0.1rem 0.55rem;
+    border-radius: var(--radius-pill);
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+  }
+  .ars-price {
+    margin-block-start: var(--space-1);
+  }
+  .ars-why {
+    color: var(--fg-muted);
+  }
+  .ars-prep {
+    padding: 0.55rem 0.75rem;
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--fg) 6%, transparent);
+  }
+  .ars-bundle {
+    padding: var(--space-4) var(--space-5);
+  }
+  .ars-bundle[hidden] {
+    display: none;
+  }
+  .ars-next {
+    --glass-radius: var(--radius-xl);
+    display: grid;
+    gap: var(--space-6);
+    padding: clamp(1.25rem, 0.9rem + 1.5vw, 2rem);
+  }
+  @media (min-width: 60rem) {
+    .ars-next {
+      grid-template-columns: 1.2fr 1fr;
+      align-items: start;
+    }
+  }
+  .ars-next > div:first-child {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .ars-send {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .ars-send[hidden] {
+    display: none;
+  }
+  .ars-send-title {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    font-weight: 600;
+  }
+  .ars-sent {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+  }
+  .ars-sent[hidden] {
+    display: none;
+  }
+  .ars-sent .icon {
+    color: var(--ars-ok);
+    flex: none;
+  }
+
+  /* ---------- static sections ---------- */
+  .ars-dim-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .ars-weight {
+    padding: 0.1rem 0.55rem;
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--fg) 9%, transparent);
+  }
+  .ars-table table {
+    margin: 0;
+  }
+  .ars-wide {
+    overflow-x: auto;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-lg);
+  }
+  .ars-nowrap {
+    white-space: nowrap;
+  }
+  .ars-note {
+    margin-block-start: var(--space-4);
+  }
+</style>

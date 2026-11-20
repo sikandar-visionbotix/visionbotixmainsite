@@ -88,6 +88,7 @@ export async function llmsTxt(full: boolean): Promise<string> {
   L.push('', '## Free tools', '');
   L.push(
     `- [AI visibility checker](${u('/tools/ai-visibility-checker/')}): free check of whether ChatGPT, Claude, Perplexity, Google and Bing can crawl, read and identify a web page (robots.txt per AI crawler, noindex/nosnippet, text without JavaScript, structure, schema), with a score out of 100 and the top fixes. Includes a reference table of AI crawler user agents.`,
+    `- [AI readiness score](${u('/tools/ai-readiness-score/')}): free 13-question AI readiness assessment: a score out of 100 across five weighted dimensions (processes 25%, knowledge and records 20%, connected tools 20%, volume and value 20%, ownership 15%), what to fix first, and which AI agents to start with, with prices. Runs in the browser.`,
     `- [Project cost estimator](${u('/estimate/')}): price range, timeline and cost drivers for apps, websites, SaaS MVPs and AI agents.`,
   );
   L.push('', '## Our own products', '');

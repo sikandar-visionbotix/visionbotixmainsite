@@ -27,7 +27,7 @@ const UI = [
   'cable', 'satellite', 'activity', 'swords', 'gavel', 'hard-drive', 'wifi-off', 'microchip', 'send-horizontal', 'wand-sparkles',
   'arrow-left', 'map', 'heart', 'flask-conical', 'download', 'corner-down-left', 'building', 'scan-search',
   // S6 estimator and exit offer
-  'calculator', 'copy', 'rotate-ccw', 'pencil',
+  'calculator', 'copy', 'rotate-ccw', 'pencil', 'circle-help',
   // S7 live demos
   'heart-pulse', 'phone-off', 'mic-off', 'keyboard', 'wrench', 'shopping-bag', 'maximize-2', 'circle-play', 'ban', 'check-check', 'volume-2', 'user-round',
   // S10 resources

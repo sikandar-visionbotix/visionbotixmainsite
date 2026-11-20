@@ -189,6 +189,8 @@ const budgets = ['Under $15k', '$15k–$40k', '$40k–$80k', '$80k+', 'Not sure 
           disabled={demo.surface === 'sms'}></textarea>
         <button type="submit" class="ld-send" aria-label="Send" data-send disabled={demo.surface === 'sms'}><Icon name="send-horizontal" size={18} /></button>
       </form>
+      {/* Cloudflare's tick box, if it ever needs one, appears right under the composer (also inside the concierge). */}
+      <div class="ld-ts" data-ts></div>
       <p class="ld-foot mono" data-foot>
         Live AI · fictional business · don't share real personal data · <a href="/privacy/#live-ai-demos">how demo chats are handled</a>
       </p>
@@ -235,7 +237,6 @@ const budgets = ['Under $15k', '$15k–$40k', '$40k–$80k', '$80k+', 'Not sure 
     </aside>
   </div>
 
-  <div class="ld-ts" data-ts></div>
   {/* Buttons the script clones (Button styles are scoped, so they must come from the component). */}
   <template data-tpl="a-primary"><Button href="#" size="sm" icon="arrow-right">x</Button></template>
   <template data-tpl="a-glass"><Button href="#" size="sm" variant="glass">x</Button></template>

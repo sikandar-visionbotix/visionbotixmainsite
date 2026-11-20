@@ -286,7 +286,7 @@ const faqs: FaqItem[] = [
       btn.disabled = true;
       status.textContent = 'Sending…';
       try {
-        const token = await lead.token();
+        const token = await lead.tokenOrTick(() => (status.textContent = 'One quick check first: tick the box above the button and it sends.'));
         if (token) d['cf-turnstile-response'] = token;
         const r = await fetch(form.action, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) });
         const j = await r.json().catch(() => ({}));
