@@ -1,0 +1,75 @@
+---
+/**
+ * Links between service × country pages (S11, D75) and their parents: on a country page it lists the agents with a
+ * page for that country; on an agent page it lists the countries. Renders nothing when there are none.
+ */
+import Section from '@/components/Section.astro';
+import Icon from '@/components/Icon.astro';
+import { getEntry } from 'astro:content';
+import { agentItem } from '@/lib/industries';
+import { localFor, localForAgent, localPath } from '@/lib/local';
+
+interface Props {
+  location?: string;
+  agent?: string;
+}
+const { location, agent } = Astro.props;
+const entries = location ? await localFor(location) : agent ? await localForAgent(agent) : [];
+const items = await Promise.all(
+  entries.map(async (e) => {
+    const loc = (await getEntry(e.data.location))!;
+    const a = agentItem(e.data.agent.id);
+    return { href: localPath(e), title: location ? a.name : loc.data.name, line: e.data.tagline, code: loc.data.code };
+  }),
+);
+const title = location ? 'Agents set up for your market.' : 'Set up for your country.';
+---
+
+{
+  items.length > 0 && (
+    <Section id="local" eyebrow={location ? 'Local guides' : 'By country'} title={title} space="tight">
+      <ul role="list" class="ll" data-stagger>
+        {items.map((i) => (
+          <li>
+            <a class="ll-card glass-subtle lift" href={i.href}>
+              <span class="ll-code mono" aria-hidden="true">{i.code}</span>
+              <span class="ll-body">
+                <strong>{i.title}</strong>
+                <span class="small muted">{i.line}</span>
+              </span>
+              <Icon name="arrow-right" size={16} />
+            </a>
+          </li>
+        ))}
+      </ul>
+    </Section>
+  )
+}
+
+<style>
+  .ll {
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+  }
+  .ll-card {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    padding: var(--space-4);
+    color: inherit;
+    text-decoration: none;
+    block-size: 100%;
+  }
+  .ll-body {
+    display: grid;
+    gap: 0.15rem;
+    flex: 1;
+  }
+  .ll-code {
+    padding: 0.1rem 0.4rem;
+    border-radius: var(--radius-xs);
+    background: color-mix(in srgb, var(--fg) 10%, transparent);
+    font-size: 0.75rem;
+  }
+</style>

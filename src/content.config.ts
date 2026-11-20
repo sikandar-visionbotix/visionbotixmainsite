@@ -301,6 +301,42 @@ const locations = defineCollection({
     }),
 });
 
+/* ---------- local offers: service × country pages (S11, D75) ----------
+ * One packaged agent in one country, only where there is unique local substance (PLAN §6.2): local rules with a
+ * source link each, local systems we connect, local setup (numbers, WhatsApp, voices, languages), local use cases.
+ * Files live at src/content/local/<location>/<agent>.md, so the entry id is "<location>/<agent>" and the URL is
+ * /locations/<location>/<agent>/. Prices are computed from pricing.ts in the location's currency (D66); never typed.
+ * Spelling follows the location (D65); scripts/check-local.mjs enforces it plus the content rules. */
+const local = defineCollection({
+  loader: md('local'),
+  schema: base
+    .extend({
+      seo: seo.extend({ title: z.string().max(46) }),
+      location: reference('locations'),
+      agent: reference('agents'),
+      h1: z.string().min(20).max(80),
+      /** Card line on the country and agent pages. */
+      tagline: z.string().min(30).max(110),
+      /** Why businesses in this country want this agent: the local situation, 3–4. */
+      local: z.array(z.object({ title: z.string().max(60), body: z.string().min(80).max(320) })).min(3).max(4),
+      /** Local use cases, 3–5; link an industry page where one fits. */
+      scenarios: z.array(z.object({ who: z.string().max(48), industry: reference('industries').optional(), body: z.string().min(80).max(300) })).min(3).max(5),
+      /** Local rules: what the rule requires and what we put in place, with the official source we read. */
+      rules: z.array(z.object({ name: z.string().max(60), body: z.string().min(80).max(360), source: z.url() })).min(3).max(5),
+      /** Local setup specifics: numbers, WhatsApp account, voices, languages, hours, holidays. */
+      setup: z.array(z.object({ title: z.string().max(60), body: z.string().min(60).max(300) })).min(3).max(5),
+      /** Local systems we connect, by kind (e.g. "Practice software"). Capability claims only. */
+      systems: z.array(z.object({ kind: z.string().max(32), names: z.array(z.string().max(32)).min(1).max(6) })).min(2).max(5),
+      /** Every source opened while writing (rules, market facts). */
+      sources: z.array(z.object({ title: z.string().max(120), url: z.url() })).min(3).max(12),
+      faq: z.array(z.object({ q: z.string().min(8), a: z.string().min(20) })).min(5).max(8),
+    })
+    .refine((d) => d.seo.title.toLowerCase().includes(d.keywords.primary.toLowerCase()), {
+      message: 'seo.title must contain keywords.primary.',
+      path: ['seo', 'title'],
+    }),
+});
+
 /* ---------- work / case studies ----------
  * ANONYMOUS BY DESIGN (owner, 2026-11-19): clients must not be named or linked. There is no client-name field and
  * links are only allowed for our own products. Content files live in a GitHub repo, so never write a client's
@@ -478,4 +514,4 @@ const legal = defineCollection({
   }),
 });
 
-export const collections = { agents, services, industries, locations, work, products, posts, faqs, legal };
+export const collections = { agents, services, industries, locations, local, work, products, posts, faqs, legal };

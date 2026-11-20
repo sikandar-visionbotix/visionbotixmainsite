@@ -50,6 +50,10 @@ Our homepage has a box where you can describe your project to see which of our s
 
 Our cost estimator works out a price range in your browser. Your answers are not sent to us. They are kept only in the page address, so you can bookmark or share the result, unless you choose to send us the breakdown or carry it into the contact form.
 
+### Free tools
+
+Our [AI visibility checker](/tools/ai-visibility-checker/) fetches the public web page you enter, plus that site's robots.txt, sitemap and llms.txt, and shows you a report. To do that, the address you enter is sent to our server. We keep the report in memory for up to 10 minutes so that a repeat check is quick, and our log records only the website's host name and its score, not your IP address. A Cloudflare Turnstile check, as on our forms, keeps automated abuse out, and a per-address limit on checks is enforced with a short-lived counter based on a one-way hash of your IP address. Nothing reaches our team unless you choose to send us the report with your name and email address, in which case it is handled like the contact form.
+
 ### Booking a call
 
 If you book a call with us, the booking is handled by our scheduling provider, Cal.com. It collects the details you enter (such as your name, email address and chosen time) and shares them with us so we can hold the meeting. Your use of the scheduling tool is also governed by that provider's own privacy policy.

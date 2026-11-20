@@ -1,0 +1,117 @@
+---
+/** /tools/ (S11): the free tools in one place: AI visibility checker, cost estimator, live agent demos. */
+import '@/styles/page-kit.css';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Icon from '@/components/Icon.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import { liveDemos } from '@/data/demos';
+import { BOTS } from '../../../api/_check/bots.js';
+import { abs, ORG_ID, type Thing } from '@/lib/schema';
+import type { IconName } from '@/lib/icons';
+
+const tools: { href: string; icon: IconName; name: string; body: string; cta: string; badge: string }[] = [
+  {
+    href: '/tools/ai-visibility-checker/',
+    icon: 'radar',
+    name: 'AI visibility checker',
+    body: `Can ChatGPT, Claude, Perplexity and Google’s AI read and cite your site? Checks robots.txt for ${BOTS.length} AI crawlers, indexing rules, the text AI crawlers see and your entity signals. Score out of 100 and the fixes that matter most.`,
+    cta: 'Check your site',
+    badge: 'New',
+  },
+  {
+    href: '/estimate/',
+    icon: 'calculator',
+    name: 'Project cost estimator',
+    body: 'What will your app, website, SaaS MVP or AI agent cost? Answer up to four questions and get a price range, a timeline and the cost drivers, from our public price list.',
+    cta: 'Estimate a project',
+    badge: '2 minutes',
+  },
+  {
+    href: '/demos/',
+    icon: 'bot',
+    name: 'Live AI agent demos',
+    body: `Talk to ${liveDemos.length} working AI agents (receptionist, WhatsApp, support, SDR, data analyst and more) on sample businesses, with every tool call and approval shown.`,
+    cta: 'Try an agent',
+    badge: `${liveDemos.length} agents`,
+  },
+];
+
+const list: Thing = {
+  '@type': 'CollectionPage',
+  '@id': `${abs('/tools/')}#page`,
+  name: 'Free tools',
+  url: abs('/tools/'),
+  publisher: { '@id': ORG_ID },
+  mainEntity: {
+    '@type': 'ItemList',
+    itemListElement: tools.map((t, i) => ({ '@type': 'ListItem', position: i + 1, url: abs(t.href), name: t.name })),
+  },
+};
+---
+
+<BaseLayout
+  seo={{ title: 'Free AI Tools: Visibility Checker, Estimator', description: 'Free tools from Visionbotix: check whether AI search can read your site, estimate what your app or AI agent will cost, and try 16 live AI agents.' }}
+  schema={[list]}
+>
+  <section class="container pk-hero" data-compact aria-labelledby="tl-title">
+    <div class="pk-copy">
+      <Breadcrumbs items={[{ name: 'Free tools', href: '/tools/' }]} />
+      <p class="eyebrow">Free tools</p>
+      <h1 id="tl-title" class="pk-title">Free tools for AI search, project costs and AI agents.</h1>
+      <p class="lead pk-lead">No sign-up and nothing sent to us unless you choose. Check how AI search sees your website, price a project from our public price list, or try a working AI agent before you talk to anyone.</p>
+    </div>
+  </section>
+
+  <section class="container tl" aria-label="Tools">
+    <ul role="list" class="tl-grid" data-stagger>
+      {
+        tools.map((t) => (
+          <li>
+            <a class="tl-card glass-subtle lift spotlight" href={t.href}>
+              <span class="tl-top">
+                <span class="pk-icon" aria-hidden="true"><Icon name={t.icon} size={22} /></span>
+                <span class="tl-badge mono small">{t.badge}</span>
+              </span>
+              <h2 class="h3">{t.name}</h2>
+              <p class="muted">{t.body}</p>
+              <span class="pk-more">{t.cta} <Icon name="arrow-right" size={15} /></span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <CtaBand title="Rather talk it through?" text="Book a free 30-minute call. You get a fixed quote within 24 hours." location="tools-final" />
+</BaseLayout>
+
+<style>
+  .tl {
+    padding-block-end: var(--section-y);
+  }
+  .tl-grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+  }
+  .tl-card {
+    display: grid;
+    gap: var(--space-3);
+    align-content: start;
+    block-size: 100%;
+    padding: clamp(1.1rem, 0.9rem + 1vw, 1.6rem);
+    color: inherit;
+    text-decoration: none;
+  }
+  .tl-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .tl-badge {
+    padding: 0.15rem 0.55rem;
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--fg) 9%, transparent);
+  }
+</style>

@@ -36,7 +36,7 @@ export default async function handler(req, res) {
 
   const b = parse(req.body);
   const f = Object.fromEntries(Object.entries(LIMITS).map(([k, max]) => [k, clean(b[k], max)]));
-  f.form = f.form === 'estimate' ? 'estimate' : 'contact';
+  f.form = ['estimate', 'checker'].includes(f.form) ? f.form : 'contact';
   const wantsCall = b.call === true || b.call === 'on' || b.call === 'yes';
 
   // Bots: honeypot filled, or the form was submitted faster than a person could type it. Pretend success.

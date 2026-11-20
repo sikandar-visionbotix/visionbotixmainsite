@@ -15,6 +15,7 @@ import Steps from '@/components/Steps.astro';
 import Accordion from '@/components/Accordion.astro';
 import CtaBand from '@/components/CtaBand.astro';
 import RelatedReading from '@/components/RelatedReading.astro';
+import LocalLinks from '@/components/LocalLinks.astro';
 import AgentDemo from '@/components/AgentDemo.astro';
 import AgentCard from '@/components/AgentCard.astro';
 import LiveDemo from '@/components/demo/LiveDemo.astro';
@@ -383,6 +384,7 @@ const cols = (n: number, four: 2 | 4) => (n === 4 ? four : n === 5 ? 5 : 3);
   }
 
   <!-- ============ Guides (S10): posts that link to this page ============ -->
+  <LocalLinks agent={slug} />
   <RelatedReading />
 
   <CtaBand title={`Put the ${d.name} to work.`} location={`agent-final-${slug}`} />

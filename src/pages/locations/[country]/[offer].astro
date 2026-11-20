@@ -1,0 +1,353 @@
+---
+/**
+ * Service × country template (S11, D75, PLAN §6.2): one packaged agent in one country, only where the page has local
+ * substance. Hero + "at a glance" panel (local price, timeline, overlap, languages) → why it matters here → local use
+ * cases → mid CTA → local rules (each with its official source) → setup here + systems we connect → prices in the
+ * local currency (computed) → live demo → FAQ (+ generated price question) → sources → related pages → CTA.
+ * Copy: src/content/local/<location>/<agent>.md. Template copy is spelling-neutral (UK/AU/PK pages use UK spelling).
+ */
+import '@/styles/page-kit.css';
+import { getEntry } from 'astro:content';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Button from '@/components/Button.astro';
+import Icon from '@/components/Icon.astro';
+import Accordion from '@/components/Accordion.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import { site } from '@/data/site';
+import { localMoney, usMoney, agentPrices, currencyNames } from '@/data/pricing';
+import { agentItem, demoFor } from '@/lib/industries';
+import { overlap, overlapLabel, fxLabel, delivered } from '@/lib/locations';
+import { getLocalOffers, localPath, localPrices, localPriceFaq, localOffers, localFor, localForAgent, type LocalEntry } from '@/lib/local';
+import { service } from '@/lib/schema';
+
+export async function getStaticPaths() {
+  const all = await getLocalOffers();
+  return all.map((entry) => ({ params: { country: entry.data.location.id, offer: entry.data.agent.id }, props: { entry } }));
+}
+interface Props {
+  entry: LocalEntry;
+}
+const { entry } = Astro.props;
+const d = entry.data;
+const path = localPath(entry);
+const loc = (await getEntry(d.location))!;
+const L = loc.data;
+const agentEntry = (await getEntry(d.agent))!;
+const A = agentEntry.data;
+const agent = agentItem(d.agent.id);
+const demo = demoFor(d.agent.id);
+const c = L.currency;
+const isLocal = c !== 'USD';
+const p = agentPrices[d.agent.id]!;
+const rows = localPrices(d.agent.id, c);
+const main = overlap(L)[0]!;
+const faqs = [...d.faq.slice(0, 1), localPriceFaq(d.agent.id, c, L.inName), ...d.faq.slice(1)];
+const industries = await Promise.all(d.scenarios.map(async (s) => (s.industry ? await getEntry(s.industry) : undefined)));
+const siblingsHere = (await localFor(loc.id)).filter((e) => e.id !== entry.id);
+const sameAgent = (await localForAgent(d.agent.id)).filter((e) => e.id !== entry.id);
+const sameAgentLocs = await Promise.all(sameAgent.map(async (e) => ({ e, loc: (await getEntry(e.data.location))! })));
+const updated = d.updated.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+const priceShort = `${isLocal ? '≈ ' : ''}${localMoney(p.setup, c)}${p.monthly ? ` + ${localMoney(p.monthly, c)}/mo` : ''}`;
+---
+
+<BaseLayout
+  seo={{ title: d.seo.title, description: d.seo.description, modifiedTime: d.updated.toISOString() }}
+  lang={L.lang}
+  schema={[service({ name: `${agent.name} for ${L.who}`, description: d.summary, path, serviceType: d.keywords.primary, offers: localOffers(d.agent.id), areaServed: [L.code] })]}
+>
+  <!-- ============ Hero ============ -->
+  <section class="container pk-hero" data-split aria-labelledby="lx-title">
+    <div class="pk-copy">
+      <Breadcrumbs items={[{ name: 'Where we work', href: '/locations/' }, { name: L.name, href: `/locations/${loc.id}/` }, { name: agent.name, href: path }]} />
+      <p class="eyebrow lx-eyebrow"><span class="lx-code mono" aria-hidden="true">{L.code}</span> {agent.name} for {L.who}</p>
+      <h1 id="lx-title" class="pk-title">{d.h1}</h1>
+      <p class="lead pk-lead">{d.summary}</p>
+      <div class="cluster">
+        <Button href={site.contact.bookingUrl} size="lg" icon="arrow-right" data-event="book_call" data-event-location={`local-hero-${entry.id}`}>Book a free strategy call</Button>
+        {
+          demo ? (
+            <Button href={`/demos/${demo.id}/`} size="lg" variant="glass" icon="circle-play" data-event="demo_cta" data-event-location={`local-hero-${entry.id}`}>
+              Try it live
+            </Button>
+          ) : (
+            <Button href="#prices" size="lg" variant="glass">See prices</Button>
+          )
+        }
+      </div>
+    </div>
+
+    <aside class="pk-snap glass-strong" aria-labelledby="lx-snap">
+      <div class="pk-snap-head">
+        <span class="pk-snap-icon" aria-hidden="true"><Icon name={agent.icon} size={20} /></span>
+        <div>
+          <p id="lx-snap" class="pk-snap-name">{agent.name} in {L.inName}</p>
+          <p class="mono subtle pk-snap-sub">At a glance</p>
+        </div>
+      </div>
+      <dl class="pk-rows">
+        <div class="pk-row"><dt>Price</dt><dd><strong>{priceShort}</strong>{isLocal && <span class="small subtle"> ({usMoney(p.setup)}{p.monthly ? ` + ${usMoney(p.monthly)}/mo` : ''})</span>}</dd></div>
+        <div class="pk-row"><dt>Timeline</dt><dd>{A.timeline}</dd></div>
+        <div class="pk-row"><dt>Hours</dt><dd>The agent works 24/7; our team overlaps your day {overlapLabel(main)}</dd></div>
+        <div class="pk-row"><dt>Systems</dt><dd>{d.systems.flatMap((s) => s.names).slice(0, 6).join(', ')}</dd></div>
+        <div class="pk-row"><dt>You own</dt><dd>Your data, prompts and configuration</dd></div>
+        {delivered(L) && <div class="pk-row"><dt>Delivered</dt><dd>Projects for clients in {L.inName}</dd></div>}
+      </dl>
+    </aside>
+  </section>
+
+  <!-- ============ Why here ============ -->
+  <Section id="why" eyebrow={`Why ${L.who} use it`} title={`What is different in ${L.inName}.`} space="tight">
+    <ul role="list" class="pk-cards" data-cols={d.local.length === 4 ? '4' : '3'} data-stagger>
+      {
+        d.local.map((x) => (
+          <li class="pk-card glass-subtle">
+            <h3 class="h4">{x.title}</h3>
+            <p class="small muted">{x.body}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <!-- ============ Use cases ============ -->
+  <Section id="use-cases" eyebrow="Use cases" title={`Where it pays off for ${L.who}.`} space="tight">
+    <ul role="list" class="pk-cards" data-cols={d.scenarios.length >= 4 ? '2' : '3'} data-stagger>
+      {
+        d.scenarios.map((s, i) => {
+          const ind = industries[i];
+          return (
+            <li class="pk-card glass-subtle">
+              <h3 class="h4">{s.who}</h3>
+              <p class="small muted">{s.body}</p>
+              {ind && (
+                <a class="pk-more small" href={`/industries/${ind.id}/`}>
+                  AI agents for {ind.data.name.toLowerCase()} <Icon name="arrow-right" size={14} />
+                </a>
+              )}
+            </li>
+          );
+        })
+      }
+    </ul>
+  </Section>
+
+  <CtaBand title={`See the ${agent.name} handle a real conversation.`} text="Try the live demo, or book a call and we will map it to your business." {...(demo ? { primary: { label: 'Try it live', href: `/demos/${demo.id}/` } } : {})} location={`local-mid-${entry.id}`} />
+
+  <!-- ============ Local rules ============ -->
+  <Section id="rules" eyebrow="Rules we design around" title={`The rules that apply in ${L.inName}, and what we put in place.`} lead="We are not your lawyers; your own adviser has the final word. Each rule links to the official source we read." space="tight">
+    <ul role="list" class="pk-cards" data-cols="2" data-stagger>
+      {
+        d.rules.map((r) => (
+          <li class="pk-card glass-subtle">
+            <span class="pk-icon" aria-hidden="true"><Icon name="scale" size={20} /></span>
+            <h3 class="h4">{r.name}</h3>
+            <p class="small muted">{r.body}</p>
+            <a class="pk-more small" href={r.source} target="_blank" rel="noopener">Official source <Icon name="external-link" size={13} /></a>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <!-- ============ Setup + systems ============ -->
+  <Section id="setup" eyebrow="Set up for your market" title={`How we set it up in ${L.inName}.`} space="tight">
+    <div class="lx-setup">
+      <ol role="list" class="lx-steps">
+        {
+          d.setup.map((s, i) => (
+            <li class="glass-subtle">
+              <span class="lx-num mono" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+              <div>
+                <h3 class="h4">{s.title}</h3>
+                <p class="small muted">{s.body}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+      <div class="lx-systems glass-subtle">
+        <h3 class="h4">Systems we connect</h3>
+        <p class="small muted">If a system has an API, we connect it. These are the ones {L.who} ask about most.</p>
+        <dl>
+          {
+            d.systems.map((s) => (
+              <div>
+                <dt class="small subtle">{s.kind}</dt>
+                <dd>
+                  <ul role="list" class="pk-tags">
+                    {s.names.map((n) => (
+                      <li>{n}</li>
+                    ))}
+                  </ul>
+                </dd>
+              </div>
+            ))
+          }
+        </dl>
+      </div>
+    </div>
+  </Section>
+
+  <!-- ============ Prices ============ -->
+  <Section id="prices" eyebrow={isLocal ? `Prices in ${currencyNames[c]}` : 'Prices'} title={`What the ${agent.name} costs in ${L.inName}.`} lead={isLocal ? `Set in US dollars; local amounts are approximate at ${fxLabel(c)}. Your quote states the exact amount and currency.` : 'Fixed setup, then a monthly fee. Your quote states the exact amount before any work starts.'} space="tight" width="narrow">
+    <div class="lx-table glass-subtle">
+      <table>
+        <caption class="visually-hidden">Prices for {L.who}</caption>
+        <thead>
+          <tr><th scope="col">Option</th><th scope="col">{isLocal ? `≈ ${c}` : 'Price'}</th>{isLocal && <th scope="col">US$</th>}</tr>
+        </thead>
+        <tbody>
+          {
+            rows.map((r) => (
+              <tr>
+                <th scope="row">
+                  <a class="link" href={r.href}>{r.name}</a>
+                  {r.note && <span class="small subtle lx-note">{r.note}</span>}
+                </th>
+                <td>{r.local}</td>
+                {isLocal && <td class="subtle">{r.usd}</td>}
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted lx-after">
+      Every plan includes a fair-use volume of usage; anything above it is passed through at cost with no markup. See <a class="link" href="/pricing/">all prices</a> or
+      <a class="link" href="/estimate/">estimate a custom build</a>.
+    </p>
+  </Section>
+
+  <!-- ============ FAQ ============ -->
+  <Section id="faq" eyebrow="FAQ" title={`${agent.name} questions from ${L.who}.`} width="narrow" align="center">
+    <Accordion items={faqs} schema name="lx-faq" />
+  </Section>
+
+  <!-- ============ Sources + related ============ -->
+  <Section id="more" space="tight">
+    <div class="lx-more">
+      <div class="glass-subtle lx-box">
+        <h2 class="h4">Sources</h2>
+        <ul role="list" class="lx-sources small">
+          {d.sources.map((s) => (
+            <li>
+              <a class="link" href={s.url} target="_blank" rel="noopener">{s.title}</a>
+            </li>
+          ))}
+        </ul>
+        <p class="small subtle">Updated {updated}</p>
+      </div>
+      <div class="glass-subtle lx-box">
+        <h2 class="h4">Related</h2>
+        <ul role="list" class="lx-links">
+          <li><a class="link" href={`/ai-agents/${d.agent.id}/`}>{agent.name}: how it works, everywhere</a></li>
+          <li><a class="link" href={`/locations/${loc.id}/`}>Working with us from {L.inName}</a></li>
+          {siblingsHere.map((e) => <li><a class="link" href={localPath(e)}>{agentItem(e.data.agent.id).name} in {L.inName}</a></li>)}
+          {sameAgentLocs.map(({ e, loc: l }) => <li><a class="link" href={localPath(e)}>{agent.name} in {l.data.inName}</a></li>)}
+        </ul>
+      </div>
+    </div>
+  </Section>
+
+  <CtaBand title={`Ready to put the ${agent.name} to work in ${L.inName}?`} text={`A free call, a fixed quote within 24 hours, then ${A.timeline.charAt(0).toLowerCase()}${A.timeline.slice(1)}.`} location={`local-final-${entry.id}`} />
+</BaseLayout>
+
+<style>
+  .lx-eyebrow {
+    display: inline-flex;
+    gap: var(--space-2);
+    align-items: center;
+  }
+  .lx-code {
+    padding: 0.05rem 0.4rem;
+    border-radius: var(--radius-xs);
+    background: color-mix(in srgb, var(--fg) 10%, transparent);
+    font-size: 0.75rem;
+  }
+  .lx-setup {
+    display: grid;
+    gap: var(--space-5);
+  }
+  @media (min-width: 60rem) {
+    .lx-setup {
+      grid-template-columns: 1.3fr 1fr;
+      align-items: start;
+    }
+  }
+  .lx-steps {
+    display: grid;
+    gap: var(--space-3);
+    padding: 0;
+    list-style: none;
+  }
+  .lx-steps li {
+    display: flex;
+    gap: var(--space-4);
+    padding: var(--space-4);
+  }
+  .lx-num {
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .lx-systems,
+  .lx-box {
+    display: grid;
+    gap: var(--space-3);
+    align-content: start;
+    padding: var(--space-5);
+  }
+  .lx-systems dl {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .lx-table {
+    overflow-x: auto;
+    padding: var(--space-2) var(--space-4);
+  }
+  .lx-table table {
+    inline-size: 100%;
+    border-collapse: collapse;
+  }
+  .lx-table th,
+  .lx-table td {
+    padding: 0.7rem 0.5rem;
+    text-align: start;
+    vertical-align: top;
+    border-block-end: 1px solid var(--border);
+  }
+  .lx-table tr:last-child > * {
+    border-block-end: 0;
+  }
+  .lx-table thead th {
+    color: var(--fg-muted);
+    font-weight: 600;
+    font-size: var(--step--1);
+  }
+  .lx-table td {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .lx-note {
+    display: block;
+    font-weight: 400;
+  }
+  .lx-after {
+    margin-block-start: var(--space-3);
+  }
+  .lx-more {
+    display: grid;
+    gap: var(--space-5);
+  }
+  @media (min-width: 52rem) {
+    .lx-more {
+      grid-template-columns: 1.4fr 1fr;
+    }
+  }
+  .lx-sources,
+  .lx-links {
+    display: grid;
+    gap: var(--space-2);
+  }
+</style>

@@ -1,0 +1,1091 @@
+---
+/**
+ * /tools/ai-visibility-checker/ (S11, D74): free link-magnet tool. The visitor enters a URL; api/ai-check.js fetches the
+ * page the way an AI crawler does (no JavaScript) and returns a scored report: AI crawler access per robots.txt,
+ * indexing directives, text in the HTML, structure, schema and entity signals, plus the five fixes that matter most.
+ * Without JS the page still shows what is checked, the AI crawler table and a sample robots.txt (what search and AI
+ * answers read). Results can be shared with ?url=… (the check runs again; nothing is stored).
+ */
+import '@/styles/page-kit.css';
+import '@/styles/forms.css';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Section from '@/components/Section.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Button from '@/components/Button.astro';
+import Icon from '@/components/Icon.astro';
+import Accordion from '@/components/Accordion.astro';
+import CtaBand from '@/components/CtaBand.astro';
+import RelatedReading from '@/components/RelatedReading.astro';
+import { site } from '@/data/site';
+import { agentPrices, money, audit } from '@/data/pricing';
+import { BOTS, CRAWLERS_AS_OF } from '../../../api/_check/bots.js';
+import { abs, ORG_ID, type FaqItem, type Thing } from '@/lib/schema';
+import type { IconName } from '@/lib/icons';
+
+const seoPrice = agentPrices['ai-seo-agent']!;
+const kindLabel = { search: 'AI search and citations', user: 'Fetches a page a user asks about', training: 'Model training' } as const;
+const searchCount = BOTS.filter((b) => b.kind !== 'training').length;
+
+const groups: { icon: IconName; title: string; body: string; items: string[] }[] = [
+  {
+    icon: 'radar',
+    title: 'Can AI crawlers reach the page?',
+    body: 'If a crawler may not fetch a page, or the page says “do not index” or “do not quote”, nothing else matters.',
+    items: [
+      `robots.txt rules for ${BOTS.length} AI crawlers, from OAI-SearchBot to PerplexityBot`,
+      'noindex, nosnippet, max-snippet, and Bing’s noarchive and nocache, in meta tags and X-Robots-Tag headers',
+      'HTTPS, redirects and server response time',
+      'An XML sitemap, in robots.txt or at /sitemap.xml',
+    ],
+  },
+  {
+    icon: 'scan-search',
+    title: 'Can AI read and understand it?',
+    body: 'We read the HTML your server sends without running JavaScript, the way most AI crawlers do.',
+    items: [
+      'How much text is in the HTML, and whether the page is an empty JavaScript app shell',
+      'Title, meta description and one clear H1',
+      'Sections, question-style headings and an answer-first opening paragraph',
+      'Lists and tables, the page language and image alt text',
+    ],
+  },
+  {
+    icon: 'fingerprint',
+    title: 'Does AI know who you are?',
+    body: 'AI assistants recommend businesses they can identify and trust, so entity signals count.',
+    items: [
+      'Valid JSON-LD structured data and its types',
+      'Organization or LocalBusiness data, with sameAs links to your profiles',
+      'About and contact pages, and dates that show the page is kept up to date',
+      'Canonical URL and Open Graph link previews',
+    ],
+  },
+];
+
+const faqs: FaqItem[] = [
+  {
+    q: 'What is AI visibility?',
+    a: 'AI visibility is how likely AI assistants such as ChatGPT, Claude, Perplexity, Gemini, Copilot and Google’s AI Overviews are to find, read and cite your website when people ask about what you do. It has two halves: technical access (can their crawlers fetch and understand your pages?), which this checker tests, and reputation (what other sites, directories and reviews say about you), which no page-level tool can measure.',
+  },
+  {
+    q: 'How does the AI visibility checker work?',
+    a: `It fetches the page you enter the way an AI crawler does, without running JavaScript, and reads your robots.txt and sitemap. It runs more than 20 checks in three groups (access, content, identity), weights them by impact, and gives a score out of 100 with the five fixes that matter most. A blocked AI search crawler or a noindex tag caps the score at 39, because nothing else helps until that is fixed. No AI model is involved: every check is a rule you can verify yourself.`,
+  },
+  {
+    q: 'Should I block GPTBot and other AI training crawlers?',
+    a: 'That is a business choice, and it is separate from AI search. OpenAI and Anthropic document separate crawlers for search and for training: OpenAI says sites that block OAI-SearchBot are not shown in ChatGPT search answers, while blocking GPTBot only keeps your content out of model training. Google-Extended works the same way and, per Google, does not affect Google Search. So you can block training crawlers and still allow the search crawlers that decide whether you can be cited. The sample robots.txt on this page does exactly that.',
+  },
+  {
+    q: 'Do AI crawlers run JavaScript?',
+    a: 'Most do not. <a class="link" href="https://vercel.com/blog/the-rise-of-the-ai-crawler" rel="noopener">Vercel’s study of AI crawler traffic</a> (December 2024) found that none of the major AI crawlers it measured, including OpenAI’s, ClaudeBot and PerplexityBot, render JavaScript; Googlebot and Applebot do. Text that only appears after JavaScript runs is invisible to the rest. If the checker finds little text in your HTML, render pages on the server or pre-render them.',
+  },
+  {
+    q: 'Does llms.txt help AI visibility?',
+    a: 'Not as far as anyone can show. llms.txt is a proposed file that summarises a site for language models. It is harmless and quick to add, but none of the major AI providers says its crawlers read it, and <a class="link" href="https://developers.google.com/search/docs/appearance/ai-features" rel="noopener">Google’s guidance on AI features</a> says you do not need new machine-readable or AI text files to appear in them. The checker reports whether you have one without counting it in the score.',
+  },
+  {
+    q: 'If my score is high, will ChatGPT recommend my business?',
+    a: `Not by itself. A high score means AI crawlers can reach, read and identify your pages, which is the part you control on your own site. Whether an assistant recommends you also depends on what other sites say about you: directory profiles, reviews, press and forum mentions. Our <a class="link" href="/ai-agents/ai-seo-agent/">SEO &amp; GEO Agent</a> tracks both, including which prompts cite you and which cite competitors.`,
+  },
+  {
+    q: 'Is the checker free, and what do you store?',
+    a: 'It is free, with no sign-up. We fetch the page, robots.txt, sitemap and llms.txt once, keep the result in memory for 10 minutes so a repeat check is instant, and log only the host name and the score. A Cloudflare Turnstile check keeps bots from abusing the tool. Nothing reaches our team unless you press “Send this report”. See the <a class="link" href="/privacy/#free-tools">privacy policy</a>.',
+  },
+];
+
+const app: Thing = {
+  '@type': 'WebApplication',
+  '@id': `${abs('/tools/ai-visibility-checker/')}#app`,
+  name: 'AI visibility checker',
+  url: abs('/tools/ai-visibility-checker/'),
+  description: 'Free tool that checks whether ChatGPT, Claude, Perplexity, Google and Bing can crawl, read and identify a web page, with a score out of 100 and the fixes that matter most.',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Any (runs in the browser)',
+  isAccessibleForFree: true,
+  offers: { '@type': 'Offer', price: 0, priceCurrency: 'USD' },
+  publisher: { '@id': ORG_ID },
+};
+const crawlerTable: Thing = {
+  '@type': 'Dataset',
+  '@id': `${abs('/tools/ai-visibility-checker/')}#crawlers`,
+  name: `AI crawler user agents and what they do (${CRAWLERS_AS_OF})`,
+  description: `The robots.txt user-agent tokens of ${BOTS.length} AI crawlers from OpenAI, Anthropic, Perplexity, Google, Microsoft, Apple, DuckDuckGo, Amazon, Meta, Mistral and Common Crawl, and whether each is used for AI search, user-requested fetches or model training.`,
+  url: `${abs('/tools/ai-visibility-checker/')}#crawlers`,
+  creator: { '@id': ORG_ID },
+  isAccessibleForFree: true,
+  license: 'https://creativecommons.org/licenses/by/4.0/',
+};
+
+const robotsSample = `# Let AI search engines and assistants read and cite the site
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: DuckAssistBot
+Allow: /
+
+# Optional: opt out of model training
+User-agent: GPTBot
+User-agent: ClaudeBot
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: meta-externalagent
+User-agent: Amazonbot
+User-agent: CCBot
+Disallow: /
+
+# Everyone else, including Googlebot and Bingbot
+User-agent: *
+Allow: /
+
+Sitemap: https://www.example.com/sitemap.xml`;
+---
+
+<BaseLayout
+  seo={{
+    title: 'Free AI Visibility Checker for Your Website',
+    description: `Can ChatGPT, Claude, Perplexity and Google's AI read and cite your site? Free check of ${BOTS.length} AI crawlers, robots.txt, content and schema, with a score and fixes.`,
+  }}
+  schema={[app, crawlerTable]}
+  exitOffer={false}
+>
+  <section class="container pk-hero avc-hero" data-compact aria-labelledby="avc-title">
+    <div class="pk-copy">
+      <Breadcrumbs items={[{ name: 'Free tools', href: '/tools/' }, { name: 'AI visibility checker', href: '/tools/ai-visibility-checker/' }]} />
+      <p class="eyebrow">Free tool</p>
+      <h1 id="avc-title" class="pk-title">Can ChatGPT, Claude and Perplexity read your website?</h1>
+      <p class="lead pk-lead">
+        This free AI visibility checker fetches your page the way AI crawlers do, without JavaScript, then checks robots.txt for {BOTS.length} AI crawlers,
+        indexing rules, the text and structure machines read, and the signals that tell AI who you are. You get a score out of 100 and the five fixes that matter most, in about ten seconds.
+      </p>
+    </div>
+
+    <form class="avc-form glass-strong" data-avc-form novalidate>
+      <label for="avc-url" class="avc-label">Your website or any page on it</label>
+      <div class="avc-row">
+        <span class="avc-prefix" aria-hidden="true"><Icon name="globe" size={18} /></span>
+        <input id="avc-url" name="url" type="text" inputmode="url" autocomplete="url" spellcheck="false" placeholder="example.com" maxlength="300" required aria-describedby="avc-hint avc-err" />
+        <Button type="submit" icon="arrow-right" data-avc-go>Check my site</Button>
+      </div>
+      <p id="avc-hint" class="small subtle">Free · no sign-up · checks one page plus your robots.txt and sitemap</p>
+      <p id="avc-err" class="field-err" role="alert" hidden data-avc-err></p>
+      <div data-avc-ts></div>
+      <noscript><p class="small">The checker needs JavaScript. Everything it looks at is explained below.</p></noscript>
+    </form>
+  </section>
+
+  <!-- ============ Result (filled by the script) ============ -->
+  <section class="container avc-result" data-avc-result hidden aria-labelledby="avr-title" aria-busy="false">
+    <div class="avc-loading glass-subtle" data-avc-loading hidden>
+      <span class="avc-spin" aria-hidden="true"></span>
+      <div>
+        <p class="avc-loading-title">Checking <span data-avc-host></span>…</p>
+        <ol role="list" class="avc-steps small muted">
+          <li>Fetching the page without JavaScript</li>
+          <li>Reading robots.txt for {BOTS.length} AI crawlers</li>
+          <li>Looking for a sitemap and structured data</li>
+          <li>Scoring and ranking the fixes</li>
+        </ol>
+      </div>
+    </div>
+
+    <div data-avc-report hidden>
+      <div class="avc-top">
+        <div class="avc-score glass-strong">
+          <div class="avc-ring" data-avc-ring style="--p: 0">
+            <span class="avc-num" data-avc-score>0</span>
+            <span class="avc-of">/100</span>
+          </div>
+          <div>
+            <p class="eyebrow">AI visibility score</p>
+            <h2 id="avr-title" class="avc-grade" tabindex="-1" data-avc-grade></h2>
+            <p class="small muted" data-avc-sub></p>
+            <p class="avc-blocker small" data-avc-blocker hidden></p>
+          </div>
+          <ul role="list" class="avc-groups" data-avc-groups></ul>
+        </div>
+
+        <div class="avc-fixes glass-subtle">
+          <h3 class="h4">Fix these first</h3>
+          <ol class="avc-fixlist" data-avc-fixes></ol>
+          <p class="small muted" data-avc-nofix hidden>Nothing important to fix on this page. Check your other key pages too, and work on what other sites say about you.</p>
+          <div class="avc-tools">
+            <Button variant="ghost" size="sm" iconLeading="copy" data-avc-copy>Copy link to this report</Button>
+            <Button variant="ghost" size="sm" iconLeading="rotate-ccw" data-avc-again>Check another page</Button>
+          </div>
+        </div>
+      </div>
+
+      <div class="avc-detail">
+        <div data-avc-checks></div>
+
+        <div class="avc-bots glass-subtle">
+          <h3 class="h4">AI crawlers and this page</h3>
+          <p class="small muted">From your robots.txt. A CDN or firewall can still block a crawler that robots.txt allows; we cannot see that from outside.</p>
+          <div class="avc-table-wrap">
+            <table class="avc-table">
+              <thead><tr><th scope="col">Crawler</th><th scope="col">Used for</th><th scope="col">This page</th></tr></thead>
+              <tbody data-avc-bots></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="avc-next glass-strong">
+        <div>
+          <p class="eyebrow">Next step</p>
+          <h3 class="h3">Want this fixed, and tracked in ChatGPT and Perplexity?</h3>
+          <p class="muted">
+            Our <a class="link" href="/ai-agents/ai-seo-agent/">SEO &amp; GEO Agent</a> fixes what this report finds, then tracks which AI answers cite you and your competitors every month.
+            From {money(seoPrice.setup)} setup and {money(seoPrice.monthly!)}/month. Not sure yet? The {audit.name} ({money(audit.price)}) looks at your whole AI opportunity.
+          </p>
+          <div class="avc-ctas">
+            <Button href={site.contact.bookingUrl ?? '/contact/'} icon="calendar-check" data-event="book_call" data-event-location="ai-check-result">Book a free strategy call</Button>
+            <Button href="/demos/seo/" variant="glass" icon="arrow-right" data-event="ai_check_cta" data-event-location="ai-check-demo">Try the SEO &amp; GEO agent live</Button>
+          </div>
+        </div>
+
+        <form class="avc-send" data-avc-send data-turnstile={site.turnstile.siteKey ?? undefined} novalidate>
+          <p class="avc-send-title"><Icon name="mail" size={16} /> Send this report to our team</p>
+          <div class="field">
+            <label for="c-name">Name</label>
+            <input id="c-name" name="name" autocomplete="name" required maxlength="120" />
+            <p class="field-err" id="ce-name" hidden></p>
+          </div>
+          <div class="field">
+            <label for="c-email">Work email</label>
+            <input id="c-email" name="email" type="email" autocomplete="email" required maxlength="200" />
+            <p class="field-err" id="ce-email" hidden></p>
+          </div>
+          <div class="field">
+            <label for="c-note">What would you like to improve? <span class="opt">optional</span></label>
+            <textarea id="c-note" name="note" rows="2" maxlength="2000"></textarea>
+          </div>
+          <div class="ct-hp" aria-hidden="true">
+            <label for="c-website">Website</label>
+            <input id="c-website" name="website" tabindex="-1" autocomplete="off" />
+          </div>
+          <div data-ts-slot></div>
+          <Button type="submit" variant="glass" icon="send-horizontal" block>Send this report</Button>
+          <p class="small subtle">An engineer reads it and replies within one business day. <a class="link" href="/privacy/">Privacy</a></p>
+          <p class="small" role="status" aria-live="polite" data-avc-send-status></p>
+        </form>
+        <div class="avc-sent" data-avc-sent hidden tabindex="-1">
+          <Icon name="mail-check" size={22} />
+          <p><strong>Sent.</strong> An engineer will reply within one business day.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="avc-failed glass-subtle" data-avc-failed hidden tabindex="-1">
+      <Icon name="triangle-alert" size={22} />
+      <div>
+        <h2 class="h4" data-avc-fail-title>We could not check that page</h2>
+        <p class="muted" data-avc-fail-msg></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ What it checks (static, also for search and AI answers) ============ -->
+  <Section id="checks" eyebrow="What we check" title="Three questions decide whether AI can cite you." lead="More than 20 checks, weighted by how much each one changes whether AI search can use your page." space="tight">
+    <ul role="list" class="pk-cards" data-cols="3" data-stagger>
+      {
+        groups.map((g) => (
+          <li class="pk-card glass-subtle">
+            <span class="pk-icon" aria-hidden="true">
+              <Icon name={g.icon} size={20} />
+            </span>
+            <h3 class="h4">{g.title}</h3>
+            <p class="small muted">{g.body}</p>
+            <ul role="list" class="pk-checks small">
+              {g.items.map((i) => (
+                <li>
+                  <Icon name="check" size={14} strokeWidth={2.5} /> {i}
+                </li>
+              ))}
+            </ul>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <!-- ============ AI crawler table (linkable reference) ============ -->
+  <Section id="crawlers" eyebrow="Reference" title="AI crawlers and what they do." lead={`The robots.txt names of the AI crawlers this tool checks, from each company's own documentation (${CRAWLERS_AS_OF}). Search and user crawlers decide whether you can be cited; training crawlers do not.`} space="tight">
+    <div class="avc-table-wrap glass-subtle">
+      <table class="avc-table avc-ref">
+        <caption class="visually-hidden">AI crawler user agents, vendors and purposes</caption>
+        <thead>
+          <tr><th scope="col">User agent</th><th scope="col">Company</th><th scope="col">Used for</th><th scope="col">What it does</th></tr>
+        </thead>
+        <tbody>
+          {
+            BOTS.map((b) => (
+              <tr>
+                <th scope="row"><code>{b.token}</code></th>
+                <td>{b.vendor}</td>
+                <td><span class:list={['avc-kind', `k-${b.kind}`]}>{kindLabel[b.kind]}</span></td>
+                <td class="small">
+                  {b.note} <a class="link" href={b.doc} rel="noopener" target="_blank">Docs</a>
+                </td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted avc-note">
+      Of these, {searchCount} fetch pages for AI search answers or when a user asks about a page; blocking the search crawlers can keep you out of those answers. Several vendors say their user-triggered fetchers may not follow robots.txt at all. Blocking a training crawler only keeps your pages out of future model training.
+    </p>
+  </Section>
+
+  <!-- ============ Sample robots.txt ============ -->
+  <Section id="robots" eyebrow="Copy and adapt" title="A robots.txt that allows AI search and opts out of training." space="tight" width="narrow">
+    <pre class="avc-code glass-subtle" tabindex="0" aria-label="Sample robots.txt"><code>{robotsSample}</code></pre>
+    <p class="small muted">
+      Rules for a named crawler replace the <code>*</code> rules for that crawler, so list any private paths in every group. Leave out the training block if you are happy for your public pages to be used for training.
+      Google-Extended and Applebot-Extended are control tokens, not separate crawlers: they never fetch pages, they only tell Google and Apple how pages that Googlebot or Applebot crawled may be used.
+    </p>
+  </Section>
+
+  <!-- ============ Limits ============ -->
+  <Section id="limits" eyebrow="Be clear-eyed" title="What a score cannot tell you." space="tight">
+    <ul role="list" class="pk-cards" data-cols="3">
+      <li class="pk-card glass-subtle">
+        <span class="pk-icon" aria-hidden="true"><Icon name="message-square-text" size={20} /></span>
+        <h3 class="h4">What AI answers actually say</h3>
+        <p class="small muted">The checker does not ask ChatGPT or Perplexity about you. Track that with a fixed list of the prompts your buyers use, every month.</p>
+      </li>
+      <li class="pk-card glass-subtle">
+        <span class="pk-icon" aria-hidden="true"><Icon name="users" size={20} /></span>
+        <h3 class="h4">What other sites say about you</h3>
+        <p class="small muted">AI assistants lean on third-party sources: directories, review sites, press and forums. Profiles and reviews there matter as much as your own pages.</p>
+      </li>
+      <li class="pk-card glass-subtle">
+        <span class="pk-icon" aria-hidden="true"><Icon name="shield-alert" size={20} /></span>
+        <h3 class="h4">Firewall and CDN blocking</h3>
+        <p class="small muted">A CDN or firewall can block AI crawlers before robots.txt matters. Cloudflare, for example, has AI crawler settings and can manage robots.txt for you, adding blocks for training crawlers. Check those settings if a crawler should be allowed.</p>
+      </li>
+    </ul>
+  </Section>
+
+  <Section id="faq" eyebrow="FAQ" title="AI visibility questions." width="narrow" align="center">
+    <Accordion items={faqs} schema name="avc-faq" />
+  </Section>
+
+  <RelatedReading />
+
+  <CtaBand title="Want AI search to recommend you, not just read you?" text="We fix the technical side, build the third-party profile, and track your citations every month." location="ai-check-final" />
+</BaseLayout>
+
+<script>
+  import { attachLead, track, turnstileBox } from '@/scripts/lead';
+
+  type Status = 'pass' | 'warn' | 'fail' | 'info';
+  interface Check { id: string; group: string; label: string; status: Status; value: string; why: string; fix?: string }
+  interface Report {
+    url: string; host: string; checkedAt: string; score: number; grade: string; blocker: string | null;
+    groups: { id: string; title: string; score: number; checks: Check[] }[];
+    bots: { token: string; vendor: string; product: string; kind: string; allowed: boolean | null; rule: string }[];
+    fixes: { id: string; label: string; fix: string; status: Status }[];
+    stats: { words: number; ms: number };
+  }
+
+  const form = document.querySelector<HTMLFormElement>('[data-avc-form]');
+  const box = document.querySelector<HTMLElement>('[data-avc-result]')!;
+  if (form && box) {
+    const $ = <T extends HTMLElement = HTMLElement>(sel: string) => box.querySelector<T>(sel)!;
+    const input = form.querySelector<HTMLInputElement>('#avc-url')!;
+    const err = form.querySelector<HTMLElement>('[data-avc-err]')!;
+    const go = form.querySelector<HTMLButtonElement>('[data-avc-go]')!;
+    const key = document.querySelector<HTMLElement>('[data-avc-send]')?.dataset.turnstile;
+    const ts = turnstileBox(key, form.querySelector<HTMLElement>('[data-avc-ts]')!, 'ai_check');
+    input.addEventListener('focus', ts.start, { once: true });
+    let last: Report | null = null;
+
+    const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: string) => {
+      const n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (text !== undefined) n.textContent = text;
+      return n;
+    };
+    const icon: Record<Status, string> = { pass: '✓', warn: '!', fail: '✕', info: 'i' };
+    const statusText: Record<Status, string> = { pass: 'Passed', warn: 'Could be better', fail: 'Problem', info: 'For information' };
+    const badge = (s: Status) => {
+      const b = el('span', `avc-st st-${s}`, icon[s]);
+      b.setAttribute('role', 'img');
+      b.setAttribute('aria-label', statusText[s]);
+      return b;
+    };
+
+    function showError(msg: string) {
+      err.textContent = msg;
+      err.hidden = !msg;
+      input.toggleAttribute('aria-invalid', !!msg);
+    }
+
+    function render(r: Report) {
+      last = r;
+      $('[data-avc-report]').hidden = false;
+      $('[data-avc-failed]').hidden = true;
+      const ring = $('[data-avc-ring]');
+      ring.dataset.band = r.score >= 85 ? 'good' : r.score >= 65 ? 'ok' : r.score >= 40 ? 'warn' : 'bad';
+      const num = $('[data-avc-score]');
+      const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduce) {
+        num.textContent = String(r.score);
+        ring.style.setProperty('--p', String(r.score));
+      } else {
+        const t0 = performance.now();
+        const step = (t: number) => {
+          const k = Math.min(1, (t - t0) / 900);
+          const v = Math.round(r.score * (1 - Math.pow(1 - k, 3)));
+          num.textContent = String(v);
+          ring.style.setProperty('--p', String(v));
+          if (k < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      }
+      $('[data-avc-grade]').textContent = r.grade;
+      $('[data-avc-sub]').textContent = `${r.url.replace(/^https?:\/\//, '').replace(/\/$/, '')} · ${r.stats.words.toLocaleString('en-US')} words in the HTML · checked ${new Date(r.checkedAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}`;
+      const blk = $('[data-avc-blocker]');
+      blk.hidden = !r.blocker;
+      blk.textContent = r.blocker ? `Blocker: “${r.blocker}” failed, so the score is capped at 39 until it is fixed.` : '';
+
+      const groups = $('[data-avc-groups]');
+      groups.replaceChildren(
+        ...r.groups.map((g) => {
+          const li = el('li');
+          const head = el('div', 'avc-g-head');
+          head.append(el('span', '', g.title), el('strong', '', `${g.score}`));
+          const bar = el('span', 'avc-bar');
+          bar.style.setProperty('--w', `${g.score}%`);
+          bar.dataset.band = g.score >= 85 ? 'good' : g.score >= 65 ? 'ok' : g.score >= 40 ? 'warn' : 'bad';
+          li.append(head, bar);
+          return li;
+        }),
+      );
+
+      const fixes = $('[data-avc-fixes]');
+      fixes.replaceChildren(
+        ...r.fixes.map((f) => {
+          const li = el('li');
+          const t = el('p', 'avc-fix-t');
+          t.append(badge(f.status), el('strong', '', f.label));
+          li.append(t, el('p', 'small muted', f.fix));
+          return li;
+        }),
+      );
+      $('[data-avc-nofix]').hidden = r.fixes.length > 0;
+
+      const checks = $('[data-avc-checks]');
+      checks.replaceChildren(
+        ...r.groups.map((g) => {
+          const sec = el('section', 'avc-group glass-subtle');
+          const h = el('h3', 'h4', g.title);
+          const sc = el('span', 'avc-g-score', `${g.score}/100`);
+          h.append(' ', sc);
+          const ul = el('ul', 'avc-checklist');
+          ul.setAttribute('role', 'list');
+          for (const c of g.checks) {
+            const li = el('li');
+            const d = el('details');
+            const s = el('summary');
+            s.append(badge(c.status), el('span', 'avc-c-label', c.label), el('span', 'avc-c-val', c.value));
+            const body = el('div', 'avc-c-body small');
+            body.append(el('p', 'muted', c.why));
+            if (c.fix && c.status !== 'pass' && c.status !== 'info') {
+              const p = el('p');
+              p.append(el('strong', '', 'Fix: '), c.fix);
+              body.append(p);
+            }
+            d.append(s, body);
+            if (c.status === 'fail') d.open = true;
+            li.append(d);
+            ul.append(li);
+          }
+          sec.append(h, ul);
+          return sec;
+        }),
+      );
+
+      const kinds: Record<string, string> = { search: 'AI search', user: 'User fetches', training: 'Training' };
+      $('[data-avc-bots]').replaceChildren(
+        ...r.bots.map((b) => {
+          const tr = el('tr');
+          const th = el('th');
+          th.scope = 'row';
+          th.append(el('code', '', b.token), el('span', 'avc-vendor small subtle', ` ${b.vendor}`));
+          const st: Status = b.allowed === null ? 'warn' : b.allowed ? 'pass' : b.kind === 'training' ? 'info' : 'fail';
+          const td = el('td');
+          td.append(badge(st), el('span', 'small', b.allowed === null ? ' Unknown' : b.allowed ? ' Allowed' : ' Blocked'));
+          td.title = b.rule;
+          tr.append(th, el('td', 'small', kinds[b.kind] ?? b.kind), td);
+          return tr;
+        }),
+      );
+
+      const grade = $('[data-avc-grade]');
+      grade.focus({ preventScroll: true });
+      $('[data-avc-report]').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    }
+
+    function fail(title: string, msg: string) {
+      $('[data-avc-report]').hidden = true;
+      const f = $('[data-avc-failed]');
+      f.hidden = false;
+      $('[data-avc-fail-title]').textContent = title;
+      $('[data-avc-fail-msg]').textContent = msg;
+      f.focus();
+    }
+
+    async function run(raw: string) {
+      const url = raw.trim();
+      if (!url || !/\./.test(url)) return showError('Enter a website address, for example example.com');
+      showError('');
+      go.disabled = true;
+      box.hidden = false;
+      box.setAttribute('aria-busy', 'true');
+      $('[data-avc-loading]').hidden = false;
+      $('[data-avc-report]').hidden = true;
+      $('[data-avc-failed]').hidden = true;
+      $('[data-avc-host]').textContent = url.replace(/^https?:\/\//, '').split('/')[0] ?? url;
+      track('ai_check_run');
+      try {
+        const token = await ts.token();
+        const r = await fetch('/api/ai-check/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url, ts: token }) });
+        const j = await r.json().catch(() => ({}));
+        if (r.status === 422) {
+          box.hidden = true;
+          return showError(j.message ?? 'That does not look like a website address.');
+        }
+        if (r.status === 429) return fail('Too many checks right now', j.error === 'busy_ip' ? 'You have run a lot of checks in a short time. Please try again in about ten minutes.' : 'The checker is busy. Please try again in a few minutes.');
+        if (r.status === 403) return fail('We could not verify the request', 'The human check did not complete. Reload the page and try again.');
+        if (!r.ok) return fail('Something went wrong', 'The checker did not answer. Please try again in a moment.');
+        if (!j.ok) return fail('We could not check that page', j.message ?? 'The page did not answer.');
+        render(j.report as Report);
+        const u = new URL(location.href);
+        u.searchParams.set('url', url);
+        history.replaceState(null, '', u);
+        track('ai_check_complete', { score: j.report.score });
+      } catch {
+        fail('Something went wrong', 'Check your connection and try again.');
+      } finally {
+        $('[data-avc-loading]').hidden = true;
+        box.setAttribute('aria-busy', 'false');
+        go.disabled = false;
+        ts.reset();
+      }
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      run(input.value);
+    });
+    $('[data-avc-again]').addEventListener('click', () => {
+      input.value = '';
+      input.focus();
+      form.scrollIntoView({ block: 'center' });
+    });
+    $('[data-avc-copy]').addEventListener('click', async (e) => {
+      const b = e.currentTarget as HTMLButtonElement;
+      try {
+        await navigator.clipboard.writeText(location.href);
+        const label = b.lastChild!;
+        const old = label.textContent;
+        label.textContent = ' Link copied';
+        setTimeout(() => (label.textContent = old), 2000);
+      } catch {}
+    });
+
+    const shared = new URL(location.href).searchParams.get('url');
+    if (shared) {
+      input.value = shared.slice(0, 300);
+      run(input.value);
+    }
+
+    // ---- "Send this report to our team" ----
+    const send = $<HTMLFormElement>('[data-avc-send]');
+    const status = $('[data-avc-send-status]');
+    const lead = attachLead(send, 'ai_check');
+    const summary = (r: Report) =>
+      [
+        `AI visibility check: ${r.url}`,
+        `Score ${r.score}/100 (${r.grade})${r.blocker ? `, blocker: ${r.blocker}` : ''}`,
+        ...r.groups.map((g) => `${g.title} ${g.score}/100`),
+        '',
+        'Fix first:',
+        ...r.fixes.map((f, i) => `${i + 1}. ${f.label}: ${f.fix}`),
+        '',
+        `Blocked AI crawlers: ${r.bots.filter((b) => b.allowed === false).map((b) => b.token).join(', ') || 'none'}`,
+        `Report: ${location.href}`,
+      ].join('\n');
+    send.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      if (!last) return;
+      const d = Object.fromEntries([...new FormData(send)].map(([k, v]) => [k, String(v)]));
+      const errs: Record<string, string> = {};
+      if ((d.name ?? '').trim().length < 2) errs.name = 'Please enter your name.';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test((d.email ?? '').trim())) errs.email = 'Please enter a valid email address.';
+      for (const f of ['name', 'email']) {
+        const p = document.getElementById(`ce-${f}`)!;
+        p.textContent = errs[f] ?? '';
+        p.hidden = !errs[f];
+        (send.elements.namedItem(f) as HTMLInputElement).toggleAttribute('aria-invalid', !!errs[f]);
+      }
+      const first = ['name', 'email'].find((f) => errs[f]);
+      if (first) return (send.elements.namedItem(first) as HTMLElement).focus();
+      const body: Record<string, string> = {
+        ...d,
+        form: 'checker',
+        topic: 'AI search visibility (GEO)',
+        range: `${last.score}/100 · ${last.host}`.slice(0, 120),
+        message: `${summary(last)}${d.note ? `\n\nNote from the visitor:\n${d.note}` : ''}`,
+      };
+      delete body.note;
+      const btn = send.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+      btn.disabled = true;
+      status.textContent = 'Sending…';
+      try {
+        const token = await lead.token();
+        if (token) body['cf-turnstile-response'] = token;
+        const r = await fetch('/api/contact/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const j = await r.json().catch(() => ({}));
+        if (!(r.ok && j.ok)) throw new Error('fallback');
+        track('ai_check_send', { score: last.score });
+        try {
+          sessionStorage.setItem('vbx-lead', '1');
+        } catch {}
+        send.hidden = true;
+        const done = $('[data-avc-sent]');
+        done.hidden = false;
+        done.focus();
+      } catch {
+        const a = Object.assign(document.createElement('a'), {
+          className: 'link',
+          href: `mailto:info@visionbotix.com?subject=${encodeURIComponent(`AI visibility check: ${last.host}`)}&body=${encodeURIComponent(body.message!)}`,
+          textContent: 'send it by email instead',
+        });
+        status.replaceChildren('We could not send it just now. Please ', a, '.');
+        track('form_fallback', { form: 'checker' });
+        lead.reset();
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  }
+</script>
+
+<style is:global>
+  /* Global on purpose: most of the result is built by the script, and every class is avc-prefixed. */
+  .avc-hero {
+    display: grid;
+    gap: var(--space-5);
+  }
+  .avc-form {
+    --glass-radius: var(--radius-xl);
+    display: grid;
+    gap: var(--space-2);
+    padding: clamp(1rem, 0.7rem + 1.2vw, 1.5rem);
+    max-inline-size: 46rem;
+  }
+  .avc-label {
+    font-weight: 600;
+  }
+  .avc-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+  .avc-prefix {
+    position: absolute;
+    inset-block-start: 0.95rem;
+    inset-inline-start: 0.9rem;
+    color: var(--fg-subtle);
+    pointer-events: none;
+  }
+  .avc-row input {
+    inline-size: 100%;
+    min-block-size: 3.1rem;
+    padding-inline-start: 2.6rem;
+    font-size: var(--step-0);
+  }
+  @media (min-width: 40rem) {
+    .avc-row {
+      grid-template-columns: 1fr auto;
+    }
+  }
+  .avc-result {
+    display: grid;
+    gap: var(--space-5);
+    padding-block: var(--space-6);
+    scroll-margin-block-start: calc(var(--header-h) + 1rem);
+  }
+  .avc-loading {
+    display: flex;
+    gap: var(--space-4);
+    align-items: flex-start;
+    padding: var(--space-5);
+  }
+  .avc-loading-title {
+    font-weight: 600;
+  }
+  .avc-steps {
+    margin-block-start: var(--space-2);
+    padding-inline-start: 1.1rem;
+    list-style: decimal;
+  }
+  .avc-spin {
+    flex: none;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    border-radius: 50%;
+    border: 3px solid var(--border);
+    border-block-start-color: var(--accent);
+    animation: avc-spin 0.9s linear infinite;
+  }
+  @keyframes avc-spin {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .avc-spin {
+      animation-duration: 3s;
+    }
+  }
+  [data-avc-report] {
+    scroll-margin-block-start: calc(var(--header-h) + 1.5rem);
+    display: grid;
+    gap: var(--space-5);
+  }
+  [data-avc-report][hidden] {
+    display: none;
+  }
+  .avc-top {
+    display: grid;
+    gap: var(--space-5);
+  }
+  @media (min-width: 60rem) {
+    .avc-top {
+      grid-template-columns: 1.15fr 1fr;
+    }
+  }
+  .avc-score {
+    --glass-radius: var(--radius-xl);
+    display: grid;
+    gap: var(--space-4) var(--space-5);
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    align-content: start;
+    padding: clamp(1.1rem, 0.8rem + 1.2vw, 1.75rem);
+  }
+  .avc-ring {
+    --c: var(--avc-bad);
+    position: relative;
+    display: grid;
+    place-items: center;
+    inline-size: clamp(6.5rem, 5rem + 5vw, 8.5rem);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: conic-gradient(var(--c) calc(var(--p) * 1%), color-mix(in srgb, var(--fg) 10%, transparent) 0);
+  }
+  .avc-ring::before {
+    content: '';
+    position: absolute;
+    inset: 9px;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+  }
+  .avc-ring > * {
+    position: relative;
+  }
+  .avc-num {
+    font-size: clamp(2rem, 1.5rem + 2vw, 2.75rem);
+    font-weight: 750;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .avc-of {
+    position: absolute;
+    inset-block-end: 24%;
+    font-size: var(--step--1);
+    color: var(--fg-subtle);
+  }
+  .avc-ring[data-band='good'],
+  .avc-bar[data-band='good'] {
+    --c: var(--avc-ok);
+  }
+  .avc-ring[data-band='ok'],
+  .avc-bar[data-band='ok'] {
+    --c: var(--avc-lime);
+  }
+  .avc-ring[data-band='warn'],
+  .avc-bar[data-band='warn'] {
+    --c: var(--avc-amber);
+  }
+  .avc-grade {
+    font-size: var(--step-3);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+  .avc-grade:focus {
+    outline: none;
+  }
+  .avc-blocker {
+    margin-block-start: var(--space-2);
+    color: var(--avc-bad);
+    font-weight: 600;
+  }
+  .avc-groups {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: var(--space-3);
+  }
+  .avc-g-head {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    font-size: var(--step--1);
+  }
+  .avc-bar {
+    --c: var(--avc-bad);
+    display: block;
+    block-size: 6px;
+    margin-block-start: 0.35rem;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(var(--c), var(--c)) no-repeat 0 0 / var(--w) 100%, color-mix(in srgb, var(--fg) 10%, transparent);
+  }
+  .avc-fixes {
+    display: grid;
+    align-content: start;
+    gap: var(--space-3);
+    padding: clamp(1.1rem, 0.8rem + 1.2vw, 1.75rem);
+  }
+  .avc-fixlist {
+    display: grid;
+    gap: var(--space-3);
+    padding: 0;
+    list-style: none;
+  }
+  .avc-fix-t {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+  }
+  .avc-fixlist .small {
+    margin-inline-start: 1.85rem;
+  }
+  .avc-tools,
+  .avc-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .avc-st {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    inline-size: 1.35rem;
+    block-size: 1.35rem;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--bg);
+    background: var(--avc-bad);
+  }
+  .st-pass {
+    background: var(--avc-ok);
+  }
+  .st-warn {
+    background: var(--avc-amber);
+  }
+  .st-info {
+    background: var(--fg-subtle);
+  }
+  .avc-detail {
+    display: grid;
+    gap: var(--space-5);
+  }
+  @media (min-width: 64rem) {
+    .avc-detail {
+      grid-template-columns: 1.4fr 1fr;
+      align-items: start;
+    }
+  }
+  [data-avc-checks] {
+    display: grid;
+    gap: var(--space-4);
+  }
+  .avc-group,
+  .avc-bots {
+    padding: clamp(1rem, 0.8rem + 1vw, 1.5rem);
+  }
+  .avc-g-score {
+    font-size: var(--step--1);
+    font-weight: 500;
+    color: var(--fg-muted);
+  }
+  .avc-checklist {
+    display: grid;
+    margin-block-start: var(--space-3);
+  }
+  .avc-checklist li + li {
+    border-block-start: 1px solid var(--border);
+  }
+  .avc-checklist summary {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.15rem var(--space-3);
+    align-items: center;
+    padding-block: var(--space-3);
+    cursor: pointer;
+    list-style: none;
+  }
+  .avc-checklist summary::-webkit-details-marker {
+    display: none;
+  }
+  .avc-c-label {
+    font-weight: 600;
+  }
+  .avc-c-val {
+    grid-column: 2;
+    font-size: var(--step--1);
+    color: var(--fg-muted);
+    overflow-wrap: anywhere;
+  }
+  .avc-c-body {
+    display: grid;
+    gap: var(--space-2);
+    padding: 0 0 var(--space-3) 2.1rem;
+  }
+  .avc-table-wrap {
+    overflow-x: auto;
+    margin-block-start: var(--space-3);
+  }
+  .avc-table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--step--1);
+  }
+  .avc-table th,
+  .avc-table td {
+    padding: 0.55rem 0.6rem;
+    text-align: start;
+    vertical-align: top;
+    border-block-end: 1px solid var(--border);
+  }
+  .avc-table thead th {
+    color: var(--fg-muted);
+    font-weight: 600;
+  }
+  .avc-table td:last-child {
+    white-space: nowrap;
+  }
+  .avc-table td .avc-st {
+    vertical-align: -0.3rem;
+  }
+  .avc-vendor {
+    display: block;
+  }
+  .avc-ref {
+    min-inline-size: 44rem;
+  }
+  .avc-ref td:last-child {
+    white-space: normal;
+  }
+  .avc-ref code,
+  .avc-table th code {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+  }
+  .avc-kind {
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.78rem;
+    background: color-mix(in srgb, var(--fg) 8%, transparent);
+    white-space: nowrap;
+  }
+  .k-search {
+    background: color-mix(in srgb, var(--avc-ok) 18%, transparent);
+  }
+  .k-user {
+    background: color-mix(in srgb, var(--brand-cyan) 18%, transparent);
+  }
+  .avc-note {
+    margin-block-start: var(--space-3);
+  }
+  .avc-code {
+    margin: 0 0 var(--space-3);
+    padding: var(--space-4);
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    white-space: pre;
+  }
+  .avc-next {
+    --glass-radius: var(--radius-xl);
+    display: grid;
+    gap: var(--space-5);
+    padding: clamp(1.1rem, 0.8rem + 1.5vw, 2rem);
+  }
+  @media (min-width: 60rem) {
+    .avc-next {
+      grid-template-columns: 1.2fr 1fr;
+    }
+  }
+  .avc-next .h3 {
+    margin-block: var(--space-2);
+  }
+  .avc-next .muted {
+    margin-block-end: var(--space-4);
+  }
+  .avc-send {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .avc-send-title {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    font-weight: 600;
+  }
+  .avc-sent,
+  .avc-failed {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    padding: var(--space-4);
+  }
+  .avc-sent[hidden],
+  .avc-failed[hidden],
+  .avc-loading[hidden] {
+    display: none;
+  }
+  .avc-failed {
+    padding: var(--space-5);
+    color: var(--fg);
+  }
+  .avc-failed .icon {
+    color: var(--avc-amber);
+    flex: none;
+  }
+  :root {
+    --avc-ok: #4ade80;
+    --avc-lime: #a3e635;
+    --avc-amber: #fbbf24;
+    --avc-bad: #f87171;
+  }
+  [data-theme='light'] {
+    --avc-ok: #15803d;
+    --avc-lime: #4d7c0f;
+    --avc-amber: #b45309;
+    --avc-bad: #b91c1c;
+  }
+</style>

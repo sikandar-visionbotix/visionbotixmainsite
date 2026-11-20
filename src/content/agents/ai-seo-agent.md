@@ -95,6 +95,8 @@ related:
 faq:
   - q: What is GEO, and how is it different from SEO?
     a: SEO helps your pages rank in classic search results. Generative engine optimization (GEO) helps AI assistants such as ChatGPT, Perplexity and Google AI Overviews understand, mention and cite your business when they answer a question. The foundations overlap, and GEO adds tracking of AI answers and pages written to be quoted.
+  - q: Can I check my site's AI visibility before I talk to you?
+    a: Yes. Our free <a class="link" href="/tools/ai-visibility-checker/">AI visibility checker</a> tests whether the crawlers behind ChatGPT, Claude, Perplexity, Google and Bing may read your page, what text they see without JavaScript, and whether they can tell who you are. The agent starts from the same checks, then tracks real AI answers every month.
   - q: Can you guarantee rankings or AI citations?
     a: No, and nobody honestly can, because search engines and AI assistants decide what to show. What we commit to is the process, which is regular tracking, a prioritized task list, reviewed drafts and technical fixes, with a weekly report that shows what changed.
   - q: Will AI-written content hurt my site?

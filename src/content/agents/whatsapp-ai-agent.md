@@ -54,7 +54,7 @@ controls:
   - Prices, stock and policies come only from your store and your approved knowledge base.
 security:
   - Runs on the official WhatsApp Business Platform, not unofficial tools that put your number at risk of being banned.
-  - Chat data is encrypted in transit and at rest and stored in the region you choose, including UAE, EU or US hosting.
+  - Chat data is encrypted in transit and at rest and stored in the region you choose, for example the UAE, Saudi Arabia, the EU or the US.
   - Store and courier access is scoped to reading orders and stock, and payment details never pass through the agent.
   - Inbox access is role-based, chats follow your retention rules, and every message and action is in the audit log.
 setup:

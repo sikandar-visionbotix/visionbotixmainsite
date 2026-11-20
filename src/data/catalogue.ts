@@ -131,6 +131,7 @@ export const company = [
   { href: '/work/', name: 'Our work' },
   { href: '/locations/', name: 'Where we work' },
   { href: '/resources/', name: 'Resources' },
+  { href: '/tools/', name: 'Free tools' },
   { href: '/careers/', name: 'Careers' },
   { href: '/contact/', name: 'Contact' },
 ];

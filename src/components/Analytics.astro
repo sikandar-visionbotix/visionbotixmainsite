@@ -18,6 +18,8 @@
  *           demo_message, demo_gate, demo_complete (mark as a key event), demo_cta, demo_busy, demo_voice, demo_reset,
  *           concierge_open, demo_hub_click; a demo's "book a call" also sends book_call with location "demo-<id>"
  *           (demo → booked-call rate = book_call where location starts with "demo" ÷ demo_start)
+ *   free tools (S11): ai_check_run, ai_check_complete (`score`), ai_check_send (mark as a key event), ai_check_cta;
+ *           result-page book_call has location "ai-check-result"
  * GA4 setup (owner): Admin → Custom definitions → add event-scoped dimensions `ai_source`, `location`, `type`, `step`, `demo`
  * and a user-scoped `ai_source`; Admin → Channel groups → copy the default and add "AI assistants" above Referral with
  * source matching: chatgpt|openai|perplexity|claude|anthropic|gemini|copilot|deepseek|grok|meta\.ai|mistral|you\.com|phind|poe|kagi

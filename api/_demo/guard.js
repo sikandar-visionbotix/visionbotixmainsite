@@ -77,7 +77,7 @@ function memIncr(key, ttlSec) {
 }
 const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || '';
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || '';
-async function incr(key, ttlSec) {
+export async function incr(key, ttlSec) {
   if (!REDIS_URL || !REDIS_TOKEN) return memIncr(key, ttlSec);
   try {
     const r = await fetch(`${REDIS_URL}/pipeline`, {

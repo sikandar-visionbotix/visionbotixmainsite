@@ -17,6 +17,7 @@ import Icon from '@/components/Icon.astro';
 import Accordion from '@/components/Accordion.astro';
 import CtaBand from '@/components/CtaBand.astro';
 import RelatedReading from '@/components/RelatedReading.astro';
+import LocalLinks from '@/components/LocalLinks.astro';
 import ServiceCard from '@/components/ServiceCard.astro';
 import Stat from '@/components/Stat.astro';
 import { site } from '@/data/site';
@@ -404,6 +405,7 @@ const groups = [
   </Section>
 
   <!-- ============ Guides (S10): posts that link to this page ============ -->
+  <LocalLinks location={slug} />
   <RelatedReading />
 
   <CtaBand title="Tell us how your team works. Get a fixed quote within 24 hours." location={`location-final-${slug}`} />

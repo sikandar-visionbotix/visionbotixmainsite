@@ -10,6 +10,8 @@ import { getProducts } from '@/lib/products';
 import { getWork } from '@/lib/work';
 import { getIndustries, teamPricing } from '@/lib/industries';
 import { getLocations, overlap, overlapLabel, locationFaq } from '@/lib/locations';
+import { getLocalOffers, localPath, localPriceFaq } from '@/lib/local';
+import { agentItem } from '@/lib/industries';
 import { typicalProjects, estimate, rangeLabel } from '@/data/estimator';
 import { liveDemos } from '@/data/demos';
 import { getPosts, filled } from '@/lib/posts';
@@ -72,6 +74,22 @@ export async function llmsTxt(full: boolean): Promise<string> {
     );
     if (full) L.push(faq([price, ...l.data.faq]));
   }
+  const locals = await getLocalOffers();
+  if (locals.length) {
+    L.push('', '## AI agents set up for one country (local rules, systems and prices)', '');
+    for (const e of locals) {
+      const l = locations.find((x) => x.id === e.data.location.id)!;
+      L.push(
+        `- [${agentItem(e.data.agent.id).name} in ${l.data.inName}](${u(localPath(e))}): ${e.data.summary.replace(/\s+/g, ' ')} Local rules: ${e.data.rules.map((r) => r.name).join(', ')}. Systems: ${e.data.systems.flatMap((x) => x.names).join(', ')}.`,
+      );
+      if (full) L.push(faq([localPriceFaq(e.data.agent.id, l.data.currency, l.data.inName), ...e.data.faq]));
+    }
+  }
+  L.push('', '## Free tools', '');
+  L.push(
+    `- [AI visibility checker](${u('/tools/ai-visibility-checker/')}): free check of whether ChatGPT, Claude, Perplexity, Google and Bing can crawl, read and identify a web page (robots.txt per AI crawler, noindex/nosnippet, text without JavaScript, structure, schema), with a score out of 100 and the top fixes. Includes a reference table of AI crawler user agents.`,
+    `- [Project cost estimator](${u('/estimate/')}): price range, timeline and cost drivers for apps, websites, SaaS MVPs and AI agents.`,
+  );
   L.push('', '## Our own products', '');
   for (const p of products) {
     L.push(`- [${p.data.name}](${u(`/products/${p.id}/`)}): ${p.data.summary.replace(/\s+/g, ' ')}${p.data.externalUrl ? ` Live at ${p.data.externalUrl}` : ''}`);
