@@ -553,8 +553,16 @@ Sitemap: https://www.example.com/sitemap.xml`;
       $('[data-avc-failed]').hidden = true;
       $('[data-avc-host]').textContent = url.replace(/^https?:\/\//, '').split('/')[0] ?? url;
       track('ai_check_run');
+      let sent = false;
       try {
         const token = await ts.token();
+        if (key && !token) {
+          // Cloudflare wants an interaction (a tick box under the address field): keep that check, ask for it.
+          box.hidden = true;
+          showError('Please complete the quick human check below, then press “Check my site” again.');
+          return;
+        }
+        sent = true;
         const r = await fetch('/api/ai-check/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url, ts: token }) });
         const j = await r.json().catch(() => ({}));
         if (r.status === 422) {
@@ -562,7 +570,10 @@ Sitemap: https://www.example.com/sitemap.xml`;
           return showError(j.message ?? 'That does not look like a website address.');
         }
         if (r.status === 429) return fail('Too many checks right now', j.error === 'busy_ip' ? 'You have run a lot of checks in a short time. Please try again in about ten minutes.' : 'The checker is busy. Please try again in a few minutes.');
-        if (r.status === 403) return fail('We could not verify the request', 'The human check did not complete. Reload the page and try again.');
+        if (r.status === 403) {
+          box.hidden = true;
+          return showError('The human check did not go through. Complete it below, then press “Check my site” again.');
+        }
         if (!r.ok) return fail('Something went wrong', 'The checker did not answer. Please try again in a moment.');
         if (!j.ok) return fail('We could not check that page', j.message ?? 'The page did not answer.');
         render(j.report as Report);
@@ -576,7 +587,8 @@ Sitemap: https://www.example.com/sitemap.xml`;
         $('[data-avc-loading]').hidden = true;
         box.setAttribute('aria-busy', 'false');
         go.disabled = false;
-        ts.reset();
+        // A token is single-use: get a fresh one for the next check (but never wipe a check still waiting for a tick).
+        if (sent) ts.reset();
       }
     }
 
